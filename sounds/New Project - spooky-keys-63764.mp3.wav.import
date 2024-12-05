@@ -1,0 +1,24 @@
+[remap]
+
+importer="wav"
+type="AudioStreamWAV"
+uid="uid://f5582dkkqfjj"
+path="res://.godot/imported/New Project - spooky-keys-63764.mp3.wav-c5f97a47b2e138baa75477d9ed0509b9.sample"
+
+[deps]
+
+source_file="res://sounds/New Project - spooky-keys-63764.mp3.wav"
+dest_files=["res://.godot/imported/New Project - spooky-keys-63764.mp3.wav-c5f97a47b2e138baa75477d9ed0509b9.sample"]
+
+[params]
+
+force/8_bit=true
+force/mono=true
+force/max_rate=false
+force/max_rate_hz=44100
+edit/trim=true
+edit/normalize=false
+edit/loop_mode=2
+edit/loop_begin=0
+edit/loop_end=-1
+compress/mode=0

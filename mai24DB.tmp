@@ -1,0 +1,33 @@
+[gd_scene load_steps=3 format=3 uid="uid://ckeoklxr07hah"]
+
+[ext_resource type="Script" path="res://main_menu.gd" id="1_rkdax"]
+[ext_resource type="PackedScene" uid="uid://5s5tymjjs4cf" path="res://world.tscn" id="2_duil8"]
+
+[node name="main_menu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_rkdax")
+world_scene = ExtResource("2_duil8")
+
+[node name="Button" type="Button" parent="."]
+layout_mode = 0
+offset_right = 8.0
+offset_bottom = 8.0
+text = "Start
+"
+
+[node name="GalleryButton" type="Button" parent="."]
+layout_mode = 0
+offset_left = 196.0
+offset_top = 186.0
+offset_right = 321.0
+offset_bottom = 241.0
+text = "Gallery
+"
+
+[connection signal="pressed" from="Button" to="." method="_on_startbutton_pressed"]
+[connection signal="pressed" from="GalleryButton" to="." method="_on_gallery_button_pressed"]

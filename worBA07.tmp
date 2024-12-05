@@ -1,0 +1,57 @@
+[gd_scene load_steps=9 format=3 uid="uid://djqmenb1dkewd"]
+
+[ext_resource type="Script" path="res://camera_3d.gd" id="1_vtk8y"]
+[ext_resource type="Texture2D" uid="uid://olglsyirp53q" path="res://assets/SBS - Noise Texture Pack - 128x128/128x128/Swirl/Swirl_13-128x128.png" id="2_chbcp"]
+[ext_resource type="Texture2D" uid="uid://i1vgbf86kquw" path="res://assets/SBS - Noise Texture Pack - 128x128/128x128/Cracks/Cracks_04-128x128.png" id="3_6gp5g"]
+
+[sub_resource type="Environment" id="Environment_6pcud"]
+background_mode = 1
+background_color = Color(0.0344032, 0, 0.907546, 1)
+background_energy_multiplier = 0.3
+ambient_light_energy = 0.3
+fog_enabled = true
+fog_light_color = Color(0.506749, 0.0203646, 0.480618, 1)
+fog_density = 0.013
+fog_height_density = 20.0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_yb7e3"]
+specular_mode = 2
+albedo_color = Color(0.774803, 0.168935, 0.660595, 1)
+albedo_texture = ExtResource("2_chbcp")
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_r3jhv"]
+material = SubResource("StandardMaterial3D_yb7e3")
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_oe5no"]
+specular_mode = 2
+albedo_color = Color(0.0235294, 0, 1, 1)
+albedo_texture = ExtResource("3_6gp5g")
+
+[sub_resource type="PrismMesh" id="PrismMesh_uxrer"]
+material = SubResource("StandardMaterial3D_oe5no")
+
+[node name="World" type="Node3D"]
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(-0.999657, -0.00454558, 0.0257793, 0, 0.984808, 0.173648, -0.026177, 0.173589, -0.98447, 0, 5, -10)
+environment = SubResource("Environment_6pcud")
+current = true
+fov = 50.0
+script = ExtResource("1_vtk8y")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, 0, 0, 0)
+cast_shadow = 0
+mesh = SubResource("PlaneMesh_r3jhv")
+
+[node name="MeshInstance3D2" type="MeshInstance3D" parent="."]
+transform = Transform3D(8, 0, 0, 0, 5, 0, 0, 0, 3, 0, 2.39987, 2.76376)
+cast_shadow = 0
+mesh = SubResource("PrismMesh_uxrer")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.707107, 0.707107, 0, -0.707107, 0.707107, 1, 0, 0)
+light_color = Color(0.772549, 1, 1, 1)
+light_energy = 1.5
+shadow_enabled = true
+shadow_normal_bias = 0.5

@@ -1,0 +1,23 @@
+[gd_resource type="Environment" load_steps=4 format=3 uid="uid://depamicaiy7qg"]
+
+[ext_resource type="Texture2D" uid="uid://dv07dapyb3s01" path="res://assests/SBS - Tiny Texture Pack 3 - Small/128x128/Elements/Elements_01-128x128.png" id="1_t1hs8"]
+
+[sub_resource type="PanoramaSkyMaterial" id="PanoramaSkyMaterial_7i3sk"]
+panorama = ExtResource("1_t1hs8")
+
+[sub_resource type="Sky" id="Sky_psead"]
+sky_material = SubResource("PanoramaSkyMaterial_7i3sk")
+
+[resource]
+background_mode = 2
+background_color = Color(0.663049, 0.0908107, 0.504105, 1)
+sky = SubResource("Sky_psead")
+ambient_light_source = 2
+ambient_light_color = Color(1, 1, 1, 1)
+ambient_light_energy = 0.5
+fog_light_color = Color(0.856581, 0, 0.00713288, 1)
+fog_sun_scatter = 0.1
+fog_density = 0.001
+fog_sky_affect = 0.3
+fog_height = 250.0
+fog_height_density = 0.001

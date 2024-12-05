@@ -1,0 +1,75 @@
+[gd_scene load_steps=3 format=3 uid="uid://6ug1fcixbgss"]
+
+[sub_resource type="GDScript" id="GDScript_4be8c"]
+script/source = "extends CharacterBody3D
+
+@export var speed: float = 5.0  # Forward/backward movement speed
+@export var rotation_speed: float = 90.0  # Rotation speed (degrees per second)
+
+var camera_node: Camera3D  # Holds the Camera3D reference
+
+func _ready():
+	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED  # Lock and hide the mouse
+	velocity = Vector3.ZERO  # Ensure initial velocity is zero
+
+	# Get the Camera3D node
+	camera_node = get_node(\"../Camera3D\")
+	if camera_node == null:
+		print(\"Error: Camera3D node not found!\")
+
+func _process(delta):
+	handle_tank_controls(delta)
+
+func handle_tank_controls(delta):
+	# Debug to check inputs
+	if Input.is_action_pressed(\"ui_up\"):
+		print(\"ui_up detected: Moving forward\")
+	if Input.is_action_pressed(\"ui_down\"):
+		print(\"ui_down detected: Moving backward\")
+	if Input.is_action_pressed(\"ui_left\"):
+		print(\"ui_left detected: Rotating left\")
+	if Input.is_action_pressed(\"ui_right\"):
+		print(\"ui_right detected: Rotating right\")
+
+	# Handle rotation (left/right)
+	if Input.is_action_pressed(\"ui_right\"):  # Rotate player right
+		rotate_y(-rotation_speed * delta)
+	elif Input.is_action_pressed(\"ui_left\"):  # Rotate player left
+		rotate_y(rotation_speed * delta)
+
+	# Forward/backward movement
+	var input_dir = Vector3(0, 0, 0)
+	if Input.is_action_pressed(\"ui_up\"):  # Move forward
+		input_dir.z -= 1
+	elif Input.is_action_pressed(\"ui_down\"):  # Move backward
+		input_dir.z += 1
+
+	# Debug the input direction
+	print(\"Input Direction: \", input_dir)
+
+	# Apply movement
+	if input_dir != Vector3.ZERO:
+		input_dir = global_transform.basis * input_dir.normalized()  # Transform direction
+		velocity.x = input_dir.x * speed
+		velocity.z = input_dir.z * speed
+	else:
+		velocity.x = 0
+		velocity.z = 0
+
+	# Debug velocity
+	print(\"Velocity: \", velocity)
+
+	# Apply the velocity using move_and_slide()
+	move_and_slide()
+"
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_8bggb"]
+
+[node name="Player" type="Node3D"]
+
+[node name="CharacterBody3D" type="CharacterBody3D" parent="."]
+transform = Transform3D(0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 0, 0, 0)
+script = SubResource("GDScript_4be8c")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="CharacterBody3D"]
+shape = SubResource("CapsuleShape3D_8bggb")

@@ -1,0 +1,14 @@
+Node3D
+CollisionShape3D
+StaticBody3D
+MeshInstance3D
+AudioStreamPlayer
+AudioStreamPlayer3D
+OmniLight3D
+LightmapProbe
+Area3D
+ColorRect
+SpotLight3D
+DirectionalLight3D
+Label
+ProgressBar
