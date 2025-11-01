@@ -15,6 +15,7 @@ var world_scene: PackedScene = load("res://world.tscn")
 var lobby_id: int = 0
 var is_host: bool = false
 var lobby_members: Array = []
+var peer: SteamMultiplayerPeer = null
 
 func _process(_delta: float) -> void:
 	# Process Steam callbacks every frame
@@ -89,6 +90,12 @@ func _on_lobby_created(connect_status: int, created_lobby_id: int) -> void:
 		is_host = true
 		print("Lobby created! ID: ", lobby_id)
 
+		# Create the multiplayer peer as host
+		peer = SteamMultiplayerPeer.new()
+		var create_result = peer.create_host(0, [])
+		print("Host peer created with result: ", create_result)
+		multiplayer.multiplayer_peer = peer
+
 		lobby_id_label.text = "Lobby ID: " + str(lobby_id)
 		lobby_id_label.show()
 		copy_button.show()
@@ -120,6 +127,17 @@ func _on_lobby_joined(lobby_id_joined: int, _permissions: int, _locked: bool, re
 		lobby_id = lobby_id_joined
 		is_host = false
 		print("Successfully joined lobby: ", lobby_id)
+
+		# Get the host's Steam ID (first member of the lobby)
+		var host_steam_id = Steam.getLobbyOwner(lobby_id)
+		print("Connecting to host Steam ID: ", host_steam_id)
+
+		# Create the multiplayer peer as client
+		peer = SteamMultiplayerPeer.new()
+		var join_result = peer.create_client(host_steam_id, 0, [])
+		print("Client peer created with result: ", join_result)
+		multiplayer.multiplayer_peer = peer
+
 		status_label.text = "Joined lobby! Waiting for host to start..."
 
 		# Hide buttons, show players
@@ -169,10 +187,20 @@ func _on_start_multiplayer_pressed() -> void:
 	if is_host:
 		print("Host starting the game!")
 		status_label.text = "Starting game..."
+		# Tell all clients to start the game
+		start_game_for_all.rpc()
+		# Start the game for the host too
 		start_game()
-		# TODO: Tell the client to start the game too via RPC
 	else:
 		print("Only the host can start the game!")
+
+# RPC called by host to tell clients to start the game
+@rpc("authority", "call_remote", "reliable")
+func start_game_for_all() -> void:
+	print("Received start game command from host!")
+	status_label.text = "Host started the game!"
+	await get_tree().create_timer(0.5).timeout
+	start_game()
 
 # Placeholder for lobby match list (not used yet, but good to have)
 func _on_lobby_match_list(lobbies: Array) -> void:
