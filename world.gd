@@ -101,20 +101,20 @@ func _ready():
 			print("Removed single-player player node")
 
 	# Disable all worlds initially
-	for world_name_iter in worlds.keys():
-		var world_iter = worlds[world_name_iter]
+	for _world_name in worlds.keys():
+		var world_iter = worlds[_world_name]
 		if world_iter:
 			world_iter.visible = false
 			_disable_interactions_in_world(world_iter, true)
-			print("Disabled interactions for world:", world_name_iter)
+			print("Disabled interactions for world:", _world_name)
 
 	# Disable all nightmares initially
-	for nightmare_name_iter in nightmares.keys():
-		var nightmare_iter = nightmares[nightmare_name_iter]
+	for _nightmare_name in nightmares.keys():
+		var nightmare_iter = nightmares[_nightmare_name]
 		if nightmare_iter:
 			nightmare_iter.visible = false
 			_disable_interactions_in_world(nightmare_iter, true)
-			print("Disabled interactions for nightmare:", nightmare_name_iter)
+			print("Disabled interactions for nightmare:", _nightmare_name)
 
 	# Initialize world state
 	if is_multiplayer:
@@ -148,7 +148,6 @@ func _ready():
 
 			# Spawn host player (CRITICAL: Use RPC so clients see the host!)
 			print("SERVER: Spawning host player...")
-			var spawn_position = find_safe_spawn_position(current_world_name)
 			spawn_player.rpc(multiplayer.get_unique_id())  # FIX: Added .rpc() so clients see host!
 
 			# Spawn any already-connected clients
@@ -302,18 +301,18 @@ func teleport_to_world(world_name: String, spawn_position: Vector3, keep_player_
 	play_transition_effect(Callable(self, "_do_teleport_to_world").bind(world_name, spawn_position, keep_player_positions))
 
 func _do_teleport_to_world(world_name: String, spawn_position: Vector3, keep_player_positions: bool = false):
-	for world_name_iter in worlds.keys():
-		var world_iter = worlds[world_name_iter]
+	for _world_name in worlds.keys():
+		var world_iter = worlds[_world_name]
 		if world_iter:
 			world_iter.visible = false
 			_disable_interactions_in_world(world_iter, true)
-			print("Disabled interactions for world:", world_name_iter)
-	for nightmare_name_iter in nightmares.keys():
-		var nightmare_iter = nightmares[nightmare_name_iter]
+			print("Disabled interactions for world:", _world_name)
+	for _nightmare_name in nightmares.keys():
+		var nightmare_iter = nightmares[_nightmare_name]
 		if nightmare_iter:
 			nightmare_iter.visible = false
 			_disable_interactions_in_world(nightmare_iter, true)
-			print("Disabled interactions for nightmare:", nightmare_name_iter)
+			print("Disabled interactions for nightmare:", _nightmare_name)
 	if world_name in worlds or world_name in nightmares:
 		var target_world = worlds.get(world_name, nightmares.get(world_name, null))
 		if target_world:
@@ -340,7 +339,6 @@ func _do_teleport_to_world(world_name: String, spawn_position: Vector3, keep_pla
 				# FIX: Give each player a UNIQUE spawn position!
 				if is_multiplayer:
 					# Teleport all multiplayer players to DIFFERENT positions
-					var player_index = 0
 					for peer_id in players:
 						var player = players[peer_id]
 						if player:
@@ -348,10 +346,9 @@ func _do_teleport_to_world(world_name: String, spawn_position: Vector3, keep_pla
 							var unique_spawn = find_safe_spawn_position(world_name, 50, 2.0)
 							player.global_transform.origin = unique_spawn
 							print("Teleported player ", peer_id, " to unique position: ", unique_spawn)
-							player_index += 1
 				else:
 					# Teleport single-player player
-					var player = $SubViewportContainer/SubViewport/Player
+					var player = get_node_or_null("SubViewportContainer/SubViewport/Player")
 					if player:
 						player.global_transform.origin = spawn_position
 			else:
@@ -468,15 +465,20 @@ func adjust_position_to_ground(pos: Vector3):
 	var space_state = world.direct_space_state
 	var from_point = pos
 	var to_point = pos - Vector3(0, 100, 0)
-	
+
 	var query = PhysicsRayQueryParameters3D.new()
 	query.from = from_point
 	query.to = to_point
-	query.exclude = [ $SubViewportContainer/SubViewport/Player ]
+
+	# Only exclude single-player player if it exists
+	var single_player = get_node_or_null("SubViewportContainer/SubViewport/Player")
+	if single_player:
+		query.exclude = [ single_player ]
+
 	query.collision_mask = 0xFFFFFFFF
 	query.collide_with_bodies = true
 	query.collide_with_areas = false
-	
+
 	var result = space_state.intersect_ray(query)
 	if result.size() > 0:
 		var ground_y = result.position.y
@@ -509,7 +511,12 @@ func is_position_safe(pos: Vector3, radius: float) -> bool:
 	query.shape = sphere_shape
 	query.transform = transform
 	query.margin = 0.1
-	query.exclude = [ $SubViewportContainer/SubViewport/Player ]
+
+	# Only exclude single-player player if it exists
+	var single_player = get_node_or_null("SubViewportContainer/SubViewport/Player")
+	if single_player:
+		query.exclude = [ single_player ]
+
 	query.collision_mask = 0xFFFFFFFF
 	query.collide_with_bodies = true
 	query.collide_with_areas = false
@@ -608,15 +615,15 @@ func sync_world_state(world_name: String) -> void:
 	print("CLIENT: Received world state sync - world: ", world_name)
 
 	# Disable all worlds
-	for world_name_iter in worlds.keys():
-		var world_iter = worlds[world_name_iter]
+	for _world_name in worlds.keys():
+		var world_iter = worlds[_world_name]
 		if world_iter:
 			world_iter.visible = false
 			_disable_interactions_in_world(world_iter, true)
 
 	# Disable all nightmares
-	for nightmare_name_iter in nightmares.keys():
-		var nightmare_iter = nightmares[nightmare_name_iter]
+	for _nightmare_name in nightmares.keys():
+		var nightmare_iter = nightmares[_nightmare_name]
 		if nightmare_iter:
 			nightmare_iter.visible = false
 			_disable_interactions_in_world(nightmare_iter, true)
@@ -714,8 +721,8 @@ func _create_interaction_ui() -> void:
 	interaction_label.offset_right = 150
 	interaction_label.offset_top = -80
 	interaction_label.offset_bottom = -50
-	interaction_label.grow_horizontal = 2
-	interaction_label.grow_vertical = 0
+	interaction_label.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	interaction_label.grow_vertical = Control.GROW_DIRECTION_BEGIN
 
 	# Add to CanvasLayer
 	$CanvasLayer.add_child(interaction_label)
@@ -738,8 +745,8 @@ func _create_interaction_ui() -> void:
 	interaction_progress_bar.offset_right = 100
 	interaction_progress_bar.offset_top = -45
 	interaction_progress_bar.offset_bottom = -30
-	interaction_progress_bar.grow_horizontal = 2
-	interaction_progress_bar.grow_vertical = 0
+	interaction_progress_bar.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	interaction_progress_bar.grow_vertical = Control.GROW_DIRECTION_BEGIN
 
 	# Add to CanvasLayer
 	$CanvasLayer.add_child(interaction_progress_bar)
