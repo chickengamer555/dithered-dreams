@@ -1,6 +1,6 @@
 extends CharacterBody3D
 
-@export var speed : float = 7.0  # PS1-like movement speed
+@export var speed : float = 15.0  # PS1-like movement speed
 @export var rotation_speed : float = 1.3  # PS1-like turning speed
 @export var gravity : float = 9  # Gravity value
 @export var jump_velocity : float = 10.0  # Jump velocity

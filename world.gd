@@ -29,6 +29,10 @@ var environments = { # Loads the environment resources for each world and nightm
 @onready var nightmare_bar = $CanvasLayer/NightmareBar
 @onready var transition_rect = $CanvasLayer/ColorRect  # Reference to the ColorRect for transitions
 
+# Interaction UI (will be created dynamically)
+var interaction_label: Label = null
+var interaction_progress_bar: ProgressBar = null
+
 @export var play_time: int = 300
 @export var main_menu_scene: PackedScene
 var time_left: int = play_time
@@ -200,6 +204,9 @@ func _ready():
 	if transition_rect:
 		transition_rect.visible = false
 
+	# Create interaction UI elements
+	_create_interaction_ui()
+
 	# **Important: Mark this scene as the current main scene.**
 	get_tree().set_current_scene(self)
 
@@ -257,8 +264,9 @@ func teleport_to_nightmare_world(world_name: String):
 	else:
 		return
 	if nightmare_world_name in nightmares:
-		var spawn_position = find_safe_spawn_position(nightmare_world_name)
-		teleport_to_world(nightmare_world_name, spawn_position)
+		# FIX: Don't teleport players, keep them in same position!
+		# Just switch the world with a black fade
+		teleport_to_world(nightmare_world_name, Vector3.ZERO, true)  # true = keep player positions
 
 func teleport_to_random_world():
 	# Only server controls world transitions in multiplayer
@@ -289,11 +297,11 @@ func teleport_to_random_normal_world():
 		var spawn_position = find_safe_spawn_position(random_world)
 		teleport_to_world(random_world, spawn_position)
 
-func teleport_to_world(world_name: String, spawn_position: Vector3):
+func teleport_to_world(world_name: String, spawn_position: Vector3, keep_player_positions: bool = false):
 	is_transitioning = true
-	play_transition_effect(Callable(self, "_do_teleport_to_world").bind(world_name, spawn_position))
+	play_transition_effect(Callable(self, "_do_teleport_to_world").bind(world_name, spawn_position, keep_player_positions))
 
-func _do_teleport_to_world(world_name: String, spawn_position: Vector3):
+func _do_teleport_to_world(world_name: String, spawn_position: Vector3, keep_player_positions: bool = false):
 	for world_name_iter in worlds.keys():
 		var world_iter = worlds[world_name_iter]
 		if world_iter:
@@ -327,26 +335,33 @@ func _do_teleport_to_world(world_name: String, spawn_position: Vector3):
 				print("SERVER: Syncing world change to clients: ", world_name)
 				sync_world_state.rpc(world_name)
 
-			# Teleport players
-			if is_multiplayer:
-				# Teleport all multiplayer players
-				for peer_id in players:
-					var player = players[peer_id]
+			# Teleport players (or keep their positions)
+			if not keep_player_positions:
+				# FIX: Give each player a UNIQUE spawn position!
+				if is_multiplayer:
+					# Teleport all multiplayer players to DIFFERENT positions
+					var player_index = 0
+					for peer_id in players:
+						var player = players[peer_id]
+						if player:
+							# Find a unique safe spawn position for each player
+							var unique_spawn = find_safe_spawn_position(world_name, 50, 2.0)
+							player.global_transform.origin = unique_spawn
+							print("Teleported player ", peer_id, " to unique position: ", unique_spawn)
+							player_index += 1
+				else:
+					# Teleport single-player player
+					var player = $SubViewportContainer/SubViewport/Player
 					if player:
 						player.global_transform.origin = spawn_position
 			else:
-				# Teleport single-player player
-				var player = $SubViewportContainer/SubViewport/Player
-				if player:
-					player.global_transform.origin = spawn_position
+				# Keep player positions (for nightmare transitions)
+				print("Keeping player positions during world transition")
 
 func _on_area_3d_body_entered(body: Node3D):
-	# Only server handles area triggers in multiplayer
-	if is_multiplayer and not multiplayer.is_server():
-		return
-
-	if not is_transitioning and body is CharacterBody3D:
-		teleport_to_random_world()
+	# DISABLED: Old automatic teleportation on area trigger
+	# Now using end_object interaction system instead
+	pass
 
 func _on_timer_tick():
 	time_left -= 1
@@ -440,13 +455,22 @@ func adjust_position_to_ground(pos: Vector3):
 		return null
 
 func is_position_safe(pos: Vector3, radius: float) -> bool:
+	# FIX: Check if any existing players are too close
+	for peer_id in players:
+		var player = players[peer_id]
+		if player:
+			var distance = pos.distance_to(player.global_position)
+			if distance < radius * 2.0:  # Players need to be at least 2x radius apart
+				print("Position too close to player ", peer_id, " (distance: ", distance, ")")
+				return false
+
 	var world = get_tree().root.get_world_3d()
 	var space_state = world.direct_space_state
-	
+
 	var sphere_shape = SphereShape3D.new()
 	sphere_shape.radius = radius
 	var transform = Transform3D(Basis.IDENTITY, pos)
-	
+
 	var query = PhysicsShapeQueryParameters3D.new()
 	query.shape = sphere_shape
 	query.transform = transform
@@ -455,7 +479,7 @@ func is_position_safe(pos: Vector3, radius: float) -> bool:
 	query.collision_mask = 0xFFFFFFFF
 	query.collide_with_bodies = true
 	query.collide_with_areas = false
-	
+
 	var result = space_state.intersect_shape(query, 1)
 	return result.size() == 0
 
@@ -622,3 +646,105 @@ func spawn_player(peer_id: int) -> void:
 	var active_cam = viewport.get_camera_3d()
 	print("Viewport active camera: ", active_cam)
 	print("=== END CAMERA DEBUG ===")
+
+# ========== INTERACTION SYSTEM ==========
+
+func _create_interaction_ui() -> void:
+	# Create interaction label (centered at bottom of screen)
+	interaction_label = Label.new()
+	interaction_label.name = "InteractionLabel"
+	interaction_label.text = ""
+	interaction_label.visible = false
+	interaction_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	interaction_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+
+	# Position at bottom center
+	interaction_label.anchor_left = 0.5
+	interaction_label.anchor_right = 0.5
+	interaction_label.anchor_top = 1.0
+	interaction_label.anchor_bottom = 1.0
+	interaction_label.offset_left = -150
+	interaction_label.offset_right = 150
+	interaction_label.offset_top = -80
+	interaction_label.offset_bottom = -50
+	interaction_label.grow_horizontal = 2
+	interaction_label.grow_vertical = 0
+
+	# Add to CanvasLayer
+	$CanvasLayer.add_child(interaction_label)
+
+	# Create progress bar
+	interaction_progress_bar = ProgressBar.new()
+	interaction_progress_bar.name = "InteractionProgressBar"
+	interaction_progress_bar.visible = false
+	interaction_progress_bar.min_value = 0.0
+	interaction_progress_bar.max_value = 1.0
+	interaction_progress_bar.value = 0.0
+	interaction_progress_bar.show_percentage = false
+
+	# Position below the label
+	interaction_progress_bar.anchor_left = 0.5
+	interaction_progress_bar.anchor_right = 0.5
+	interaction_progress_bar.anchor_top = 1.0
+	interaction_progress_bar.anchor_bottom = 1.0
+	interaction_progress_bar.offset_left = -100
+	interaction_progress_bar.offset_right = 100
+	interaction_progress_bar.offset_top = -45
+	interaction_progress_bar.offset_bottom = -30
+	interaction_progress_bar.grow_horizontal = 2
+	interaction_progress_bar.grow_vertical = 0
+
+	# Add to CanvasLayer
+	$CanvasLayer.add_child(interaction_progress_bar)
+
+	print("Interaction UI created")
+
+func show_interaction_prompt(text: String) -> void:
+	if interaction_label:
+		interaction_label.text = text
+		interaction_label.visible = true
+		print("Showing interaction prompt: ", text)
+
+func hide_interaction_prompt() -> void:
+	if interaction_label:
+		interaction_label.visible = false
+	if interaction_progress_bar:
+		interaction_progress_bar.visible = false
+		interaction_progress_bar.value = 0.0
+
+func update_interaction_progress(progress: float) -> void:
+	if interaction_progress_bar:
+		interaction_progress_bar.visible = true
+		interaction_progress_bar.value = progress
+
+# Get total player count (for end_object to check if all players are ready)
+func get_total_player_count() -> int:
+	if is_multiplayer:
+		return players.size()
+	else:
+		return 1  # Single player
+
+# Called by end_object when player activates it
+@rpc("any_peer", "call_local", "reliable")
+func teleport_from_end_object() -> void:
+	# Only server handles the actual teleportation
+	if is_multiplayer and not multiplayer.is_server():
+		# Client sends request to server
+		teleport_from_end_object.rpc_id(1)
+		return
+
+	print("Teleporting to random dream world from end object...")
+
+	# Teleport to a random NORMAL world (not nightmare)
+	var available_worlds = worlds.keys()
+	available_worlds.erase(current_world_name)  # Don't teleport to current world
+
+	if available_worlds.size() > 0:
+		var random_world = available_worlds[randi() % available_worlds.size()]
+		print("Selected random world: ", random_world)
+
+		# Teleport with random spawn positions (NOT keeping positions)
+		var spawn_position = find_safe_spawn_position(random_world)
+		teleport_to_world(random_world, spawn_position, false)
+	else:
+		print("ERROR: No other worlds available to teleport to!")

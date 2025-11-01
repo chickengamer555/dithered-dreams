@@ -59,7 +59,7 @@ text = "Start Game"
 
 [node name="LobbyInput" type="LineEdit" parent="VBoxContainer"]
 layout_mode = 2
-placeholder_text = "Enter Lobby ID"
+placeholder_text = "Enter Lobby Code"
 alignment = 1
 
 [node name="JoinGameButton" type="Button" parent="VBoxContainer"]

@@ -1,8 +1,9 @@
-[gd_scene load_steps=89 format=4 uid="uid://5s5tymjjs4cf"]
+[gd_scene load_steps=90 format=4 uid="uid://5s5tymjjs4cf"]
 
 [ext_resource type="Script" uid="uid://pkt703rm8s13" path="res://world.gd" id="1_bylj8"]
 [ext_resource type="Shader" uid="uid://coicieil24264" path="res://Shaders/Jitter.gdshader" id="3_j1e6l"]
 [ext_resource type="PackedScene" uid="uid://b73bc3j1ohpp1" path="res://player.tscn" id="3_k3laj"]
+[ext_resource type="PackedScene" path="res://end_object.tscn" id="3_mc2jv"]
 [ext_resource type="Shader" uid="uid://01rocq3auk46" path="res://Shaders/DITHERING!!!.gdshader" id="3_rqoov"]
 [ext_resource type="Texture2D" uid="uid://0jw525imc8g2" path="res://assests/SBS - Tiny Texture Pack 3 - Small/128x128/Dirt/Dirt_16-128x128.png" id="5_4whfl"]
 [ext_resource type="Shader" uid="uid://dv5dj144vttm8" path="res://Shaders/crt.gdshader" id="5_wmmxl"]
@@ -664,6 +665,9 @@ render_target_update_mode = 4
 transform = Transform3D(15, 0, 0, 0, 15, 0, 0, 0, 15, 0, 0, 0)
 visible = false
 
+[node name="EndObject" parent="SubViewportContainer/SubViewport/world2" instance=ExtResource("3_mc2jv")]
+transform = Transform3D(0.49999994, 0, 0, 0, 0.49999994, 0, 0, 0, 0.49999994, 7.606958, 0, -1.3891728)
+
 [node name="MeshInstance3D" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world2"]
 transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, 0, 0, 0)
 cast_shadow = 0
@@ -1166,6 +1170,9 @@ volume_db = 0.75
 pitch_scale = 1.25
 autoplay = true
 
+[node name="EndObject" parent="SubViewportContainer/SubViewport/nightmare2" instance=ExtResource("3_mc2jv")]
+transform = Transform3D(0.49999994, 0, 0, 0, 0.49999994, 0, 0, 0, 0.49999994, 7.606958, 0, -1.3891728)
+
 [node name="world1" type="Node3D" parent="SubViewportContainer/SubViewport"]
 transform = Transform3D(15, 0, 0, 0, 15, 0, 0, 0, 15, 0, 0, 0)
 visible = false
@@ -1368,6 +1375,9 @@ transform = Transform3D(0.707107, 0, 0.707107, 0, 1, 0, -0.707107, 0, 0.707107, 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/world1/areas/Area3D9"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.0783558, 0, -1.02006)
 shape = SubResource("BoxShape3D_y2ymk")
+
+[node name="EndObject" parent="SubViewportContainer/SubViewport/world1" instance=ExtResource("3_mc2jv")]
+transform = Transform3D(0.49999988, 0, 0, 0, 0.49999988, 0, 0, 0, 0.49999988, -3.754219, 0, -1.3891726)
 
 [node name="nightmare1" type="Node3D" parent="SubViewportContainer/SubViewport"]
 transform = Transform3D(15, 0, 0, 0, 15, 0, 0, 0, 15, 0, 0, 0)
@@ -1658,6 +1668,9 @@ stream = ExtResource("6_ipbu6")
 volume_db = 0.75
 pitch_scale = 0.75
 autoplay = true
+
+[node name="EndObject" parent="SubViewportContainer/SubViewport/nightmare1" instance=ExtResource("3_mc2jv")]
+transform = Transform3D(0.49999988, 0, 0, 0, 0.49999988, 0, 0, 0, 0.49999988, -3.754219, 0, -1.3891726)
 
 [node name="Player" parent="SubViewportContainer/SubViewport" instance=ExtResource("3_k3laj")]
 

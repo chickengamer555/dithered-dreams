@@ -17,6 +17,9 @@ var is_host: bool = false
 var lobby_members: Array = []
 var peer: SteamMultiplayerPeer = null
 
+# Short lobby code system
+var short_lobby_code: String = ""
+
 func _process(_delta: float) -> void:
 	# Process Steam callbacks every frame
 	Steam.run_callbacks()
@@ -79,22 +82,19 @@ func _on_host_game_pressed() -> void:
 
 # Join a multiplayer game
 func _on_join_game_pressed() -> void:
-	var input_text = lobby_input.text.strip_edges()
+	var input_text = lobby_input.text.strip_edges().to_upper()
 
 	if input_text == "":
-		status_label.text = "Please enter a Lobby ID!"
+		status_label.text = "Please enter a Lobby Code!"
 		return
 
-	# Convert the input to a lobby ID
-	var lobby_to_join = int(input_text)
+	status_label.text = "Searching for lobby..."
+	print("Searching for lobby with code: ", input_text)
 
-	if lobby_to_join == 0:
-		status_label.text = "Invalid Lobby ID!"
-		return
-
-	status_label.text = "Joining lobby..."
-	print("Attempting to join lobby: ", lobby_to_join)
-	Steam.joinLobby(lobby_to_join)
+	# Search for lobbies with matching short code
+	# We'll use Steam's lobby list to find the matching lobby
+	Steam.addRequestLobbyListStringFilter("short_code", input_text, Steam.LOBBY_COMPARISON_EQUAL)
+	Steam.requestLobbyList()
 
 # Called when lobby is created
 func _on_lobby_created(connect_status: int, created_lobby_id: int) -> void:
@@ -106,10 +106,16 @@ func _on_lobby_created(connect_status: int, created_lobby_id: int) -> void:
 		# DON'T create multiplayer peer yet - wait until we start the game
 		# This way the client will be in the lobby when we create the peer
 
-		lobby_id_label.text = "Lobby ID: " + str(lobby_id)
+		# Generate a short, readable lobby code (6 characters)
+		short_lobby_code = _generate_short_code()
+
+		# Store the mapping in Steam lobby data so others can look it up
+		Steam.setLobbyData(lobby_id, "short_code", short_lobby_code)
+
+		lobby_id_label.text = "Lobby Code: " + short_lobby_code
 		lobby_id_label.show()
 		copy_button.show()
-		status_label.text = "Lobby created! Share the ID with your friend!"
+		status_label.text = "Lobby created! Share the code with your friend!"
 
 		# Hide main menu buttons, show start button and players
 		start_button.hide()
@@ -156,11 +162,11 @@ func _on_lobby_joined(lobby_id_joined: int, _permissions: int, _locked: bool, re
 		status_label.text = "Failed to join lobby!"
 		print("Failed to join lobby. Response: ", response)
 
-# Copy lobby ID to clipboard
+# Copy lobby code to clipboard
 func _on_copy_lobby_id_pressed() -> void:
-	DisplayServer.clipboard_set(str(lobby_id))
-	status_label.text = "Lobby ID copied to clipboard!"
-	print("Copied lobby ID to clipboard: ", lobby_id)
+	DisplayServer.clipboard_set(short_lobby_code)
+	status_label.text = "Lobby code copied to clipboard!"
+	print("Copied lobby code to clipboard: ", short_lobby_code)
 
 # Called when lobby members change (someone joins/leaves)
 func _on_lobby_chat_update(_lobby_id: int, _changed_id: int, _making_change_id: int, _chat_state: int) -> void:
@@ -326,9 +332,27 @@ func _on_connection_failed() -> void:
 	print("Failed to connect to server!")
 	status_label.text = "Connection failed!"
 
-# Placeholder for lobby match list (not used yet, but good to have)
+# Called when lobby search completes
 func _on_lobby_match_list(lobbies: Array) -> void:
-	print("Found lobbies: ", lobbies)
+	print("Found ", lobbies.size(), " lobbies matching search")
+
+	if lobbies.size() == 0:
+		status_label.text = "Lobby code not found!"
+		return
+
+	# Join the first matching lobby
+	var lobby_to_join = lobbies[0]
+	print("Joining lobby: ", lobby_to_join)
+	status_label.text = "Joining lobby..."
+	Steam.joinLobby(lobby_to_join)
+
+# Generate a short, readable lobby code (6 characters: letters and numbers)
+func _generate_short_code() -> String:
+	const CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"  # Removed confusing chars like I, O, 0, 1
+	var code = ""
+	for i in range(6):
+		code += CHARS[randi() % CHARS.length()]
+	return code
 
 # Start the actual game
 func start_game() -> void:
