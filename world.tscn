@@ -663,7 +663,6 @@ render_target_update_mode = 4
 
 [node name="world2" type="Node3D" parent="SubViewportContainer/SubViewport"]
 transform = Transform3D(15, 0, 0, 0, 15, 0, 0, 0, 15, 0, 0, 0)
-visible = false
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world2"]
 transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, 0, 0, 0)
@@ -1169,6 +1168,7 @@ autoplay = true
 
 [node name="world1" type="Node3D" parent="SubViewportContainer/SubViewport"]
 transform = Transform3D(15, 0, 0, 0, 15, 0, 0, 0, 15, 0, 0, 0)
+visible = false
 
 [node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="SubViewportContainer/SubViewport/world1"]
 stream = ExtResource("6_uxp5i")

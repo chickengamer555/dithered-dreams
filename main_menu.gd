@@ -92,7 +92,7 @@ func _on_lobby_created(connect_status: int, created_lobby_id: int) -> void:
 
 		# Create the multiplayer peer as host
 		peer = SteamMultiplayerPeer.new()
-		var create_result = peer.create_host(0, [])
+		var create_result = peer.create_host(0)
 		print("Host peer created with result: ", create_result)
 		multiplayer.multiplayer_peer = peer
 
@@ -134,7 +134,7 @@ func _on_lobby_joined(lobby_id_joined: int, _permissions: int, _locked: bool, re
 
 		# Create the multiplayer peer as client
 		peer = SteamMultiplayerPeer.new()
-		var join_result = peer.create_client(host_steam_id, 0, [])
+		var join_result = peer.create_client(host_steam_id, 0)
 		print("Client peer created with result: ", join_result)
 		multiplayer.multiplayer_peer = peer
 

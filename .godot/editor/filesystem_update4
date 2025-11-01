@@ -1,1 +1,10 @@
+res://world.tscn
+res://Shaders/sky.gdshader
+res://envoirments/world1.tres
+res://envoirments/nightmare1.tres
+res://envoirments/world2.tres
+res://envoirments/nightmare2.tres
+res://Shaders/Jitter.gdshader
+res://Shaders/DITHERING!!!.gdshader
+res://Shaders/crt.gdshader
 res://main_menu.gd

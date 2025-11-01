@@ -1,17 +1,17 @@
 63f7b34db8d8cdea90c76aacccf841ec
-::res://::1762006827
+::res://::1762008093
 character_body_3d.gd::GDScript::2123765202215715169::1745981527::0::1::::<>CharacterBody3D<><>0<>0<><>::
 jumpscare.gd::GDScript/GDScript::743240701115154376::1733572531::0::1::::<>Node2D<><>0<>0<><>::
 Jumpscare.tscn::PackedScene::5598827447457144464::1745981515::0::1::::<><><>0<>0<><>::uid://kubciatrg13i::::res://jumpscare.gd<>uid://dv5dj144vttm8::::res://Shaders/crt.gdshader
 license.md::TextFile::-1::1761986639::0::1::::<><><>0<>0<><>::
-main_menu.gd::GDScript::4934561200567452826::1761988720::0::1::::<>Control<><>0<>0<><>::
+main_menu.gd::GDScript::4934561200567452826::1762007945::0::1::::<>Control<><>0<>0<><>::
 main_menu.tscn::PackedScene::5483855824714974099::1761988558::0::1::::<><><>0<>0<><>::uid://ccklrclt8vx0u::::res://main_menu.gd
 player.tscn::PackedScene::4690332031561753836::1745981527::0::1::::<><><>0<>0<><>::uid://5i1dqum0hujx::::res://character_body_3d.gd
 README.md::TextFile/TextFile::-1::1733379573::0::1::::<><><>0<>0<><>::
 steam_appid.txt::TextFile::-1::1761986676::0::1::::<><><>0<>0<><>::
 world.gd::GDScript/GDScript::1074688557506637248::1738195685::0::1::::<>Node<><>0<>0<><>::
 world.tscn::PackedScene::2144680828100977789::1761998221::0::1::::<><><>0<>0<><>::uid://pkt703rm8s13::::res://world.gd<>uid://coicieil24264::::res://Shaders/Jitter.gdshader<>uid://b73bc3j1ohpp1::::res://player.tscn<>uid://01rocq3auk46::::res://Shaders/DITHERING!!!.gdshader<>uid://0jw525imc8g2::::res://assests/SBS - Tiny Texture Pack 3 - Small/128x128/Dirt/Dirt_16-128x128.png<>uid://dv5dj144vttm8::::res://Shaders/crt.gdshader<>uid://dxup8414rdroi::::res://models/world2/psx_tree_0.png<>uid://lqas60krhqi5::::res://assests/SBS - Tiny Texture Pack 3 - Small/128x128/Brick/Brick_12-128x128.png<>uid://f5582dkkqfjj::::res://sounds/New Project - spooky-keys-63764.mp3.wav<>uid://b0m8w0rpr57y5::::res://models/world2/creepy tree.jpg<>uid://dao5qt16ebjvn::::res://sounds/paft_drunk__happy-walk-210161.mp3.wav<>uid://cg3s8wagb3n28::::res://models/ps1_Facade019C_1K-JPG_Color.jpg<>uid://dsldbmtelj6md::::res://models/world2/japanese_koi_fish_in_psxps1_style_0.png<>uid://b57gfc8owgf4f::::res://models/world2/mushroom_0.png<>uid://dxcket3xkerqi::::res://models/world2/japanese_gate_0.png<>uid://dsgmpn487i5bm::::res://models/world2/simple_rock_-_ps1_low_poly_0.jpg<>uid://bffaw33ntitne::::res://models/ps1_GUID-C59B68EA-6217-4E58-A9FE-592926F4C253-web.jpg<>uid://d0rxqylua1ikp::::res://models/catskin.png<>uid://dnqgcnmiume32::::res://models/Couch2_Couch2.png<>uid://hnv63ylnemgy::::res://sounds/peacefull-drone-132285.mp3.wav<>uid://b0uwdw5bc0f1r::::res://assests/SBS - Tiny Texture Pack 3 - Small/128x128/Dirt/Dirt_13-128x128.png<>uid://cungn35kso3bd::::res://sounds/whispers-loop-41891.mp3.wav<>uid://y8hoxswlexnp::::res://models/world3/psx_low-poly_victorian_clock_0.png<>uid://dsbkqfejxrbae::::res://assests/SBS - Tiny Texture Pack 3 - Small/128x128/Texture_128x128_36.png<>uid://be66v3nng188j::::res://envoirments/world1.tres
-::res://addons/::1761986638
+::res://addons/::1762008024
 ::res://addons/godotsteam/::1761986639
 godotsteam.gdextension::GDExtension::1274050958349889299::1761986638::0::1::::<><><>0<>0<><>::
 license.md::TextFile::-1::1761986638::0::1::::<><><>0<>0<><>::
@@ -23,7 +23,13 @@ license.md::TextFile::-1::1761986638::0::1::::<><><>0<>0<><>::
 ::res://addons/godotsteam/osx/libgodotsteam.macos.template_release.framework/::1761986639
 ::res://addons/godotsteam/osx/libgodotsteam.macos.template_release.framework/Resources/::1761986639
 ::res://addons/godotsteam/win32/::1761986639
-::res://addons/godotsteam/win64/::1762006817
+::res://addons/godotsteam/win64/::1762008082
+::res://addons/steam-multiplayer-peer/::1762008025
+README.md::TextFile::-1::1762008025::0::1::::<><><>0<>0<><>::
+steam-multiplayer-peer.gdextension::GDExtension::3359190872529678078::1762008025::0::1::::<><><>0<>0<><>::
+::res://addons/steam-multiplayer-peer/linux/::1762008025
+::res://addons/steam-multiplayer-peer/macos/::1762008025
+::res://addons/steam-multiplayer-peer/windows/::1762008083
 ::res://assests/::1733219606
 ::res://assests/SBS - Tiny Texture Pack 3 - Small/::1733045985
 License.txt::TextFile/TextFile::-1::1679208118::0::1::::<><><>0<>0<><>::
