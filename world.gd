@@ -7,15 +7,17 @@ extends Node
 
 @onready var nightmares = { # Sets up the dictionaries of what nightmares there are
 	"nightmare1": $SubViewportContainer/SubViewport/nightmare1,
+	"nightmare2": $SubViewportContainer/SubViewport/nightmare2,
+
 }
 
 var environments = { # Loads the environment resources for each world and nightmare
 	"world1": preload("res://envoirments/world1.tres"),
 	"nightmare1": preload("res://envoirments/nightmare1.tres"),
 	"world2": preload("res://envoirments/world2.tres"),
+	"nightmare2": preload("res://envoirments/nightmare2.tres"),
 	# Add other environments as needed
 }
-
 @onready var world_environment = $WorldEnvironment  # Reference to the WorldEnvironment node
 
 @onready var timer_label = $CanvasLayer/Label
@@ -29,25 +31,25 @@ var timer: Timer
 
 var world_timer: Timer
 var time_in_world: float = 0.0
-@export var time_before_nightmare: float = 30.0
+@export var time_before_nightmare: float = 15.0
 
-@export var nightmare_chance: float = 20.0
-@export var world_chance: float = 80.0
+@export var nightmare_chance: float = 25.0
+@export var world_chance: float = 75.0
 
 var current_world_name: String = "world1"
 
-var nightmare_value = 0
-var nightmare_speed = 0
-@export var nightmare_increment: float = 1.0
+var nightmare_value = 0.0
+var nightmare_speed = 0.0
+@export var nightmare_increment: float = 2.0
 
-var dream_value = 0
+var dream_value = 0.0
 @export var dream_increment: float = 0.2
 
 # Dictionaries to store original collision layers and masks
 var original_collision_layers = {}
 var original_collision_masks = {}
 
-# **New Variable:** Flag to indicate if a transition is in progress
+# Flag to indicate if a transition is in progress
 var is_transitioning: bool = false
 
 func _ready():
@@ -55,7 +57,7 @@ func _ready():
 	nightmare_bar.value = nightmare_value  # Sets up the nightmare bar based on var
 	var normal_worlds = worlds.keys()  # Gets the list of worlds
 	if normal_worlds.size() > 0:  # Makes sure there are worlds available
-		current_world_name = normal_worlds[randi() % normal_worlds.size()]  # Randomly chooses a world to spawn in
+		current_world_name = normal_worlds[randi() % normal_worlds.size()]  # Randomly chooses a world
 	else:
 		return  # This runs if no worlds
 	var spawn_position = find_safe_spawn_position(current_world_name)  # Gets safe random spawn position
@@ -105,11 +107,14 @@ func _ready():
 	
 	# Set the timer label
 	if timer_label:
-		timer_label.text = str(play_time)
+		timer_label.text = str(time_left)
 	
 	# Ensure the transition_rect is initially hidden
 	if transition_rect:
 		transition_rect.visible = false
+
+	# **Important: Mark this scene as the current main scene.**
+	get_tree().set_current_scene(self)
 
 func _disable_interactions_in_world(world: Node, disable: bool):
 	print("_disable_interactions_in_world called for:", world.name, "disable:", disable)
@@ -133,13 +138,11 @@ func _disable_interactions_in_world(world: Node, disable: bool):
 				if original_collision_masks.has(child.get_instance_id()):
 					child.set_deferred("collision_mask", original_collision_masks[child.get_instance_id()])
 		elif child is AudioStreamPlayer:
-			# Pause or unpause the audio player using 'stream_paused'
 			child.stream_paused = disable
 			if disable:
 				print("Paused AudioStreamPlayer:", child.name, "in", world.name)
 			else:
 				print("Playing AudioStreamPlayer:", child.name, "in", world.name)
-		# Add more conditions here if you have other interactive node types
 		
 		# Recursively disable interactions for child nodes
 		if child.get_child_count() > 0:
@@ -184,7 +187,6 @@ func teleport_to_random_normal_world():
 		teleport_to_world(random_world, spawn_position)
 
 func teleport_to_world(world_name: String, spawn_position: Vector3):
-	# **Set the transition flag to true**
 	is_transitioning = true
 	play_transition_effect(Callable(self, "_do_teleport_to_world").bind(world_name, spawn_position))
 
@@ -222,7 +224,6 @@ func _do_teleport_to_world(world_name: String, spawn_position: Vector3):
 				player.global_transform.origin = spawn_position
 
 func _on_area_3d_body_entered(body: Node3D):
-	# **Check if a transition is not already in progress**
 	if not is_transitioning and body is CharacterBody3D:
 		teleport_to_random_world()
 
@@ -235,9 +236,9 @@ func _on_timer_tick():
 
 func go_to_main_menu():
 	if main_menu_scene:
-		var menu = main_menu_scene.instantiate()
-		get_tree().root.add_child(menu)
-		queue_free()
+		get_tree().change_scene_to_packed(main_menu_scene)
+	else:
+		print("Error: Main menu scene is not set.")
 
 func _process(delta):
 	if nightmare_speed > 0:
@@ -252,77 +253,91 @@ func _process(delta):
 func update_nightmare_and_dream_speed(is_moving: bool):
 	if is_in_nightmare_world():
 		nightmare_speed = 1.0
-		dream_value = 0
+		dream_value = 0.0
 	else:
 		if is_moving:
-			nightmare_speed = 0
+			nightmare_speed = 0.0
 			dream_value = 1.0
 		else:
 			nightmare_speed = 0.5
-			dream_value = 0
+			dream_value = 0.0
 
 func is_in_nightmare_world() -> bool:
 	return current_world_name in nightmares
 
 func _trigger_jumpscare():
-	nightmare_value = 0
+	nightmare_value = 0.0
 	nightmare_bar.value = nightmare_value
-	_play_jumpscare_effects()
-	go_to_main_menu()
+	# Because we've marked the current scene as main in _ready(), 
+	# this will properly replace the current scene with the jumpscare scene.
+	get_tree().change_scene_to_file("res://Jumpscare.tscn")
 
-func _play_jumpscare_effects():
-	# Implement your jumpscare effects here
-	pass
 
-# **New Function:** Find a safe spawn position by checking for collisions
-func find_safe_spawn_position(world_name: String, attempts: int = 10, radius: float = 1.0) -> Vector3:
+
+func find_safe_spawn_position(world_name: String, attempts: int = 50, radius: float = 1.0) -> Vector3:
 	for i in range(attempts):
 		var pos = get_random_spawn_position(world_name)
-		if is_position_safe(pos, radius):
+		pos = adjust_position_to_ground(pos)
+		if pos != null and is_position_safe(pos, radius):
 			return pos
-	# Fallback to original method if no safe position is found
-	return get_random_spawn_position(world_name)
+	print("Warning: Could not find a safe spawn position after", attempts, "attempts.")
+	return Vector3(0, 10, 0)  # Or some predefined safe position
 
-# **Corrected Function:** Check if the position is free from collisions
+func adjust_position_to_ground(pos: Vector3):
+	var world = get_tree().root.get_world_3d()
+	var space_state = world.direct_space_state
+	var from_point = pos
+	var to_point = pos - Vector3(0, 100, 0)
+	
+	var query = PhysicsRayQueryParameters3D.new()
+	query.from = from_point
+	query.to = to_point
+	query.exclude = [ $SubViewportContainer/SubViewport/Player ]
+	query.collision_mask = 0xFFFFFFFF
+	query.collide_with_bodies = true
+	query.collide_with_areas = false
+	
+	var result = space_state.intersect_ray(query)
+	if result.size() > 0:
+		var ground_y = result.position.y
+		pos.y = ground_y + 1.0
+		return pos
+	else:
+		return null
+
 func is_position_safe(pos: Vector3, radius: float) -> bool:
 	var world = get_tree().root.get_world_3d()
 	var space_state = world.direct_space_state
 	
 	var sphere_shape = SphereShape3D.new()
 	sphere_shape.radius = radius
-	
 	var transform = Transform3D(Basis.IDENTITY, pos)
 	
 	var query = PhysicsShapeQueryParameters3D.new()
 	query.shape = sphere_shape
 	query.transform = transform
 	query.margin = 0.1
-	query.exclude = [ $SubViewportContainer/SubViewport/Player ]  # Ensure correct player node path
+	query.exclude = [ $SubViewportContainer/SubViewport/Player ]
 	query.collision_mask = 0xFFFFFFFF
 	query.collide_with_bodies = true
 	query.collide_with_areas = false
-	# Removed: query.max_results = 1  # This property does not exist
 	
 	var result = space_state.intersect_shape(query, 1)
-	
-	return result.is_empty()
+	return result.size() == 0
 
-# **Unified Spawn Position Function**
 func get_random_spawn_position(world_name: String) -> Vector3:
 	if world_name.begins_with("world"):
 		return get_random_spawn_position_in_world(world_name)
 	elif world_name.begins_with("nightmare"):
 		return get_random_spawn_position_in_nightmare(world_name)
 	else:
-		# Default fallback position if world type is unrecognized
 		return Vector3.ZERO
 
 func get_random_spawn_position_in_world(world_name: String) -> Vector3:
-	# Adjusted spawn range based on world scale
 	var min_x = -100
 	var max_x = 100
-	var min_y = 0.0
-	var max_y = 0.0
+	var min_y = 10.0
+	var max_y = 50.0
 	var min_z = -100
 	var max_z = 100
 	
@@ -333,11 +348,10 @@ func get_random_spawn_position_in_world(world_name: String) -> Vector3:
 	return Vector3(random_x, random_y, random_z)
 
 func get_random_spawn_position_in_nightmare(nightmare_name: String) -> Vector3:
-	# Adjusted spawn range based on world scale
 	var min_x = -100
 	var max_x = 100
-	var min_y = 0.0
-	var max_y = 0.0
+	var min_y = 10.0
+	var max_y = 50.0
 	var min_z = -100
 	var max_z = 100
 	
@@ -347,27 +361,20 @@ func get_random_spawn_position_in_nightmare(nightmare_name: String) -> Vector3:
 	
 	return Vector3(random_x, random_y, random_z)
 
-
 func _on_area_3d_area_entered(area: Area3D) -> void:
-	pass  # Replace with function body.
+	pass
 
-# Transition effect functions
 func play_transition_effect(completion_callback: Callable):
 	if transition_rect:
 		transition_rect.visible = true
-		transition_rect.modulate.a = 0.0  # Start from transparent
+		transition_rect.modulate.a = 0.0
 		var tween = create_tween()
-		# Fade in
-		tween.tween_property(transition_rect, "modulate:a", 1.0, 0.0)
-		# After fade-in, call the completion_callback
+		tween.tween_property(transition_rect, "modulate:a", 1.0, 0.1)
 		tween.tween_callback(completion_callback)
-		# Fade out
 		tween.tween_property(transition_rect, "modulate:a", 0.0, 0.5)
-		# After fade-out, hide the transition_rect and reset the transition flag
 		tween.tween_callback(Callable(self, "_hide_transition_rect"))
 
 func _hide_transition_rect():
 	if transition_rect:
 		transition_rect.visible = false
-	# **Reset the transition flag to false**
 	is_transitioning = false

@@ -1,0 +1,24 @@
+[gd_resource type="Environment" load_steps=4 format=3 uid="uid://du0g4804etm2o"]
+
+[ext_resource type="Texture2D" uid="uid://b0m8w0rpr57y5" path="res://models/world2/creepy tree.jpg" id="1_7wn54"]
+
+[sub_resource type="PanoramaSkyMaterial" id="PanoramaSkyMaterial_oenx2"]
+panorama = ExtResource("1_7wn54")
+energy_multiplier = 5.0
+
+[sub_resource type="Sky" id="Sky_psead"]
+sky_material = SubResource("PanoramaSkyMaterial_oenx2")
+
+[resource]
+background_mode = 2
+background_color = Color(1, 1, 1, 1)
+sky = SubResource("Sky_psead")
+ambient_light_source = 2
+ambient_light_color = Color(0.615686, 1, 1, 1)
+glow_intensity = 8.0
+fog_light_color = Color(1, 1, 1, 1)
+fog_light_energy = 0.0
+fog_sun_scatter = 0.1
+fog_sky_affect = 0.3
+fog_height = 250.0
+fog_height_density = 0.001

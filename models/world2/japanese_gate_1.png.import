@@ -2,11 +2,14 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dlrj3yagtqv1l"
+uid="uid://bscq2hq0ik2a8"
 path.s3tc="res://.godot/imported/japanese_gate_1.png-209535049ed7359b3cde767973dc807b.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
+}
+generator_parameters={
+"md5": "c93c61173b5cf72c9003e8d649cc2aae"
 }
 
 [deps]

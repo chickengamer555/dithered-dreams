@@ -1,4 +1,6 @@
 Node3D
+Sprite2D
+TextEdit
 CollisionShape3D
 StaticBody3D
 MeshInstance3D
@@ -10,5 +12,3 @@ Area3D
 ColorRect
 SpotLight3D
 DirectionalLight3D
-Label
-ProgressBar

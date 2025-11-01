@@ -3,9 +3,7 @@ res://Shaders/sky.gdshader
 res://envoirments/world1.tres
 res://envoirments/nightmare1.tres
 res://envoirments/world2.tres
+res://envoirments/nightmare2.tres
 res://Shaders/Jitter.gdshader
 res://Shaders/DITHERING!!!.gdshader
 res://Shaders/crt.gdshader
-res://fix.gd
-res://player.tscn
-res://main_menu.tscn

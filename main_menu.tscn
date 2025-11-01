@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://ckeoklxr07hah"]
 
-[ext_resource type="Script" path="res://main_menu.gd" id="1_rkdax"]
+[ext_resource type="Script" uid="uid://ccklrclt8vx0u" path="res://main_menu.gd" id="1_rkdax"]
 
 [node name="main_menu" type="Control"]
 layout_mode = 3
@@ -11,11 +11,63 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_rkdax")
 
-[node name="Button" type="Button" parent="."]
-layout_mode = 0
-offset_right = 8.0
-offset_bottom = 8.0
-text = "Start
-"
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -100.0
+offset_top = -100.0
+offset_right = 100.0
+offset_bottom = 100.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 10
 
-[connection signal="pressed" from="Button" to="." method="_on_startbutton_pressed"]
+[node name="StatusLabel" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+text = "Initializing Steam..."
+horizontal_alignment = 1
+
+[node name="SinglePlayerButton" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+text = "Single Player"
+
+[node name="HostGameButton" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+text = "Host Multiplayer Game"
+
+[node name="LobbyIDLabel" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+text = "Lobby ID: 12345"
+horizontal_alignment = 1
+
+[node name="CopyLobbyIDButton" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+text = "Copy Lobby ID"
+
+[node name="PlayersLabel" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+text = "Players (0/2):"
+horizontal_alignment = 1
+
+[node name="StartMultiplayerButton" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+text = "Start Game"
+
+[node name="LobbyInput" type="LineEdit" parent="VBoxContainer"]
+layout_mode = 2
+placeholder_text = "Enter Lobby ID"
+alignment = 1
+
+[node name="JoinGameButton" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+text = "Join Game"
+
+[connection signal="pressed" from="VBoxContainer/SinglePlayerButton" to="." method="_on_single_player_pressed"]
+[connection signal="pressed" from="VBoxContainer/HostGameButton" to="." method="_on_host_game_pressed"]
+[connection signal="pressed" from="VBoxContainer/CopyLobbyIDButton" to="." method="_on_copy_lobby_id_pressed"]
+[connection signal="pressed" from="VBoxContainer/StartMultiplayerButton" to="." method="_on_start_multiplayer_pressed"]
+[connection signal="pressed" from="VBoxContainer/JoinGameButton" to="." method="_on_join_game_pressed"]

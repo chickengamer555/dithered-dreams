@@ -1,6 +1,6 @@
 [gd_resource type="Environment" load_steps=4 format=3 uid="uid://c56vnqetc6q1k"]
 
-[ext_resource type="Shader" path="res://Shaders/sky.gdshader" id="1_qtas6"]
+[ext_resource type="Shader" uid="uid://bp38fvblg2n4n" path="res://Shaders/sky.gdshader" id="1_qtas6"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_347yv"]
 shader = ExtResource("1_qtas6")
@@ -21,9 +21,11 @@ sky_material = SubResource("ShaderMaterial_347yv")
 background_mode = 2
 background_color = Color(0.663049, 0.0908107, 0.504105, 1)
 sky = SubResource("Sky_ssuef")
+ambient_light_source = 2
+ambient_light_color = Color(1, 0, 0, 1)
+ambient_light_energy = 0.07
 fog_enabled = true
 fog_light_color = Color(0, 0, 0, 1)
-fog_density = 0.02
 fog_sky_affect = 0.55
 fog_height = 250.0
 fog_height_density = 0.001

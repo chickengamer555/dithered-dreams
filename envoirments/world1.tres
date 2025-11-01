@@ -1,6 +1,6 @@
 [gd_resource type="Environment" load_steps=4 format=3 uid="uid://be66v3nng188j"]
 
-[ext_resource type="Shader" path="res://Shaders/sky.gdshader" id="1_0a7wh"]
+[ext_resource type="Shader" uid="uid://bp38fvblg2n4n" path="res://Shaders/sky.gdshader" id="1_0a7wh"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_347yv"]
 shader = ExtResource("1_0a7wh")
@@ -9,7 +9,7 @@ shader_parameter/star_base_color = Color(0, 1, 0.960784, 1)
 shader_parameter/star_hue_offset = 0.6
 shader_parameter/star_intensity = 0.2
 shader_parameter/star_twinkle_speed = 2.0
-shader_parameter/star_twinkle_intensity = 0.187
+shader_parameter/star_twinkle_intensity = 0.2
 shader_parameter/layer_scale = 20.0
 shader_parameter/layer_scale_step = 10.0
 shader_parameter/layers_count = 3
@@ -27,7 +27,6 @@ ambient_light_energy = 0.5
 fog_enabled = true
 fog_light_color = Color(0.856581, 0, 0.00713288, 1)
 fog_sun_scatter = 0.1
-fog_density = 0.001
 fog_sky_affect = 0.3
 fog_height = 250.0
 fog_height_density = 0.001
