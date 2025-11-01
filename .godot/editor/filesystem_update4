@@ -12,3 +12,4 @@ res://world.gd
 res://player.tscn
 res://multiplayer_player.gd
 res://multiplayer_player.tscn
+res://steam_appid.txt

@@ -15,20 +15,24 @@ var is_moving = false  # Is the player moving?
 func _ready():
 	# Initialize last_position to the player's starting position
 	last_position = global_transform.origin
-	
+
 	# Set up multiplayer authority
 	# Only the owner of this player can control it
 	set_multiplayer_authority(str(name).to_int())
-	
+
+	print("MultiplayerPlayer _ready - Name: ", name, " Authority: ", get_multiplayer_authority(), " Is Authority: ", is_multiplayer_authority())
+
 	# Only show camera for the local player
 	if is_multiplayer_authority():
 		camera.current = true
 		# Hide our own mesh so we don't see it
 		mesh.visible = false
+		print("LOCAL PLAYER: Camera activated for peer ", name)
 	else:
 		camera.current = false
 		# Show other players' meshes
 		mesh.visible = true
+		print("REMOTE PLAYER: Showing mesh for peer ", name)
 
 func _physics_process(delta: float) -> void:
 	# Only process input for the player we control

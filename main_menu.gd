@@ -197,8 +197,8 @@ func _on_start_multiplayer_pressed() -> void:
 		print("Setting lobby data - game_started with host Steam ID: ", my_steam_id)
 		Steam.setLobbyData(lobby_id, "game_started", str(my_steam_id))
 
-		# Wait a moment for clients to connect
-		await get_tree().create_timer(2.0).timeout
+		# Wait longer for clients to fully connect and establish peer connection
+		await get_tree().create_timer(3.0).timeout
 
 		print("Host starting world with connected peers: ", multiplayer.get_peers())
 
@@ -227,12 +227,21 @@ func _on_lobby_data_update(_lobby_id: int, _member_id: int, _key: int) -> void:
 		print("Client peer created with result: ", join_result)
 		multiplayer.multiplayer_peer = peer
 
-		# Wait for connection
-		await get_tree().create_timer(1.5).timeout
+		# Wait longer for stable connection establishment
+		await get_tree().create_timer(2.5).timeout
 
 		print("Client starting world, connected to peers: ", multiplayer.get_peers())
-		status_label.text = "Starting game..."
-		start_game()
+
+		# Verify connection before starting
+		if multiplayer.get_peers().size() > 0:
+			status_label.text = "Connected! Starting game..."
+			start_game()
+		else:
+			print("WARNING: Client not connected to any peers!")
+			status_label.text = "Connection issue - retrying..."
+			# Try starting anyway, the world will handle sync
+			await get_tree().create_timer(1.0).timeout
+			start_game()
 
 # Multiplayer connection callbacks
 func _on_peer_connected(id: int) -> void:

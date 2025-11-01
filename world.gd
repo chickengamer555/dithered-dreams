@@ -82,28 +82,6 @@ func _ready():
 			old_player.queue_free()
 			print("Removed single-player player node")
 
-		# Spawn multiplayer players
-		if multiplayer.is_server():
-			print("SERVER: Spawning host player...")
-			# Host spawns themselves immediately
-			spawn_player(multiplayer.get_unique_id())
-			# Spawn any already-connected clients
-			print("SERVER: Checking for already-connected clients...")
-			for peer_id in multiplayer.get_peers():
-				print("SERVER: Spawning client ", peer_id)
-				spawn_player.rpc(peer_id)
-		else:
-			print("CLIENT: Waiting for server to spawn us...")
-			# Client: wait for server to spawn us
-			pass
-
-	var normal_worlds = worlds.keys()  # Gets the list of worlds
-	if normal_worlds.size() > 0:  # Makes sure there are worlds available
-		current_world_name = normal_worlds[randi() % normal_worlds.size()]  # Randomly chooses a world
-	else:
-		return  # This runs if no worlds
-	var spawn_position = find_safe_spawn_position(current_world_name)  # Gets safe random spawn position
-	
 	# Disable all worlds initially
 	for world_name_iter in worlds.keys():
 		var world_iter = worlds[world_name_iter]
@@ -111,7 +89,7 @@ func _ready():
 			world_iter.visible = false
 			_disable_interactions_in_world(world_iter, true)
 			print("Disabled interactions for world:", world_name_iter)
-	
+
 	# Disable all nightmares initially
 	for nightmare_name_iter in nightmares.keys():
 		var nightmare_iter = nightmares[nightmare_name_iter]
@@ -119,15 +97,60 @@ func _ready():
 			nightmare_iter.visible = false
 			_disable_interactions_in_world(nightmare_iter, true)
 			print("Disabled interactions for nightmare:", nightmare_name_iter)
-	
-	# Enable the starting world
-	var starting_world = worlds[current_world_name]  # Sees what the starting world is
-	if starting_world:
-		starting_world.visible = true
-		_disable_interactions_in_world(starting_world, false)
-		print("Enabled interactions for starting world:", current_world_name)
-	
-	teleport_to_world(current_world_name, spawn_position)  # Teleports player to starting world and the safe spawn
+
+	# Initialize world state
+	if is_multiplayer:
+		if multiplayer.is_server():
+			# Server picks the starting world
+			var normal_worlds = worlds.keys()
+			if normal_worlds.size() > 0:
+				current_world_name = normal_worlds[randi() % normal_worlds.size()]
+			else:
+				current_world_name = "world1"
+
+			print("SERVER: Selected starting world: ", current_world_name)
+
+			# Enable the starting world on server
+			var starting_world = worlds[current_world_name]
+			if starting_world:
+				starting_world.visible = true
+				_disable_interactions_in_world(starting_world, false)
+				print("SERVER: Enabled starting world: ", current_world_name)
+
+			# Sync world state to all clients
+			sync_world_state.rpc(current_world_name)
+
+			# Spawn host player
+			print("SERVER: Spawning host player...")
+			var spawn_position = find_safe_spawn_position(current_world_name)
+			spawn_player(multiplayer.get_unique_id())
+
+			# Spawn any already-connected clients
+			print("SERVER: Checking for already-connected clients...")
+			for peer_id in multiplayer.get_peers():
+				print("SERVER: Spawning client ", peer_id)
+				spawn_player.rpc(peer_id)
+		else:
+			# Client waits for server to sync world state
+			print("CLIENT: Waiting for server to sync world state...")
+	else:
+		# Single player mode
+		var normal_worlds = worlds.keys()
+		if normal_worlds.size() > 0:
+			current_world_name = normal_worlds[randi() % normal_worlds.size()]
+		else:
+			return
+
+		var spawn_position = find_safe_spawn_position(current_world_name)
+
+		# Enable the starting world
+		var starting_world = worlds[current_world_name]
+		if starting_world:
+			starting_world.visible = true
+			_disable_interactions_in_world(starting_world, false)
+			print("Enabled interactions for starting world:", current_world_name)
+
+		teleport_to_world(current_world_name, spawn_position)
 	
 	# Initialize and start the main timer
 	timer = Timer.new()
@@ -191,12 +214,20 @@ func _disable_interactions_in_world(world: Node, disable: bool):
 			_disable_interactions_in_world(child, disable)
 
 func _on_world_timer_tick():
+	# Only server controls world transitions in multiplayer
+	if is_multiplayer and not multiplayer.is_server():
+		return
+
 	time_in_world += 1.0
 	if time_in_world >= time_before_nightmare:
 		teleport_to_nightmare_world(current_world_name)
 		time_in_world = 0.0
 
 func teleport_to_nightmare_world(world_name: String):
+	# Only server controls world transitions in multiplayer
+	if is_multiplayer and not multiplayer.is_server():
+		return
+
 	var nightmare_world_name = ""
 	if world_name.begins_with("world"):
 		var world_number = world_name.substr(5)
@@ -208,6 +239,10 @@ func teleport_to_nightmare_world(world_name: String):
 		teleport_to_world(nightmare_world_name, spawn_position)
 
 func teleport_to_random_world():
+	# Only server controls world transitions in multiplayer
+	if is_multiplayer and not multiplayer.is_server():
+		return
+
 	var rand_val = randi() % 100
 	if rand_val < nightmare_chance:
 		var available_nightmares = nightmares.keys()
@@ -221,6 +256,10 @@ func teleport_to_random_world():
 		teleport_to_random_normal_world()
 
 func teleport_to_random_normal_world():
+	# Only server controls world transitions in multiplayer
+	if is_multiplayer and not multiplayer.is_server():
+		return
+
 	var available_worlds = worlds.keys()
 	available_worlds.erase(current_world_name)
 	if available_worlds.size() > 0:
@@ -261,6 +300,11 @@ func _do_teleport_to_world(world_name: String, spawn_position: Vector3):
 				else:
 					world_environment.environment = null  # Or set a default environment
 
+			# Sync world state to clients in multiplayer
+			if is_multiplayer and multiplayer.is_server():
+				print("SERVER: Syncing world change to clients: ", world_name)
+				sync_world_state.rpc(world_name)
+
 			# Teleport players
 			if is_multiplayer:
 				# Teleport all multiplayer players
@@ -275,6 +319,10 @@ func _do_teleport_to_world(world_name: String, spawn_position: Vector3):
 					player.global_transform.origin = spawn_position
 
 func _on_area_3d_body_entered(body: Node3D):
+	# Only server handles area triggers in multiplayer
+	if is_multiplayer and not multiplayer.is_server():
+		return
+
 	if not is_transitioning and body is CharacterBody3D:
 		teleport_to_random_world()
 
@@ -292,6 +340,19 @@ func go_to_main_menu():
 		print("Error: Main menu scene is not set.")
 
 func _process(delta):
+	# Update nightmare/dream values based on player movement
+	if is_multiplayer:
+		# Check if any local player is moving
+		var local_player_moving = false
+		for peer_id in players:
+			var player = players[peer_id]
+			if player and player.is_multiplayer_authority():
+				# This is the local player
+				if player.has_method("is_moving"):
+					local_player_moving = player.is_moving
+				break
+		update_nightmare_and_dream_speed(local_player_moving)
+
 	if nightmare_speed > 0:
 		nightmare_value += nightmare_speed * delta * nightmare_increment
 	elif dream_value > 0:
@@ -434,6 +495,13 @@ func _hide_transition_rect():
 func _on_player_connected(id: int) -> void:
 	print("Player connected to world: ", id)
 	if multiplayer.is_server():
+		print("Server syncing world state to new player: ", id)
+		# First sync the current world state to the new player
+		sync_world_state.rpc_id(id, current_world_name)
+
+		# Wait a moment for world state to sync
+		await get_tree().create_timer(0.5).timeout
+
 		print("Server spawning player: ", id)
 		# Spawn the new player for everyone
 		spawn_player.rpc(id)
@@ -446,6 +514,44 @@ func _on_player_disconnected(id: int) -> void:
 
 func _on_connected_to_server() -> void:
 	print("Client connected to server! Requesting spawn...")
+
+# Sync world state from server to clients
+@rpc("authority", "call_remote", "reliable")
+func sync_world_state(world_name: String) -> void:
+	print("CLIENT: Received world state sync - world: ", world_name)
+
+	# Disable all worlds
+	for world_name_iter in worlds.keys():
+		var world_iter = worlds[world_name_iter]
+		if world_iter:
+			world_iter.visible = false
+			_disable_interactions_in_world(world_iter, true)
+
+	# Disable all nightmares
+	for nightmare_name_iter in nightmares.keys():
+		var nightmare_iter = nightmares[nightmare_name_iter]
+		if nightmare_iter:
+			nightmare_iter.visible = false
+			_disable_interactions_in_world(nightmare_iter, true)
+
+	# Set current world
+	current_world_name = world_name
+
+	# Enable the synced world
+	var target_world = worlds.get(world_name, nightmares.get(world_name, null))
+	if target_world:
+		target_world.visible = true
+		_disable_interactions_in_world(target_world, false)
+		print("CLIENT: Enabled world: ", world_name)
+
+		# Set environment
+		if world_environment:
+			if world_name in environments:
+				world_environment.environment = environments[world_name]
+			else:
+				world_environment.environment = null
+	else:
+		print("CLIENT ERROR: Could not find world: ", world_name)
 
 @rpc("any_peer", "call_local", "reliable")
 func spawn_player(peer_id: int) -> void:
