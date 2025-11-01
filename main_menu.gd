@@ -34,7 +34,9 @@ func _ready() -> void:
 	else:
 		print("SUCCESS: Steam initialized!")
 		var steam_name = Steam.getPersonaName()
+		var steam_id = Steam.getSteamID()
 		print("Your Steam Name: ", steam_name)
+		print("Your Steam ID: ", steam_id)
 		status_label.text = "Welcome, " + steam_name + "!"
 
 		# Connect Steam signals
@@ -68,8 +70,10 @@ func _on_host_game_pressed() -> void:
 	status_label.text = "Creating lobby..."
 	print("Creating Steam lobby...")
 
-	# Create a lobby (2 players max, private)
-	Steam.createLobby(Steam.LOBBY_TYPE_FRIENDS_ONLY, 2)
+	# Create a lobby (2 players max)
+	# Changed to PUBLIC so anyone can join with the ID (not just Steam friends)
+	# If you want friends only, use Steam.LOBBY_TYPE_FRIENDS_ONLY
+	Steam.createLobby(Steam.LOBBY_TYPE_PUBLIC, 2)
 
 # Join a multiplayer game
 func _on_join_game_pressed() -> void:
@@ -79,15 +83,21 @@ func _on_join_game_pressed() -> void:
 		status_label.text = "Please enter a Lobby ID!"
 		return
 
-	# Convert the input to a lobby ID
-	var lobby_to_join = int(input_text)
+	# Convert the input to a lobby ID - Steam IDs are 64-bit
+	# Use int() for smaller numbers, but for Steam IDs we need to handle larger numbers
+	var lobby_to_join = 0
+	if input_text.is_valid_int():
+		lobby_to_join = int(input_text)
+	else:
+		status_label.text = "Invalid Lobby ID format!"
+		return
 
 	if lobby_to_join == 0:
 		status_label.text = "Invalid Lobby ID!"
 		return
 
 	status_label.text = "Joining lobby..."
-	print("Attempting to join lobby: ", lobby_to_join)
+	print("Attempting to join lobby: ", lobby_to_join, " (type: ", typeof(lobby_to_join), ")")
 	Steam.joinLobby(lobby_to_join)
 
 # Called when lobby is created
@@ -121,6 +131,9 @@ func _on_lobby_created(connect_status: int, created_lobby_id: int) -> void:
 
 # Called when we join a lobby
 func _on_lobby_joined(lobby_id_joined: int, _permissions: int, _locked: bool, response: int) -> void:
+	print("_on_lobby_joined called - Lobby: ", lobby_id_joined, " Response: ", response, " Is Host: ", is_host)
+
+	# Response codes: 1 = success, 2 = doesn't exist, 3 = not allowed, 4 = full, etc
 	if response == 1:  # Success
 		# Don't auto-start if we're the host joining our own lobby
 		if lobby_id_joined == lobby_id and is_host:
@@ -147,8 +160,20 @@ func _on_lobby_joined(lobby_id_joined: int, _permissions: int, _locked: bool, re
 		# Update player list
 		update_lobby_members()
 	else:
-		status_label.text = "Failed to join lobby!"
-		print("Failed to join lobby. Response: ", response)
+		var error_msg = "Unknown error"
+		match response:
+			2: error_msg = "Lobby doesn't exist"
+			3: error_msg = "Not allowed to join"
+			4: error_msg = "Lobby is full"
+			5: error_msg = "Error in response"
+			6: error_msg = "Banned from lobby"
+			7: error_msg = "Limited user"
+			8: error_msg = "Clan disabled"
+			9: error_msg = "Community ban"
+			10: error_msg = "Member blocked you"
+
+		status_label.text = "Failed to join: " + error_msg
+		print("Failed to join lobby. Response code: ", response, " - ", error_msg)
 
 # Copy lobby ID to clipboard
 func _on_copy_lobby_id_pressed() -> void:
