@@ -63,22 +63,39 @@ func _ready():
 
 	# Check if we're in multiplayer mode
 	is_multiplayer = multiplayer.has_multiplayer_peer()
+	print("World _ready - is_multiplayer: ", is_multiplayer)
 
 	if is_multiplayer:
+		print("Multiplayer mode detected!")
+		print("Is server: ", multiplayer.is_server())
+		print("My peer ID: ", multiplayer.get_unique_id())
+		print("Connected peers: ", multiplayer.get_peers())
+
 		# Set up multiplayer callbacks
 		multiplayer.peer_connected.connect(_on_player_connected)
 		multiplayer.peer_disconnected.connect(_on_player_disconnected)
+		multiplayer.connected_to_server.connect(_on_connected_to_server)
 
 		# Hide the original single-player player
 		var old_player = $SubViewportContainer/SubViewport/Player
 		if old_player:
 			old_player.queue_free()
+			print("Removed single-player player node")
 
 		# Spawn multiplayer players
 		if multiplayer.is_server():
-			# Host spawns themselves
+			print("SERVER: Spawning host player...")
+			# Host spawns themselves immediately
 			spawn_player(multiplayer.get_unique_id())
-		# Clients will be spawned when they connect
+			# Spawn any already-connected clients
+			print("SERVER: Checking for already-connected clients...")
+			for peer_id in multiplayer.get_peers():
+				print("SERVER: Spawning client ", peer_id)
+				spawn_player.rpc(peer_id)
+		else:
+			print("CLIENT: Waiting for server to spawn us...")
+			# Client: wait for server to spawn us
+			pass
 
 	var normal_worlds = worlds.keys()  # Gets the list of worlds
 	if normal_worlds.size() > 0:  # Makes sure there are worlds available
@@ -415,8 +432,9 @@ func _hide_transition_rect():
 
 # Multiplayer player spawning
 func _on_player_connected(id: int) -> void:
-	print("Player connected: ", id)
+	print("Player connected to world: ", id)
 	if multiplayer.is_server():
+		print("Server spawning player: ", id)
 		# Spawn the new player for everyone
 		spawn_player.rpc(id)
 
@@ -426,9 +444,17 @@ func _on_player_disconnected(id: int) -> void:
 		players[id].queue_free()
 		players.erase(id)
 
+func _on_connected_to_server() -> void:
+	print("Client connected to server! Requesting spawn...")
+
 @rpc("any_peer", "call_local", "reliable")
 func spawn_player(peer_id: int) -> void:
-	print("Spawning player for peer: ", peer_id)
+	print("spawn_player called for peer: ", peer_id)
+
+	# Don't spawn if already exists
+	if players.has(peer_id):
+		print("Player ", peer_id, " already spawned!")
+		return
 
 	var player = multiplayer_player_scene.instantiate()
 	player.name = str(peer_id)
@@ -441,4 +467,5 @@ func spawn_player(peer_id: int) -> void:
 	$SubViewportContainer/SubViewport.add_child(player)
 	players[peer_id] = player
 
-	print("Player spawned at: ", spawn_pos)
+	print("Player ", peer_id, " spawned at: ", spawn_pos)
+	print("Total players now: ", players.size())
