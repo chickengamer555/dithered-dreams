@@ -42,6 +42,7 @@ func _ready() -> void:
 		Steam.lobby_match_list.connect(_on_lobby_match_list)
 		Steam.lobby_joined.connect(_on_lobby_joined)
 		Steam.lobby_chat_update.connect(_on_lobby_chat_update)
+		Steam.lobby_data_update.connect(_on_lobby_data_update)
 		# Note: lobby_join_requested might be named differently in some versions
 		# We'll add Steam overlay invite support later
 
@@ -67,8 +68,8 @@ func _on_host_game_pressed() -> void:
 	status_label.text = "Creating lobby..."
 	print("Creating Steam lobby...")
 
-	# Create a lobby (2 players max, private)
-	Steam.createLobby(Steam.LOBBY_TYPE_FRIENDS_ONLY, 2)
+	# Create a lobby (2 players max, invisible - anyone with code can join)
+	Steam.createLobby(Steam.LOBBY_TYPE_INVISIBLE, 2)
 
 # Join a multiplayer game
 func _on_join_game_pressed() -> void:
@@ -191,42 +192,47 @@ func _on_start_multiplayer_pressed() -> void:
 		print("Host peer created with result: ", create_result)
 		multiplayer.multiplayer_peer = peer
 
-		# Get all lobby members
-		var num_members = Steam.getNumLobbyMembers(lobby_id)
-		print("Lobby has ", num_members, " members")
-
-		# Tell all clients to connect and start
-		print("Telling clients to connect and start...")
+		# Set lobby data to signal clients to start
 		var my_steam_id = Steam.getSteamID()
-		start_game_for_all.rpc(my_steam_id)
+		print("Setting lobby data - game_started with host Steam ID: ", my_steam_id)
+		Steam.setLobbyData(lobby_id, "game_started", str(my_steam_id))
 
 		# Wait a moment for clients to connect
-		await get_tree().create_timer(1.0).timeout
+		await get_tree().create_timer(2.0).timeout
+
+		print("Host starting world with connected peers: ", multiplayer.get_peers())
 
 		# Start the game for the host
 		start_game()
 	else:
 		print("Only the host can start the game!")
 
-# RPC called by host to tell clients to connect and start the game
-@rpc("authority", "call_remote", "reliable")
-func start_game_for_all(host_steam_id: int) -> void:
-	print("Received start game command from host!")
-	print("Host Steam ID: ", host_steam_id)
-	status_label.text = "Connecting to host..."
+# Called when lobby data changes (used to signal game start)
+func _on_lobby_data_update(_lobby_id: int, _member_id: int, _key: int) -> void:
+	print("Lobby data updated!")
 
-	# Create the multiplayer peer as client
-	print("Creating client multiplayer peer...")
-	peer = SteamMultiplayerPeer.new()
-	var join_result = peer.create_client(host_steam_id, 0)
-	print("Client peer created with result: ", join_result)
-	multiplayer.multiplayer_peer = peer
+	# Check if the game has started
+	var game_started_data = Steam.getLobbyData(lobby_id, "game_started")
+	print("game_started data: ", game_started_data)
 
-	# Wait for connection
-	await get_tree().create_timer(1.0).timeout
+	if game_started_data != "" and not is_host:
+		var host_steam_id = int(game_started_data)
+		print("Client: Game started! Connecting to host Steam ID: ", host_steam_id)
+		status_label.text = "Connecting to host..."
 
-	status_label.text = "Starting game..."
-	start_game()
+		# Create the multiplayer peer as client
+		print("Creating client multiplayer peer...")
+		peer = SteamMultiplayerPeer.new()
+		var join_result = peer.create_client(host_steam_id, 0)
+		print("Client peer created with result: ", join_result)
+		multiplayer.multiplayer_peer = peer
+
+		# Wait for connection
+		await get_tree().create_timer(1.5).timeout
+
+		print("Client starting world, connected to peers: ", multiplayer.get_peers())
+		status_label.text = "Starting game..."
+		start_game()
 
 # Multiplayer connection callbacks
 func _on_peer_connected(id: int) -> void:
