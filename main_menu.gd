@@ -260,21 +260,28 @@ func _on_lobby_data_update(_lobby_id: int, _member_id: int, _key: int) -> void:
 		# Steam.run_callbacks() is already being called in _process()
 		var wait_attempts = 0
 		var max_attempts = 20  # 10 seconds total
+		var connected = false
+
 		while wait_attempts < max_attempts:
 			await get_tree().create_timer(0.5).timeout
 
 			# Check connection status
 			var connection_status = peer.get_connection_status()
+			var peer_count = multiplayer.get_peers().size()
 			print("Client connection status: ", connection_status, " | Peers: ", multiplayer.get_peers())
 
-			if multiplayer.get_peers().size() > 0 or connection_status == MultiplayerPeer.CONNECTION_CONNECTED:
+			# Connection is established when status is CONNECTED or we can see peers
+			if connection_status == MultiplayerPeer.CONNECTION_CONNECTED or peer_count > 0:
+				connected = true
+				print("Client connection established!")
 				break
 
 			wait_attempts += 1
 
-		if multiplayer.get_peers().size() > 0:
+		if connected:
 			print("Client starting world, connected to peers: ", multiplayer.get_peers())
 			status_label.text = "Starting game..."
+			await get_tree().create_timer(0.5).timeout  # Brief delay to ensure everything is ready
 			start_game()
 		else:
 			print("ERROR: Client failed to connect to host!")
@@ -285,6 +292,10 @@ func _on_lobby_data_update(_lobby_id: int, _member_id: int, _key: int) -> void:
 func _on_peer_connected(id: int) -> void:
 	print("Peer connected: ", id)
 	status_label.text = "Player connected!"
+
+	# If we're the client and we just connected to the server, we might need to start
+	if not is_host and not multiplayer.is_server():
+		print("Client detected peer connection (server connected)!")
 
 func _on_peer_disconnected(id: int) -> void:
 	print("Peer disconnected: ", id)
