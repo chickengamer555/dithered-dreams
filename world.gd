@@ -423,6 +423,37 @@ func _trigger_jumpscare():
 
 
 
+func find_spawn_near_player(player_pos: Vector3, attempts: int = 50) -> Vector3:
+	# Try to spawn in a circle around the player
+	var min_distance = 3.0  # At least 3 units away
+	var max_distance = 8.0  # At most 8 units away
+
+	for i in range(attempts):
+		# Random angle around the player
+		var angle = randf() * TAU  # TAU = 2*PI (full circle)
+		var distance = randf_range(min_distance, max_distance)
+
+		# Calculate position in a circle around the player
+		var offset = Vector3(
+			cos(angle) * distance,
+			0,
+			sin(angle) * distance
+		)
+
+		var pos = player_pos + offset
+
+		# Adjust to ground level
+		pos = adjust_position_to_ground(pos)
+
+		# Check if safe (not inside walls, not on top of other players)
+		if pos != null and is_position_safe(pos, 1.5):
+			print("Found safe spawn near player at distance: ", distance, " angle: ", rad_to_deg(angle))
+			return pos
+
+	print("Warning: Could not find spawn near player after ", attempts, " attempts. Using offset position.")
+	# Fallback: just offset to the side
+	return player_pos + Vector3(5, 0, 0)
+
 func find_safe_spawn_position(world_name: String, attempts: int = 50, radius: float = 1.0) -> Vector3:
 	for i in range(attempts):
 		var pos = get_random_spawn_position(world_name)
@@ -455,8 +486,9 @@ func adjust_position_to_ground(pos: Vector3):
 		return null
 
 func is_position_safe(pos: Vector3, radius: float) -> bool:
-	# FIX: Check if any existing players are too close
-	var min_distance = max(radius * 3.0, 5.0)  # At least 3x radius or 5 units, whichever is larger
+	# Check if any existing players are too close
+	# Minimum distance is 2.5 units to prevent spawning on top of each other
+	var min_distance = max(radius * 2.0, 2.5)
 
 	for peer_id in players:
 		var player = players[peer_id]
@@ -620,9 +652,19 @@ func spawn_player(peer_id: int) -> void:
 	var player = multiplayer_player_scene.instantiate()
 	player.name = str(peer_id)
 
-	# Spawn at a safe position in the current world
-	# Use larger radius (3.0) to ensure players don't spawn too close
-	var spawn_pos = find_safe_spawn_position(current_world_name, 100, 3.0)
+	var spawn_pos: Vector3
+
+	# If there are already players, spawn NEAR them (but not on top)
+	if players.size() > 0:
+		# Get the first player's position
+		var first_player = players.values()[0]
+		spawn_pos = find_spawn_near_player(first_player.global_position)
+		print("Spawning player ", peer_id, " NEAR first player at: ", spawn_pos)
+	else:
+		# First player - spawn at random safe position
+		spawn_pos = find_safe_spawn_position(current_world_name, 100, 2.0)
+		print("Spawning FIRST player ", peer_id, " at: ", spawn_pos)
+
 	player.global_position = spawn_pos
 
 	# Add to the viewport FIRST
