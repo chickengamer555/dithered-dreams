@@ -37,6 +37,12 @@ func _ready() -> void:
 		print("Your Steam Name: ", steam_name)
 		status_label.text = "Welcome, " + steam_name + "!"
 
+		# CRITICAL FIX: Initialize Steam Relay Network for P2P connections
+		# This is REQUIRED for SteamMultiplayerPeer to work properly!
+		print("Initializing Steam Relay Network for P2P...")
+		Steam.initRelayNetworkAccess()
+		print("Steam Relay Network access initialized")
+
 		# Connect Steam signals
 		Steam.lobby_created.connect(_on_lobby_created)
 		Steam.lobby_match_list.connect(_on_lobby_match_list)
@@ -182,15 +188,26 @@ func update_lobby_members() -> void:
 # Host clicks "Start Game" button
 func _on_start_multiplayer_pressed() -> void:
 	if is_host:
-		print("Host starting the game!")
+		print("=== HOST STARTING GAME ===")
+		print("My Steam ID: ", Steam.getSteamID())
+		print("Lobby ID: ", lobby_id)
 		status_label.text = "Starting game..."
 
 		# NOW create the multiplayer peer as host
 		print("Creating host multiplayer peer...")
 		peer = SteamMultiplayerPeer.new()
+
+		# CRITICAL: Use virtual port 0 (clients must use the same port)
 		var create_result = peer.create_host(0)
-		print("Host peer created with result: ", create_result)
+		print("create_host() result: ", create_result)
+
+		if create_result != OK:
+			print("ERROR: create_host() failed with code: ", create_result)
+			status_label.text = "Failed to create host!"
+			return
+
 		multiplayer.multiplayer_peer = peer
+		print("✓ Host peer created successfully")
 
 		# Set lobby data to signal clients to start
 		var my_steam_id = Steam.getSteamID()
@@ -217,7 +234,24 @@ func _on_lobby_data_update(_lobby_id: int, _member_id: int, _key: int) -> void:
 
 	if game_started_data != "" and not is_host:
 		var host_steam_id = int(game_started_data)
-		print("Client: Game started! Connecting to host Steam ID: ", host_steam_id)
+		print("=== CLIENT CONNECTION DEBUG ===")
+		print("Host Steam ID from lobby: ", host_steam_id)
+		print("My Steam ID: ", Steam.getSteamID())
+		print("Lobby ID: ", lobby_id)
+
+		# CRITICAL VALIDATION: Make sure we're not connecting to ourselves
+		if host_steam_id == Steam.getSteamID():
+			print("ERROR: Trying to connect to ourselves!")
+			status_label.text = "ERROR: Invalid host ID!"
+			return
+
+		# CRITICAL VALIDATION: Make sure this isn't the lobby ID
+		if host_steam_id == lobby_id:
+			print("ERROR: host_steam_id is the lobby ID, not the host's Steam ID!")
+			print("This is a common bug - make sure you're passing the HOST'S Steam ID, not the lobby ID!")
+			status_label.text = "ERROR: Wrong ID type!"
+			return
+
 		status_label.text = "Connecting to host..."
 
 		# Create the multiplayer peer as client
@@ -225,6 +259,11 @@ func _on_lobby_data_update(_lobby_id: int, _member_id: int, _key: int) -> void:
 		peer = SteamMultiplayerPeer.new()
 		var join_result = peer.create_client(host_steam_id, 0)
 		print("Client peer created with result: ", join_result)
+
+		if join_result != OK:
+			print("ERROR: create_client() failed with code: ", join_result)
+			status_label.text = "Failed to create peer!"
+			return
 
 		# DON'T set multiplayer_peer yet - wait for connection first
 		# multiplayer.multiplayer_peer = peer
