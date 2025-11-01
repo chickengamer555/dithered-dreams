@@ -10,3 +10,5 @@ res://Shaders/crt.gdshader
 res://main_menu.gd
 res://world.gd
 res://player.tscn
+res://multiplayer_player.gd
+res://multiplayer_player.tscn

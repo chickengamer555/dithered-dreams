@@ -92,7 +92,8 @@ func _ready():
 			print("SERVER: Checking for already-connected clients...")
 			for peer_id in multiplayer.get_peers():
 				print("SERVER: Spawning client ", peer_id)
-				spawn_player.rpc(peer_id)
+				# Call spawn_player locally and remotely so everyone sees the new player
+				spawn_player(peer_id)
 		else:
 			print("CLIENT: Waiting for server to spawn us...")
 			# Client: wait for server to spawn us
@@ -338,6 +339,15 @@ func _process(delta):
 		_trigger_jumpscare()
 
 func update_nightmare_and_dream_speed(is_moving: bool):
+	# In multiplayer, only update for the local player
+	if is_multiplayer:
+		var my_peer_id = multiplayer.get_unique_id()
+		var my_player = players.get(my_peer_id, null)
+		if my_player and my_player.has_method("is_multiplayer_authority"):
+			# Only update if this is our player
+			if not my_player.is_multiplayer_authority():
+				return
+
 	if is_in_nightmare_world():
 		nightmare_speed = 1.0
 		dream_value = 0.0
@@ -375,15 +385,23 @@ func adjust_position_to_ground(pos: Vector3):
 	var space_state = world.direct_space_state
 	var from_point = pos
 	var to_point = pos - Vector3(0, 100, 0)
-	
+
 	var query = PhysicsRayQueryParameters3D.new()
 	query.from = from_point
 	query.to = to_point
-	query.exclude = [ $SubViewportContainer/SubViewport/Player ]
+	# Exclude all players from raycast
+	var exclude_list = []
+	for player in players.values():
+		exclude_list.append(player)
+	# Also exclude single-player if it still exists
+	var single_player = $SubViewportContainer/SubViewport.get_node_or_null("Player")
+	if single_player:
+		exclude_list.append(single_player)
+	query.exclude = exclude_list
 	query.collision_mask = 0xFFFFFFFF
 	query.collide_with_bodies = true
 	query.collide_with_areas = false
-	
+
 	var result = space_state.intersect_ray(query)
 	if result.size() > 0:
 		var ground_y = result.position.y
@@ -395,20 +413,28 @@ func adjust_position_to_ground(pos: Vector3):
 func is_position_safe(pos: Vector3, radius: float) -> bool:
 	var world = get_tree().root.get_world_3d()
 	var space_state = world.direct_space_state
-	
+
 	var sphere_shape = SphereShape3D.new()
 	sphere_shape.radius = radius
 	var transform = Transform3D(Basis.IDENTITY, pos)
-	
+
 	var query = PhysicsShapeQueryParameters3D.new()
 	query.shape = sphere_shape
 	query.transform = transform
 	query.margin = 0.1
-	query.exclude = [ $SubViewportContainer/SubViewport/Player ]
+	# Exclude all players from shape query
+	var exclude_list = []
+	for player in players.values():
+		exclude_list.append(player)
+	# Also exclude single-player if it still exists
+	var single_player = $SubViewportContainer/SubViewport.get_node_or_null("Player")
+	if single_player:
+		exclude_list.append(single_player)
+	query.exclude = exclude_list
 	query.collision_mask = 0xFFFFFFFF
 	query.collide_with_bodies = true
 	query.collide_with_areas = false
-	
+
 	var result = space_state.intersect_shape(query, 1)
 	return result.size() == 0
 
@@ -509,12 +535,18 @@ func _on_player_connected(id: int) -> void:
 	print("Player connected to world: ", id)
 	if multiplayer.is_server():
 		print("Server spawning player: ", id)
-		# Spawn the new player for everyone
+		# Spawn the new player for everyone (call_local ensures it spawns on server too)
 		spawn_player.rpc(id)
 
 		# Sync the current world state to the newly connected client
 		print("SERVER: Syncing world state to newly connected client: ", id)
 		sync_world_to_clients.rpc_id(id, current_world_name)
+
+		# Also sync all existing players to the new client
+		print("SERVER: Syncing existing players to new client: ", id)
+		for existing_peer_id in players.keys():
+			if existing_peer_id != id:  # Don't spawn them twice
+				spawn_player.rpc_id(id, existing_peer_id)
 
 func _on_player_disconnected(id: int) -> void:
 	print("Player disconnected: ", id)
