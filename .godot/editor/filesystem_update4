@@ -1,6 +1,12 @@
-res://models/ps1_Facade019C_1K-JPG_Color.jpg
-res://models/ps1_GUID-C59B68EA-6217-4E58-A9FE-592926F4C253-web.jpg
-res://models/world2/simple_rock_-_ps1_low_poly_0.jpg
+res://world.tscn
+res://Shaders/sky.gdshader
+res://envoirments/world1.tres
+res://envoirments/nightmare1.tres
+res://envoirments/world2.tres
+res://envoirments/nightmare2.tres
+res://Shaders/Jitter.gdshader
+res://Shaders/DITHERING!!!.gdshader
+res://Shaders/crt.gdshader
 res://main_menu.gd
 res://world.gd
-res://multiplayer_player.tscn
+res://player.tscn
