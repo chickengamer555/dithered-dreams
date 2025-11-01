@@ -227,21 +227,43 @@ func _on_lobby_data_update(_lobby_id: int, _member_id: int, _key: int) -> void:
 		print("Client peer created with result: ", join_result)
 		multiplayer.multiplayer_peer = peer
 
-		# Wait longer for stable connection establishment
-		await get_tree().create_timer(2.5).timeout
+		# CRITICAL: Wait for actual connection signal, not just a timer!
+		print("Waiting for connected_to_server signal...")
 
-		print("Client starting world, connected to peers: ", multiplayer.get_peers())
+		# Set up a one-shot connection to the signal
+		var connection_timeout = 10.0  # 10 second timeout
+		var connected = false
 
-		# Verify connection before starting
-		if multiplayer.get_peers().size() > 0:
+		# Create a callable that sets the flag
+		var on_connected = func():
+			connected = true
+			print("✓ Connected to server!")
+
+		# Connect the signal
+		multiplayer.connected_to_server.connect(on_connected, CONNECT_ONE_SHOT)
+
+		# Wait for connection or timeout
+		var elapsed = 0.0
+		while not connected and elapsed < connection_timeout:
+			await get_tree().create_timer(0.1).timeout
+			elapsed += 0.1
+
+			# Update status every second
+			if int(elapsed) != int(elapsed - 0.1):
+				status_label.text = "Connecting... (" + str(int(connection_timeout - elapsed)) + "s)"
+
+		if connected:
+			print("Client connected! Peers: ", multiplayer.get_peers())
 			status_label.text = "Connected! Starting game..."
+
+			# Wait one more moment for peer list to update
+			await get_tree().create_timer(0.5).timeout
+
 			start_game()
 		else:
-			print("WARNING: Client not connected to any peers!")
-			status_label.text = "Connection issue - retrying..."
-			# Try starting anyway, the world will handle sync
-			await get_tree().create_timer(1.0).timeout
-			start_game()
+			print("ERROR: Connection timeout!")
+			status_label.text = "Connection failed - timeout"
+			# Don't start the game if not connected
 
 # Multiplayer connection callbacks
 func _on_peer_connected(id: int) -> void:

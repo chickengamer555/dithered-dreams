@@ -507,18 +507,7 @@ func _hide_transition_rect():
 
 # Multiplayer player spawning
 func _on_player_connected(id: int) -> void:
-	print("Player connected to world: ", id)
-	if multiplayer.is_server():
-		print("Server syncing world state to new player: ", id)
-		# First sync the current world state to the new player
-		sync_world_state.rpc_id(id, current_world_name)
-
-		# Wait a moment for world state to sync
-		await get_tree().create_timer(0.5).timeout
-
-		print("Server spawning player: ", id)
-		# Spawn the new player for everyone
-		spawn_player.rpc(id)
+	print("SERVER: Peer ", id, " connected to network (waiting for client_ready signal...)")
 
 func _on_player_disconnected(id: int) -> void:
 	print("Player disconnected: ", id)
@@ -527,7 +516,25 @@ func _on_player_disconnected(id: int) -> void:
 		players.erase(id)
 
 func _on_connected_to_server() -> void:
-	print("Client connected to server! Requesting spawn...")
+	print("Client connected to server! World scene loaded. Notifying server...")
+	# Tell the server that this client is ready to receive world state
+	client_ready.rpc_id(1)  # 1 is always the server ID
+
+# Client tells server it's ready to receive world state
+@rpc("any_peer", "call_remote", "reliable")
+func client_ready() -> void:
+	var client_id = multiplayer.get_remote_sender_id()
+	print("SERVER: Client ", client_id, " is ready! Syncing world state...")
+
+	# Sync the current world state to the client
+	sync_world_state.rpc_id(client_id, current_world_name)
+
+	# Wait for world state to sync
+	await get_tree().create_timer(0.5).timeout
+
+	print("SERVER: Spawning player for client ", client_id)
+	# Spawn the player for everyone
+	spawn_player.rpc(client_id)
 
 # Sync world state from server to clients
 @rpc("authority", "call_remote", "reliable")
