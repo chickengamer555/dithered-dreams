@@ -180,10 +180,8 @@ func _ready():
 
 	teleport_to_world(current_world_name, spawn_position)  # Teleports player to starting world and the safe spawn
 
-	# If multiplayer and server, tell clients which world we're in
-	if is_multiplayer and multiplayer.is_server():
-		print("SERVER: Telling clients to sync to world: ", current_world_name)
-		sync_world_to_clients.rpc(current_world_name)
+	# Don't sync to clients here - do it when they connect in _on_player_connected
+	# This ensures they're fully ready to receive the RPC
 
 func _disable_interactions_in_world(world: Node, disable: bool):
 	print("_disable_interactions_in_world called for:", world.name, "disable:", disable)
@@ -512,6 +510,10 @@ func _on_player_connected(id: int) -> void:
 		print("Server spawning player: ", id)
 		# Spawn the new player for everyone
 		spawn_player.rpc(id)
+
+		# Sync the current world state to the newly connected client
+		print("SERVER: Syncing world state to newly connected client: ", id)
+		sync_world_to_clients.rpc_id(id, current_world_name)
 
 func _on_player_disconnected(id: int) -> void:
 	print("Player disconnected: ", id)
