@@ -197,8 +197,17 @@ func _on_start_multiplayer_pressed() -> void:
 		print("Setting lobby data - game_started with host Steam ID: ", my_steam_id)
 		Steam.setLobbyData(lobby_id, "game_started", str(my_steam_id))
 
-		# Wait a moment for clients to connect
+		# Wait for clients to connect to the multiplayer peer
+		status_label.text = "Waiting for players to connect..."
 		await get_tree().create_timer(2.0).timeout
+
+		# Give extra time for clients to establish connection
+		var wait_attempts = 0
+		var expected_clients = Steam.getNumLobbyMembers(lobby_id) - 1  # -1 for host
+		while multiplayer.get_peers().size() < expected_clients and wait_attempts < 10:
+			print("Host waiting for clients to connect... (", multiplayer.get_peers().size(), "/", expected_clients, ") (attempt ", wait_attempts + 1, ")")
+			await get_tree().create_timer(0.5).timeout
+			wait_attempts += 1
 
 		print("Host starting world with connected peers: ", multiplayer.get_peers())
 
@@ -227,12 +236,24 @@ func _on_lobby_data_update(_lobby_id: int, _member_id: int, _key: int) -> void:
 		print("Client peer created with result: ", join_result)
 		multiplayer.multiplayer_peer = peer
 
-		# Wait for connection
-		await get_tree().create_timer(1.5).timeout
+		# Wait for connection to fully establish
+		status_label.text = "Connecting to host..."
+		await get_tree().create_timer(2.0).timeout
 
-		print("Client starting world, connected to peers: ", multiplayer.get_peers())
-		status_label.text = "Starting game..."
-		start_game()
+		# Keep waiting until we're connected to at least one peer
+		var wait_attempts = 0
+		while multiplayer.get_peers().size() == 0 and wait_attempts < 10:
+			print("Client waiting for peer connection... (attempt ", wait_attempts + 1, ")")
+			await get_tree().create_timer(0.5).timeout
+			wait_attempts += 1
+
+		if multiplayer.get_peers().size() > 0:
+			print("Client starting world, connected to peers: ", multiplayer.get_peers())
+			status_label.text = "Starting game..."
+			start_game()
+		else:
+			print("ERROR: Client failed to connect to host!")
+			status_label.text = "Failed to connect to host!"
 
 # Multiplayer connection callbacks
 func _on_peer_connected(id: int) -> void:

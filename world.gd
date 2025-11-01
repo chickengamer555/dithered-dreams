@@ -70,6 +70,7 @@ func _ready():
 		print("Is server: ", multiplayer.is_server())
 		print("My peer ID: ", multiplayer.get_unique_id())
 		print("Connected peers: ", multiplayer.get_peers())
+		print("Multiplayer peer type: ", multiplayer.multiplayer_peer.get_class())
 
 		# Set up multiplayer callbacks
 		multiplayer.peer_connected.connect(_on_player_connected)
