@@ -96,11 +96,8 @@ func _on_lobby_created(connect_status: int, created_lobby_id: int) -> void:
 		is_host = true
 		print("Lobby created! ID: ", lobby_id)
 
-		# Create the multiplayer peer as host
-		peer = SteamMultiplayerPeer.new()
-		var create_result = peer.create_host(0)
-		print("Host peer created with result: ", create_result)
-		multiplayer.multiplayer_peer = peer
+		# DON'T create multiplayer peer yet - wait until we start the game
+		# This way the client will be in the lobby when we create the peer
 
 		lobby_id_label.text = "Lobby ID: " + str(lobby_id)
 		lobby_id_label.show()
@@ -134,15 +131,8 @@ func _on_lobby_joined(lobby_id_joined: int, _permissions: int, _locked: bool, re
 		is_host = false
 		print("Successfully joined lobby: ", lobby_id)
 
-		# Get the host's Steam ID (first member of the lobby)
-		var host_steam_id = Steam.getLobbyOwner(lobby_id)
-		print("Connecting to host Steam ID: ", host_steam_id)
-
-		# Create the multiplayer peer as client
-		peer = SteamMultiplayerPeer.new()
-		var join_result = peer.create_client(host_steam_id, 0)
-		print("Client peer created with result: ", join_result)
-		multiplayer.multiplayer_peer = peer
+		# DON'T create multiplayer peer yet - wait until host starts the game
+		# We'll create it in the RPC handler
 
 		status_label.text = "Joined lobby! Waiting for host to start..."
 
@@ -192,23 +182,50 @@ func update_lobby_members() -> void:
 func _on_start_multiplayer_pressed() -> void:
 	if is_host:
 		print("Host starting the game!")
-		print("Multiplayer peer status: ", multiplayer.multiplayer_peer)
-		print("Connected peers: ", multiplayer.get_peers())
 		status_label.text = "Starting game..."
-		# Tell all clients to start the game
-		print("Sending RPC to start game for all clients...")
-		start_game_for_all.rpc()
-		# Start the game for the host too
+
+		# NOW create the multiplayer peer as host
+		print("Creating host multiplayer peer...")
+		peer = SteamMultiplayerPeer.new()
+		var create_result = peer.create_host(0)
+		print("Host peer created with result: ", create_result)
+		multiplayer.multiplayer_peer = peer
+
+		# Get all lobby members
+		var num_members = Steam.getNumLobbyMembers(lobby_id)
+		print("Lobby has ", num_members, " members")
+
+		# Tell all clients to connect and start
+		print("Telling clients to connect and start...")
+		var my_steam_id = Steam.getSteamID()
+		start_game_for_all.rpc(my_steam_id)
+
+		# Wait a moment for clients to connect
+		await get_tree().create_timer(1.0).timeout
+
+		# Start the game for the host
 		start_game()
 	else:
 		print("Only the host can start the game!")
 
-# RPC called by host to tell clients to start the game
+# RPC called by host to tell clients to connect and start the game
 @rpc("authority", "call_remote", "reliable")
-func start_game_for_all() -> void:
+func start_game_for_all(host_steam_id: int) -> void:
 	print("Received start game command from host!")
-	status_label.text = "Host started the game!"
-	await get_tree().create_timer(0.5).timeout
+	print("Host Steam ID: ", host_steam_id)
+	status_label.text = "Connecting to host..."
+
+	# Create the multiplayer peer as client
+	print("Creating client multiplayer peer...")
+	peer = SteamMultiplayerPeer.new()
+	var join_result = peer.create_client(host_steam_id, 0)
+	print("Client peer created with result: ", join_result)
+	multiplayer.multiplayer_peer = peer
+
+	# Wait for connection
+	await get_tree().create_timer(1.0).timeout
+
+	status_label.text = "Starting game..."
 	start_game()
 
 # Multiplayer connection callbacks
