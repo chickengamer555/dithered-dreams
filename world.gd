@@ -659,6 +659,13 @@ func spawn_player(peer_id: int) -> void:
 	var player = multiplayer_player_scene.instantiate()
 	player.name = str(peer_id)
 
+	# Add to the viewport FIRST (before setting position)
+	var viewport = $SubViewportContainer/SubViewport
+	viewport.add_child(player)
+
+	# Wait for node to be ready in the tree
+	await get_tree().process_frame
+
 	var spawn_pos: Vector3
 
 	# If there are already players, spawn NEAR them (but not on top)
@@ -673,10 +680,6 @@ func spawn_player(peer_id: int) -> void:
 		print("Spawning FIRST player ", peer_id, " at: ", spawn_pos)
 
 	player.global_position = spawn_pos
-
-	# Add to the viewport FIRST
-	var viewport = $SubViewportContainer/SubViewport
-	viewport.add_child(player)
 
 	# THEN add to players dictionary (so next spawn can check against this player)
 	players[peer_id] = player
