@@ -97,11 +97,19 @@ func _ready():
 			# Client: wait for server to spawn us
 			pass
 
+	# Only the server picks the starting world
+	if is_multiplayer and not multiplayer.is_server():
+		print("CLIENT: Waiting for server to tell us which world to start in...")
+		# Client will receive the world via RPC
+		return
+
 	var normal_worlds = worlds.keys()  # Gets the list of worlds
 	if normal_worlds.size() > 0:  # Makes sure there are worlds available
 		current_world_name = normal_worlds[randi() % normal_worlds.size()]  # Randomly chooses a world
 	else:
 		return  # This runs if no worlds
+
+	print("SERVER: Selected starting world: ", current_world_name)
 	var spawn_position = find_safe_spawn_position(current_world_name)  # Gets safe random spawn position
 	
 	# Disable all worlds initially
@@ -126,8 +134,13 @@ func _ready():
 		starting_world.visible = true
 		_disable_interactions_in_world(starting_world, false)
 		print("Enabled interactions for starting world:", current_world_name)
-	
+
 	teleport_to_world(current_world_name, spawn_position)  # Teleports player to starting world and the safe spawn
+
+	# If multiplayer and server, tell clients which world we're in
+	if is_multiplayer and multiplayer.is_server():
+		print("SERVER: Telling clients to sync to world: ", current_world_name)
+		sync_world_to_clients.rpc(current_world_name)
 	
 	# Initialize and start the main timer
 	timer = Timer.new()
@@ -191,6 +204,10 @@ func _disable_interactions_in_world(world: Node, disable: bool):
 			_disable_interactions_in_world(child, disable)
 
 func _on_world_timer_tick():
+	# Only server controls world transitions
+	if is_multiplayer and not multiplayer.is_server():
+		return
+
 	time_in_world += 1.0
 	if time_in_world >= time_before_nightmare:
 		teleport_to_nightmare_world(current_world_name)
@@ -230,6 +247,12 @@ func teleport_to_random_normal_world():
 
 func teleport_to_world(world_name: String, spawn_position: Vector3):
 	is_transitioning = true
+
+	# If multiplayer and server, sync to clients
+	if is_multiplayer and multiplayer.is_server():
+		print("SERVER: Syncing world transition to clients: ", world_name)
+		sync_world_to_clients.rpc(world_name)
+
 	play_transition_effect(Callable(self, "_do_teleport_to_world").bind(world_name, spawn_position))
 
 func _do_teleport_to_world(world_name: String, spawn_position: Vector3):
@@ -429,6 +452,37 @@ func _hide_transition_rect():
 	if transition_rect:
 		transition_rect.visible = false
 	is_transitioning = false
+
+# Sync world state to clients
+@rpc("authority", "call_remote", "reliable")
+func sync_world_to_clients(world_name: String) -> void:
+	print("CLIENT: Received world sync - switching to: ", world_name)
+	current_world_name = world_name
+
+	# Disable all worlds
+	for world_name_iter in worlds.keys():
+		var world_iter = worlds[world_name_iter]
+		if world_iter:
+			world_iter.visible = false
+			_disable_interactions_in_world(world_iter, true)
+
+	# Disable all nightmares
+	for nightmare_name_iter in nightmares.keys():
+		var nightmare_iter = nightmares[nightmare_name_iter]
+		if nightmare_iter:
+			nightmare_iter.visible = false
+			_disable_interactions_in_world(nightmare_iter, true)
+
+	# Enable the synced world
+	var target_world = worlds.get(world_name, nightmares.get(world_name, null))
+	if target_world:
+		target_world.visible = true
+		_disable_interactions_in_world(target_world, false)
+		print("CLIENT: Enabled world: ", world_name)
+
+		# Set environment
+		if world_environment and world_name in environments:
+			world_environment.environment = environments[world_name]
 
 # Multiplayer player spawning
 func _on_player_connected(id: int) -> void:
