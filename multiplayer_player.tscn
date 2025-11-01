@@ -1,0 +1,44 @@
+[gd_scene load_steps=6 format=3 uid="uid://cq8yv5m3xr8yw"]
+
+[ext_resource type="Script" path="res://multiplayer_player.gd" id="1_multiplayer"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_player"]
+radius = 0.5
+height = 2.0
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_bean"]
+radius = 0.5
+height = 2.0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_bean"]
+albedo_color = Color(0.8, 0.6, 0.4, 1)
+
+[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_sync"]
+properties/0/path = NodePath(".:position")
+properties/0/spawn = true
+properties/0/replication_mode = 1
+properties/1/path = NodePath(".:rotation")
+properties/1/spawn = true
+properties/1/replication_mode = 1
+
+[node name="MultiplayerPlayer" type="CharacterBody3D"]
+transform = Transform3D(0.7, 0, 0, 0, 0.7, 0, 0, 0, 0.7, 0, 0, 0)
+script = ExtResource("1_multiplayer")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("CapsuleShape3D_player")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+mesh = SubResource("CapsuleMesh_bean")
+surface_material_override/0 = SubResource("StandardMaterial3D_bean")
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(14.2857, 0, 0, 0, 14.2314, -1.24508, 0, 1.24508, 14.2314, 0, -0.755418, 0)
+current = true
+fov = 70.0
+near = 0.1
+far = 500.0
+
+[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="."]
+replication_config = SubResource("SceneReplicationConfig_sync")
+

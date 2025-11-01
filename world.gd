@@ -11,6 +11,11 @@ extends Node
 
 }
 
+# Multiplayer
+var multiplayer_player_scene = preload("res://multiplayer_player.tscn")
+var players = {}  # Dictionary to store player nodes by peer ID
+var is_multiplayer = false
+
 var environments = { # Loads the environment resources for each world and nightmare
 	"world1": preload("res://envoirments/world1.tres"),
 	"nightmare1": preload("res://envoirments/nightmare1.tres"),
@@ -55,6 +60,26 @@ var is_transitioning: bool = false
 func _ready():
 	randomize()  # Starts random number generator
 	nightmare_bar.value = nightmare_value  # Sets up the nightmare bar based on var
+
+	# Check if we're in multiplayer mode
+	is_multiplayer = multiplayer.has_multiplayer_peer()
+
+	if is_multiplayer:
+		# Set up multiplayer callbacks
+		multiplayer.peer_connected.connect(_on_player_connected)
+		multiplayer.peer_disconnected.connect(_on_player_disconnected)
+
+		# Hide the original single-player player
+		var old_player = $SubViewportContainer/SubViewport/Player
+		if old_player:
+			old_player.queue_free()
+
+		# Spawn multiplayer players
+		if multiplayer.is_server():
+			# Host spawns themselves
+			spawn_player(multiplayer.get_unique_id())
+		# Clients will be spawned when they connect
+
 	var normal_worlds = worlds.keys()  # Gets the list of worlds
 	if normal_worlds.size() > 0:  # Makes sure there are worlds available
 		current_world_name = normal_worlds[randi() % normal_worlds.size()]  # Randomly chooses a world
@@ -219,9 +244,18 @@ func _do_teleport_to_world(world_name: String, spawn_position: Vector3):
 				else:
 					world_environment.environment = null  # Or set a default environment
 
-			var player = $SubViewportContainer/SubViewport/Player
-			if player:
-				player.global_transform.origin = spawn_position
+			# Teleport players
+			if is_multiplayer:
+				# Teleport all multiplayer players
+				for peer_id in players:
+					var player = players[peer_id]
+					if player:
+						player.global_transform.origin = spawn_position
+			else:
+				# Teleport single-player player
+				var player = $SubViewportContainer/SubViewport/Player
+				if player:
+					player.global_transform.origin = spawn_position
 
 func _on_area_3d_body_entered(body: Node3D):
 	if not is_transitioning and body is CharacterBody3D:
@@ -378,3 +412,33 @@ func _hide_transition_rect():
 	if transition_rect:
 		transition_rect.visible = false
 	is_transitioning = false
+
+# Multiplayer player spawning
+func _on_player_connected(id: int) -> void:
+	print("Player connected: ", id)
+	if multiplayer.is_server():
+		# Spawn the new player for everyone
+		spawn_player.rpc(id)
+
+func _on_player_disconnected(id: int) -> void:
+	print("Player disconnected: ", id)
+	if players.has(id):
+		players[id].queue_free()
+		players.erase(id)
+
+@rpc("any_peer", "call_local", "reliable")
+func spawn_player(peer_id: int) -> void:
+	print("Spawning player for peer: ", peer_id)
+
+	var player = multiplayer_player_scene.instantiate()
+	player.name = str(peer_id)
+
+	# Spawn at a safe position in the current world
+	var spawn_pos = find_safe_spawn_position(current_world_name)
+	player.global_position = spawn_pos
+
+	# Add to the viewport
+	$SubViewportContainer/SubViewport.add_child(player)
+	players[peer_id] = player
+
+	print("Player spawned at: ", spawn_pos)

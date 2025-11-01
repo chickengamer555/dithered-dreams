@@ -45,6 +45,12 @@ func _ready() -> void:
 		# Note: lobby_join_requested might be named differently in some versions
 		# We'll add Steam overlay invite support later
 
+		# Connect multiplayer signals
+		multiplayer.peer_connected.connect(_on_peer_connected)
+		multiplayer.peer_disconnected.connect(_on_peer_disconnected)
+		multiplayer.connected_to_server.connect(_on_connected_to_server)
+		multiplayer.connection_failed.connect(_on_connection_failed)
+
 	# Hide lobby info initially (but keep input visible for joining)
 	lobby_id_label.hide()
 	# lobby_input stays visible so people can enter a lobby ID to join
@@ -186,8 +192,11 @@ func update_lobby_members() -> void:
 func _on_start_multiplayer_pressed() -> void:
 	if is_host:
 		print("Host starting the game!")
+		print("Multiplayer peer status: ", multiplayer.multiplayer_peer)
+		print("Connected peers: ", multiplayer.get_peers())
 		status_label.text = "Starting game..."
 		# Tell all clients to start the game
+		print("Sending RPC to start game for all clients...")
 		start_game_for_all.rpc()
 		# Start the game for the host too
 		start_game()
@@ -201,6 +210,23 @@ func start_game_for_all() -> void:
 	status_label.text = "Host started the game!"
 	await get_tree().create_timer(0.5).timeout
 	start_game()
+
+# Multiplayer connection callbacks
+func _on_peer_connected(id: int) -> void:
+	print("Peer connected: ", id)
+	status_label.text = "Player connected!"
+
+func _on_peer_disconnected(id: int) -> void:
+	print("Peer disconnected: ", id)
+	status_label.text = "Player disconnected!"
+
+func _on_connected_to_server() -> void:
+	print("Successfully connected to server (host)!")
+	status_label.text = "Connected to host!"
+
+func _on_connection_failed() -> void:
+	print("Failed to connect to server!")
+	status_label.text = "Connection failed!"
 
 # Placeholder for lobby match list (not used yet, but good to have)
 func _on_lobby_match_list(lobbies: Array) -> void:
