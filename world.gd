@@ -70,7 +70,6 @@ func _ready():
 		print("Is server: ", multiplayer.is_server())
 		print("My peer ID: ", multiplayer.get_unique_id())
 		print("Connected peers: ", multiplayer.get_peers())
-		print("Multiplayer peer type: ", multiplayer.multiplayer_peer.get_class())
 
 		# Set up multiplayer callbacks
 		multiplayer.peer_connected.connect(_on_player_connected)
@@ -92,69 +91,17 @@ func _ready():
 			print("SERVER: Checking for already-connected clients...")
 			for peer_id in multiplayer.get_peers():
 				print("SERVER: Spawning client ", peer_id)
-				# Call spawn_player locally and remotely so everyone sees the new player
-				spawn_player(peer_id)
+				spawn_player.rpc(peer_id)
 		else:
 			print("CLIENT: Waiting for server to spawn us...")
 			# Client: wait for server to spawn us
 			pass
-
-	# Initialize timers and UI for everyone
-	# Initialize and start the main timer
-	timer = Timer.new()
-	timer.wait_time = 1.0
-	timer.autostart = true
-	timer.one_shot = false
-	timer.timeout.connect(_on_timer_tick)
-	add_child(timer)
-	timer.start()
-
-	# Initialize and start the world timer
-	world_timer = Timer.new()
-	world_timer.wait_time = 1.0
-	world_timer.autostart = true
-	world_timer.one_shot = false
-	world_timer.timeout.connect(_on_world_timer_tick)
-	add_child(world_timer)
-	world_timer.start()
-
-	# Set the timer label
-	if timer_label:
-		timer_label.text = str(time_left)
-
-	# Ensure the transition_rect is initially hidden
-	if transition_rect:
-		transition_rect.visible = false
-
-	# **Important: Mark this scene as the current main scene.**
-	get_tree().set_current_scene(self)
-
-	# Only the server picks the starting world
-	if is_multiplayer and not multiplayer.is_server():
-		print("CLIENT: Waiting for server to tell us which world to start in...")
-		# Client will receive the world via RPC - but still need to initialize worlds
-		# Disable all worlds initially
-		for world_name_iter in worlds.keys():
-			var world_iter = worlds[world_name_iter]
-			if world_iter:
-				world_iter.visible = false
-				_disable_interactions_in_world(world_iter, true)
-
-		# Disable all nightmares initially
-		for nightmare_name_iter in nightmares.keys():
-			var nightmare_iter = nightmares[nightmare_name_iter]
-			if nightmare_iter:
-				nightmare_iter.visible = false
-				_disable_interactions_in_world(nightmare_iter, true)
-		return
 
 	var normal_worlds = worlds.keys()  # Gets the list of worlds
 	if normal_worlds.size() > 0:  # Makes sure there are worlds available
 		current_world_name = normal_worlds[randi() % normal_worlds.size()]  # Randomly chooses a world
 	else:
 		return  # This runs if no worlds
-
-	print("SERVER: Selected starting world: ", current_world_name)
 	var spawn_position = find_safe_spawn_position(current_world_name)  # Gets safe random spawn position
 	
 	# Disable all worlds initially
@@ -179,11 +126,37 @@ func _ready():
 		starting_world.visible = true
 		_disable_interactions_in_world(starting_world, false)
 		print("Enabled interactions for starting world:", current_world_name)
-
+	
 	teleport_to_world(current_world_name, spawn_position)  # Teleports player to starting world and the safe spawn
+	
+	# Initialize and start the main timer
+	timer = Timer.new()
+	timer.wait_time = 1.0
+	timer.autostart = true
+	timer.one_shot = false
+	timer.timeout.connect(_on_timer_tick)
+	add_child(timer)
+	timer.start()
+	
+	# Initialize and start the world timer
+	world_timer = Timer.new()
+	world_timer.wait_time = 1.0
+	world_timer.autostart = true
+	world_timer.one_shot = false
+	world_timer.timeout.connect(_on_world_timer_tick)
+	add_child(world_timer)
+	world_timer.start()
+	
+	# Set the timer label
+	if timer_label:
+		timer_label.text = str(time_left)
+	
+	# Ensure the transition_rect is initially hidden
+	if transition_rect:
+		transition_rect.visible = false
 
-	# Don't sync to clients here - do it when they connect in _on_player_connected
-	# This ensures they're fully ready to receive the RPC
+	# **Important: Mark this scene as the current main scene.**
+	get_tree().set_current_scene(self)
 
 func _disable_interactions_in_world(world: Node, disable: bool):
 	print("_disable_interactions_in_world called for:", world.name, "disable:", disable)
@@ -218,10 +191,6 @@ func _disable_interactions_in_world(world: Node, disable: bool):
 			_disable_interactions_in_world(child, disable)
 
 func _on_world_timer_tick():
-	# Only server controls world transitions
-	if is_multiplayer and not multiplayer.is_server():
-		return
-
 	time_in_world += 1.0
 	if time_in_world >= time_before_nightmare:
 		teleport_to_nightmare_world(current_world_name)
@@ -261,12 +230,6 @@ func teleport_to_random_normal_world():
 
 func teleport_to_world(world_name: String, spawn_position: Vector3):
 	is_transitioning = true
-
-	# If multiplayer and server, sync to clients
-	if is_multiplayer and multiplayer.is_server():
-		print("SERVER: Syncing world transition to clients: ", world_name)
-		sync_world_to_clients.rpc(world_name)
-
 	play_transition_effect(Callable(self, "_do_teleport_to_world").bind(world_name, spawn_position))
 
 func _do_teleport_to_world(world_name: String, spawn_position: Vector3):
@@ -339,15 +302,6 @@ func _process(delta):
 		_trigger_jumpscare()
 
 func update_nightmare_and_dream_speed(is_moving: bool):
-	# In multiplayer, only update for the local player
-	if is_multiplayer:
-		var my_peer_id = multiplayer.get_unique_id()
-		var my_player = players.get(my_peer_id, null)
-		if my_player and my_player.has_method("is_multiplayer_authority"):
-			# Only update if this is our player
-			if not my_player.is_multiplayer_authority():
-				return
-
 	if is_in_nightmare_world():
 		nightmare_speed = 1.0
 		dream_value = 0.0
@@ -385,23 +339,15 @@ func adjust_position_to_ground(pos: Vector3):
 	var space_state = world.direct_space_state
 	var from_point = pos
 	var to_point = pos - Vector3(0, 100, 0)
-
+	
 	var query = PhysicsRayQueryParameters3D.new()
 	query.from = from_point
 	query.to = to_point
-	# Exclude all players from raycast
-	var exclude_list = []
-	for player in players.values():
-		exclude_list.append(player)
-	# Also exclude single-player if it still exists
-	var single_player = $SubViewportContainer/SubViewport.get_node_or_null("Player")
-	if single_player:
-		exclude_list.append(single_player)
-	query.exclude = exclude_list
+	query.exclude = [ $SubViewportContainer/SubViewport/Player ]
 	query.collision_mask = 0xFFFFFFFF
 	query.collide_with_bodies = true
 	query.collide_with_areas = false
-
+	
 	var result = space_state.intersect_ray(query)
 	if result.size() > 0:
 		var ground_y = result.position.y
@@ -413,28 +359,20 @@ func adjust_position_to_ground(pos: Vector3):
 func is_position_safe(pos: Vector3, radius: float) -> bool:
 	var world = get_tree().root.get_world_3d()
 	var space_state = world.direct_space_state
-
+	
 	var sphere_shape = SphereShape3D.new()
 	sphere_shape.radius = radius
 	var transform = Transform3D(Basis.IDENTITY, pos)
-
+	
 	var query = PhysicsShapeQueryParameters3D.new()
 	query.shape = sphere_shape
 	query.transform = transform
 	query.margin = 0.1
-	# Exclude all players from shape query
-	var exclude_list = []
-	for player in players.values():
-		exclude_list.append(player)
-	# Also exclude single-player if it still exists
-	var single_player = $SubViewportContainer/SubViewport.get_node_or_null("Player")
-	if single_player:
-		exclude_list.append(single_player)
-	query.exclude = exclude_list
+	query.exclude = [ $SubViewportContainer/SubViewport/Player ]
 	query.collision_mask = 0xFFFFFFFF
 	query.collide_with_bodies = true
 	query.collide_with_areas = false
-
+	
 	var result = space_state.intersect_shape(query, 1)
 	return result.size() == 0
 
@@ -492,61 +430,13 @@ func _hide_transition_rect():
 		transition_rect.visible = false
 	is_transitioning = false
 
-# Sync world state to clients
-@rpc("authority", "call_remote", "reliable")
-func sync_world_to_clients(world_name: String) -> void:
-	print("CLIENT: Received world sync - switching to: ", world_name)
-	current_world_name = world_name
-
-	# Disable all worlds
-	for world_name_iter in worlds.keys():
-		var world_iter = worlds[world_name_iter]
-		if world_iter:
-			world_iter.visible = false
-			_disable_interactions_in_world(world_iter, true)
-
-	# Disable all nightmares
-	for nightmare_name_iter in nightmares.keys():
-		var nightmare_iter = nightmares[nightmare_name_iter]
-		if nightmare_iter:
-			nightmare_iter.visible = false
-			_disable_interactions_in_world(nightmare_iter, true)
-
-	# Enable the synced world
-	var target_world = worlds.get(world_name, nightmares.get(world_name, null))
-	if target_world:
-		target_world.visible = true
-		_disable_interactions_in_world(target_world, false)
-		print("CLIENT: Enabled world: ", world_name)
-
-		# Set environment
-		if world_environment and world_name in environments:
-			world_environment.environment = environments[world_name]
-
-		# If we have a player already spawned, teleport them to the world
-		var my_peer_id = multiplayer.get_unique_id()
-		if players.has(my_peer_id):
-			var spawn_pos = find_safe_spawn_position(world_name)
-			players[my_peer_id].global_position = spawn_pos
-			print("CLIENT: Teleported player to spawn position: ", spawn_pos)
-
 # Multiplayer player spawning
 func _on_player_connected(id: int) -> void:
 	print("Player connected to world: ", id)
 	if multiplayer.is_server():
 		print("Server spawning player: ", id)
-		# Spawn the new player for everyone (call_local ensures it spawns on server too)
+		# Spawn the new player for everyone
 		spawn_player.rpc(id)
-
-		# Sync the current world state to the newly connected client
-		print("SERVER: Syncing world state to newly connected client: ", id)
-		sync_world_to_clients.rpc_id(id, current_world_name)
-
-		# Also sync all existing players to the new client
-		print("SERVER: Syncing existing players to new client: ", id)
-		for existing_peer_id in players.keys():
-			if existing_peer_id != id:  # Don't spawn them twice
-				spawn_player.rpc_id(id, existing_peer_id)
 
 func _on_player_disconnected(id: int) -> void:
 	print("Player disconnected: ", id)

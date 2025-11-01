@@ -15,30 +15,26 @@ var is_moving = false  # Is the player moving?
 func _ready():
 	# Initialize last_position to the player's starting position
 	last_position = global_transform.origin
-
+	
 	# Set up multiplayer authority
 	# Only the owner of this player can control it
 	set_multiplayer_authority(str(name).to_int())
-
-	print("Player _ready called for peer: ", name, " | My ID: ", multiplayer.get_unique_id(), " | Authority: ", get_multiplayer_authority())
-
+	
 	# Only show camera for the local player
 	if is_multiplayer_authority():
 		camera.current = true
 		# Hide our own mesh so we don't see it
 		mesh.visible = false
-		print("Local player spawned - camera enabled, mesh hidden")
 	else:
 		camera.current = false
 		# Show other players' meshes
 		mesh.visible = true
-		print("Remote player spawned - camera disabled, mesh visible for peer: ", name)
 
 func _physics_process(delta: float) -> void:
 	# Only process input for the player we control
 	if not is_multiplayer_authority():
 		return
-
+	
 	# Add gravity
 	if not is_on_floor():
 		velocity.y -= gravity * delta
@@ -88,9 +84,4 @@ func _physics_process(delta: float) -> void:
 	var current_position = global_transform.origin
 	is_moving = (current_position.distance_to(last_position) > 0.01)
 	last_position = current_position
-
-	# Update nightmare/dream speed in the world
-	var world_node = get_node_or_null("/root/world")
-	if world_node and world_node.has_method("update_nightmare_and_dream_speed"):
-		world_node.update_nightmare_and_dream_speed(is_moving)
 
