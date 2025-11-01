@@ -190,7 +190,14 @@ func _on_start_multiplayer_pressed() -> void:
 		peer = SteamMultiplayerPeer.new()
 		var create_result = peer.create_host(0)
 		print("Host peer created with result: ", create_result)
+
+		if create_result != OK:
+			print("ERROR: Failed to create host peer! Error code: ", create_result)
+			status_label.text = "Failed to create host!"
+			return
+
 		multiplayer.multiplayer_peer = peer
+		print("Host connection status: ", peer.get_connection_status())
 
 		# Set lobby data to signal clients to start
 		var my_steam_id = Steam.getSteamID()
@@ -199,17 +206,21 @@ func _on_start_multiplayer_pressed() -> void:
 
 		# Wait for clients to connect to the multiplayer peer
 		status_label.text = "Waiting for players to connect..."
-		await get_tree().create_timer(2.0).timeout
 
-		# Give extra time for clients to establish connection
+		# Give time for clients to establish connection
 		var wait_attempts = 0
 		var expected_clients = Steam.getNumLobbyMembers(lobby_id) - 1  # -1 for host
-		while multiplayer.get_peers().size() < expected_clients and wait_attempts < 10:
-			print("Host waiting for clients to connect... (", multiplayer.get_peers().size(), "/", expected_clients, ") (attempt ", wait_attempts + 1, ")")
+		var max_wait = 20  # 10 seconds total
+
+		while multiplayer.get_peers().size() < expected_clients and wait_attempts < max_wait:
 			await get_tree().create_timer(0.5).timeout
+			print("Host waiting for clients... (", multiplayer.get_peers().size(), "/", expected_clients, ") | Status: ", peer.get_connection_status(), " | Attempt: ", wait_attempts + 1)
 			wait_attempts += 1
 
 		print("Host starting world with connected peers: ", multiplayer.get_peers())
+
+		if multiplayer.get_peers().size() == 0:
+			print("WARNING: No clients connected to host!")
 
 		# Start the game for the host
 		start_game()
@@ -234,17 +245,31 @@ func _on_lobby_data_update(_lobby_id: int, _member_id: int, _key: int) -> void:
 		peer = SteamMultiplayerPeer.new()
 		var join_result = peer.create_client(host_steam_id, 0)
 		print("Client peer created with result: ", join_result)
+
+		if join_result != OK:
+			print("ERROR: Failed to create client peer! Error code: ", join_result)
+			status_label.text = "Failed to create connection!"
+			return
+
 		multiplayer.multiplayer_peer = peer
 
 		# Wait for connection to fully establish
 		status_label.text = "Connecting to host..."
-		await get_tree().create_timer(2.0).timeout
 
 		# Keep waiting until we're connected to at least one peer
+		# Steam.run_callbacks() is already being called in _process()
 		var wait_attempts = 0
-		while multiplayer.get_peers().size() == 0 and wait_attempts < 10:
-			print("Client waiting for peer connection... (attempt ", wait_attempts + 1, ")")
+		var max_attempts = 20  # 10 seconds total
+		while wait_attempts < max_attempts:
 			await get_tree().create_timer(0.5).timeout
+
+			# Check connection status
+			var connection_status = peer.get_connection_status()
+			print("Client connection status: ", connection_status, " | Peers: ", multiplayer.get_peers())
+
+			if multiplayer.get_peers().size() > 0 or connection_status == MultiplayerPeer.CONNECTION_CONNECTED:
+				break
+
 			wait_attempts += 1
 
 		if multiplayer.get_peers().size() > 0:
@@ -253,6 +278,7 @@ func _on_lobby_data_update(_lobby_id: int, _member_id: int, _key: int) -> void:
 			start_game()
 		else:
 			print("ERROR: Client failed to connect to host!")
+			print("Final connection status: ", peer.get_connection_status())
 			status_label.text = "Failed to connect to host!"
 
 # Multiplayer connection callbacks
