@@ -77,8 +77,10 @@ func _on_host_game_pressed() -> void:
 	status_label.text = "Creating lobby..."
 	print("Creating Steam lobby...")
 
-	# Create a lobby (2 players max, invisible - anyone with code can join)
-	Steam.createLobby(Steam.LOBBY_TYPE_INVISIBLE, 2)
+	# Create a lobby (2 players max, public so anyone can search and join with code)
+	# IMPORTANT: Must use FRIENDS_ONLY or PUBLIC for requestLobbyList() to find it!
+	# INVISIBLE lobbies cannot be found via lobby search!
+	Steam.createLobby(Steam.LOBBY_TYPE_PUBLIC, 2)
 
 # Join a multiplayer game
 func _on_join_game_pressed() -> void:
@@ -338,11 +340,21 @@ func _on_lobby_match_list(lobbies: Array) -> void:
 
 	if lobbies.size() == 0:
 		status_label.text = "Lobby code not found!"
+		print("ERROR: No lobbies found with code: ", lobby_input.text.strip_edges().to_upper())
+		print("Make sure:")
+		print("  1. The host has created the lobby")
+		print("  2. You entered the correct code")
+		print("  3. You are Steam friends (if using FRIENDS_ONLY lobby type)")
 		return
 
 	# Join the first matching lobby
 	var lobby_to_join = lobbies[0]
 	print("Joining lobby: ", lobby_to_join)
+
+	# Debug: Print lobby data
+	var lobby_code = Steam.getLobbyData(lobby_to_join, "short_code")
+	print("Lobby short_code: ", lobby_code)
+
 	status_label.text = "Joining lobby..."
 	Steam.joinLobby(lobby_to_join)
 
