@@ -1,4 +1,4 @@
-[gd_scene load_steps=90 format=4 uid="uid://5s5tymjjs4cf"]
+[gd_scene load_steps=89 format=4 uid="uid://5s5tymjjs4cf"]
 
 [ext_resource type="Script" uid="uid://pkt703rm8s13" path="res://world.gd" id="1_bylj8"]
 [ext_resource type="Shader" uid="uid://coicieil24264" path="res://Shaders/Jitter.gdshader" id="3_j1e6l"]
@@ -12,7 +12,7 @@
 [ext_resource type="Texture2D" uid="uid://b0m8w0rpr57y5" path="res://models/world2/creepy tree.jpg" id="6_p8o6g"]
 [ext_resource type="AudioStream" uid="uid://dao5qt16ebjvn" path="res://sounds/paft_drunk__happy-walk-210161.mp3.wav" id="6_uxp5i"]
 [ext_resource type="Texture2D" uid="uid://cg3s8wagb3n28" path="res://models/ps1_Facade019C_1K-JPG_Color.jpg" id="7_15l8e"]
-[ext_resource type="Texture2D" uid="uid://dsldbmtelj6md" path="res://models/world2/japanese_koi_fish_in_psxps1_style_0.png" id="7_fnot6"]
+[ext_resource type="Texture2D" uid="uid://ds5lgb113iu7j" path="res://models/world2/japanese_koi_fish_in_psxps1_style_0.png" id="7_fnot6"]
 [ext_resource type="Texture2D" uid="uid://b57gfc8owgf4f" path="res://models/world2/mushroom_0.png" id="7_uihf5"]
 [ext_resource type="Texture2D" uid="uid://dxcket3xkerqi" path="res://models/world2/japanese_gate_0.png" id="8_3xa8t"]
 [ext_resource type="Texture2D" uid="uid://dsgmpn487i5bm" path="res://models/world2/simple_rock_-_ps1_low_poly_0.jpg" id="8_khwqf"]
@@ -24,7 +24,6 @@
 [ext_resource type="AudioStream" uid="uid://cungn35kso3bd" path="res://sounds/whispers-loop-41891.mp3.wav" id="12_0adto"]
 [ext_resource type="Texture2D" uid="uid://y8hoxswlexnp" path="res://models/world3/psx_low-poly_victorian_clock_0.png" id="22_xgbmr"]
 [ext_resource type="Texture2D" uid="uid://dsbkqfejxrbae" path="res://assests/SBS - Tiny Texture Pack 3 - Small/128x128/Texture_128x128_36.png" id="23_c0vbq"]
-[ext_resource type="Environment" uid="uid://be66v3nng188j" path="res://envoirments/world1.tres" id="25_mc2jv"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_w1pga"]
 shader = ExtResource("3_rqoov")
@@ -663,6 +662,7 @@ render_target_update_mode = 4
 
 [node name="world2" type="Node3D" parent="SubViewportContainer/SubViewport"]
 transform = Transform3D(15, 0, 0, 0, 15, 0, 0, 0, 15, 0, 0, 0)
+visible = false
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world2"]
 transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, 0, 0, 0)
@@ -1828,7 +1828,6 @@ grow_vertical = 2
 color = Color(0, 0, 0, 1)
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
-environment = ExtResource("25_mc2jv")
 
 [connection signal="body_entered" from="SubViewportContainer/SubViewport/world2/models/Mushroom2/Area3D4" to="." method="_on_area_3d_body_entered"]
 [connection signal="body_entered" from="SubViewportContainer/SubViewport/world2/models/Mushroom3/Area3D4" to="." method="_on_area_3d_body_entered"]

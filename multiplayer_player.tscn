@@ -22,7 +22,6 @@ properties/1/spawn = true
 properties/1/replication_mode = 1
 
 [node name="MultiplayerPlayer" type="CharacterBody3D"]
-transform = Transform3D(0.7, 0, 0, 0, 0.7, 0, 0, 0, 0.7, 0, 0, 0)
 script = ExtResource("1_multiplayer")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]
@@ -33,8 +32,8 @@ mesh = SubResource("CapsuleMesh_bean")
 surface_material_override/0 = SubResource("StandardMaterial3D_bean")
 
 [node name="Camera3D" type="Camera3D" parent="."]
-transform = Transform3D(14.2857, 0, 0, 0, 14.2314, -1.24508, 0, 1.24508, 14.2314, 0, -0.755418, 0)
-current = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+current = false
 fov = 70.0
 near = 0.1
 far = 500.0

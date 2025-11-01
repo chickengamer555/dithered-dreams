@@ -570,8 +570,19 @@ func spawn_player(peer_id: int) -> void:
 	player.global_position = spawn_pos
 
 	# Add to the viewport
-	$SubViewportContainer/SubViewport.add_child(player)
+	var viewport = $SubViewportContainer/SubViewport
+	viewport.add_child(player)
 	players[peer_id] = player
 
 	print("Player ", peer_id, " spawned at: ", spawn_pos)
 	print("Total players now: ", players.size())
+	print("Viewport size: ", viewport.size)
+	print("Viewport render mode: ", viewport.render_target_update_mode)
+
+	# Debug: List all cameras in viewport
+	await get_tree().process_frame
+	for child in viewport.get_children():
+		if child is CharacterBody3D:
+			var cam = child.get_node_or_null("Camera3D")
+			if cam:
+				print("Found camera in ", child.name, " - Current: ", cam.current, " Position: ", cam.global_position)

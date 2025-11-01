@@ -21,13 +21,19 @@ func _ready():
 	set_multiplayer_authority(str(name).to_int())
 
 	print("MultiplayerPlayer _ready - Name: ", name, " Authority: ", get_multiplayer_authority(), " Is Authority: ", is_multiplayer_authority())
+	print("Player position: ", global_position)
+	print("Camera position: ", camera.global_position if camera else "NO CAMERA")
 
 	# Only show camera for the local player
 	if is_multiplayer_authority():
+		# Make sure camera is at proper eye level
+		camera.position = Vector3(0, 0.6, 0)
 		camera.current = true
 		# Hide our own mesh so we don't see it
 		mesh.visible = false
-		print("LOCAL PLAYER: Camera activated for peer ", name)
+		print("LOCAL PLAYER: Camera activated for peer ", name, " at position ", camera.global_position)
+		print("Camera current: ", camera.current)
+		print("Camera FOV: ", camera.fov)
 	else:
 		camera.current = false
 		# Show other players' meshes
