@@ -60,10 +60,12 @@ func _ready():
 		print("REMOTE PLAYER: Showing mesh for peer ", name)
 
 func _physics_process(delta: float) -> void:
-	# Only process input for the player we control
+	# REMOTE PLAYERS: Just return, let the MultiplayerSynchronizer handle it
+	# The synced properties will be updated automatically
 	if not is_multiplayer_authority():
 		return
-	
+
+	# LOCAL PLAYER: Process input and physics
 	# Add gravity
 	if not is_on_floor():
 		velocity.y -= gravity * delta
