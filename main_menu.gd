@@ -225,26 +225,29 @@ func _on_lobby_data_update(_lobby_id: int, _member_id: int, _key: int) -> void:
 		peer = SteamMultiplayerPeer.new()
 		var join_result = peer.create_client(host_steam_id, 0)
 		print("Client peer created with result: ", join_result)
-		multiplayer.multiplayer_peer = peer
 
-		# CRITICAL: Wait for actual connection signal, not just a timer!
-		print("Waiting for connected_to_server signal...")
+		# DON'T set multiplayer_peer yet - wait for connection first
+		# multiplayer.multiplayer_peer = peer
 
-		# Set up a one-shot connection to the signal
-		var connection_timeout = 10.0  # 10 second timeout
+		# Poll the peer connection status
+		print("Polling peer connection status...")
+		var connection_timeout = 10.0
+		var elapsed = 0.0
 		var connected = false
 
-		# Create a callable that sets the flag
-		var on_connected = func():
-			connected = true
-			print("✓ Connected to server!")
+		while elapsed < connection_timeout:
+			peer.poll()  # Update peer state
+			var status = peer.get_connection_status()
+			print("Peer status: ", status, " (0=DISCONNECTED, 1=CONNECTING, 2=CONNECTED)")
 
-		# Connect the signal
-		multiplayer.connected_to_server.connect(on_connected, CONNECT_ONE_SHOT)
+			if status == MultiplayerPeer.CONNECTION_CONNECTED:
+				connected = true
+				print("✓ Peer connected!")
+				break
+			elif status == MultiplayerPeer.CONNECTION_DISCONNECTED and elapsed > 1.0:
+				print("✗ Connection failed!")
+				break
 
-		# Wait for connection or timeout
-		var elapsed = 0.0
-		while not connected and elapsed < connection_timeout:
 			await get_tree().create_timer(0.1).timeout
 			elapsed += 0.1
 
@@ -253,17 +256,19 @@ func _on_lobby_data_update(_lobby_id: int, _member_id: int, _key: int) -> void:
 				status_label.text = "Connecting... (" + str(int(connection_timeout - elapsed)) + "s)"
 
 		if connected:
+			print("Setting multiplayer peer...")
+			multiplayer.multiplayer_peer = peer
+
+			# Wait for peer list to update
+			await get_tree().create_timer(0.5).timeout
+
 			print("Client connected! Peers: ", multiplayer.get_peers())
 			status_label.text = "Connected! Starting game..."
 
-			# Wait one more moment for peer list to update
-			await get_tree().create_timer(0.5).timeout
-
 			start_game()
 		else:
-			print("ERROR: Connection timeout!")
-			status_label.text = "Connection failed - timeout"
-			# Don't start the game if not connected
+			print("ERROR: Connection timeout or failed!")
+			status_label.text = "Connection failed"
 
 # Multiplayer connection callbacks
 func _on_peer_connected(id: int) -> void:
