@@ -456,12 +456,14 @@ func adjust_position_to_ground(pos: Vector3):
 
 func is_position_safe(pos: Vector3, radius: float) -> bool:
 	# FIX: Check if any existing players are too close
+	var min_distance = max(radius * 3.0, 5.0)  # At least 3x radius or 5 units, whichever is larger
+
 	for peer_id in players:
 		var player = players[peer_id]
 		if player:
 			var distance = pos.distance_to(player.global_position)
-			if distance < radius * 2.0:  # Players need to be at least 2x radius apart
-				print("Position too close to player ", peer_id, " (distance: ", distance, ")")
+			if distance < min_distance:
+				print("Position too close to player ", peer_id, " (distance: ", distance, ", min: ", min_distance, ")")
 				return false
 
 	var world = get_tree().root.get_world_3d()
@@ -619,12 +621,15 @@ func spawn_player(peer_id: int) -> void:
 	player.name = str(peer_id)
 
 	# Spawn at a safe position in the current world
-	var spawn_pos = find_safe_spawn_position(current_world_name)
+	# Use larger radius (3.0) to ensure players don't spawn too close
+	var spawn_pos = find_safe_spawn_position(current_world_name, 100, 3.0)
 	player.global_position = spawn_pos
 
-	# Add to the viewport
+	# Add to the viewport FIRST
 	var viewport = $SubViewportContainer/SubViewport
 	viewport.add_child(player)
+
+	# THEN add to players dictionary (so next spawn can check against this player)
 	players[peer_id] = player
 
 	print("Player ", peer_id, " spawned at: ", spawn_pos)
