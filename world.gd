@@ -40,7 +40,7 @@ var timer: Timer
 
 var world_timer: Timer
 var time_in_world: float = 0.0
-@export var time_before_nightmare: float = 15.0
+@export var time_before_nightmare: float = 45.0
 
 @export var nightmare_chance: float = 25.0
 @export var world_chance: float = 75.0

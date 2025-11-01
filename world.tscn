@@ -667,6 +667,7 @@ visible = false
 
 [node name="EndObject" parent="SubViewportContainer/SubViewport/world2" instance=ExtResource("3_mc2jv")]
 transform = Transform3D(0.49999994, 0, 0, 0, 0.49999994, 0, 0, 0, 0.49999994, 7.606958, 0, -1.3891728)
+interaction_distance = 3.0
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world2"]
 transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, 0, 0, 0)
@@ -1172,6 +1173,7 @@ autoplay = true
 
 [node name="EndObject" parent="SubViewportContainer/SubViewport/nightmare2" instance=ExtResource("3_mc2jv")]
 transform = Transform3D(0.49999994, 0, 0, 0, 0.49999994, 0, 0, 0, 0.49999994, 7.606958, 0, -1.3891728)
+interaction_distance = 3.0
 
 [node name="world1" type="Node3D" parent="SubViewportContainer/SubViewport"]
 transform = Transform3D(15, 0, 0, 0, 15, 0, 0, 0, 15, 0, 0, 0)
@@ -1378,6 +1380,7 @@ shape = SubResource("BoxShape3D_y2ymk")
 
 [node name="EndObject" parent="SubViewportContainer/SubViewport/world1" instance=ExtResource("3_mc2jv")]
 transform = Transform3D(0.49999988, 0, 0, 0, 0.49999988, 0, 0, 0, 0.49999988, -3.754219, 0, -1.3891726)
+interaction_distance = 3.0
 
 [node name="nightmare1" type="Node3D" parent="SubViewportContainer/SubViewport"]
 transform = Transform3D(15, 0, 0, 0, 15, 0, 0, 0, 15, 0, 0, 0)
@@ -1671,6 +1674,7 @@ autoplay = true
 
 [node name="EndObject" parent="SubViewportContainer/SubViewport/nightmare1" instance=ExtResource("3_mc2jv")]
 transform = Transform3D(0.49999988, 0, 0, 0, 0.49999988, 0, 0, 0, 0.49999988, -3.754219, 0, -1.3891726)
+interaction_distance = 3.0
 
 [node name="Player" parent="SubViewportContainer/SubViewport" instance=ExtResource("3_k3laj")]
 
