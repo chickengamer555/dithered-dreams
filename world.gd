@@ -65,6 +65,12 @@ func _ready():
 	is_multiplayer = multiplayer.has_multiplayer_peer()
 	print("World _ready - is_multiplayer: ", is_multiplayer)
 
+	# Debug viewport setup
+	var viewport = $SubViewportContainer/SubViewport
+	print("Viewport size: ", viewport.size)
+	print("Viewport render mode: ", viewport.render_target_update_mode)
+	print("Viewport handle_input_locally: ", viewport.handle_input_locally)
+
 	if is_multiplayer:
 		print("Multiplayer mode detected!")
 		print("Is server: ", multiplayer.is_server())
@@ -76,9 +82,17 @@ func _ready():
 		multiplayer.peer_disconnected.connect(_on_player_disconnected)
 		multiplayer.connected_to_server.connect(_on_connected_to_server)
 
-		# Hide the original single-player player
+		# IMMEDIATELY disable and remove the original single-player player
 		var old_player = $SubViewportContainer/SubViewport/Player
 		if old_player:
+			# First, disable its camera to prevent conflicts
+			var old_camera = old_player.get_node_or_null("Camera3D")
+			if old_camera:
+				old_camera.current = false
+				print("Disabled single-player camera")
+
+			# Remove it from the scene tree immediately
+			old_player.get_parent().remove_child(old_player)
 			old_player.queue_free()
 			print("Removed single-player player node")
 
@@ -579,10 +593,17 @@ func spawn_player(peer_id: int) -> void:
 	print("Viewport size: ", viewport.size)
 	print("Viewport render mode: ", viewport.render_target_update_mode)
 
+	# Wait for player to be ready and camera to be set up
+	await get_tree().create_timer(0.2).timeout
+
 	# Debug: List all cameras in viewport
-	await get_tree().process_frame
+	print("=== CAMERA DEBUG ===")
 	for child in viewport.get_children():
 		if child is CharacterBody3D:
 			var cam = child.get_node_or_null("Camera3D")
 			if cam:
 				print("Found camera in ", child.name, " - Current: ", cam.current, " Position: ", cam.global_position)
+
+	var active_cam = viewport.get_camera_3d()
+	print("Viewport active camera: ", active_cam)
+	print("=== END CAMERA DEBUG ===")

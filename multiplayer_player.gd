@@ -28,12 +28,31 @@ func _ready():
 	if is_multiplayer_authority():
 		# Make sure camera is at proper eye level
 		camera.position = Vector3(0, 0.6, 0)
-		camera.current = true
 		# Hide our own mesh so we don't see it
 		mesh.visible = false
+
+		# CRITICAL: Wait a frame to ensure old cameras are removed, then activate
+		await get_tree().process_frame
+		await get_tree().process_frame  # Wait 2 frames to be absolutely sure
+
+		camera.current = true
+		camera.make_current()  # Force it to be current
+
 		print("LOCAL PLAYER: Camera activated for peer ", name, " at position ", camera.global_position)
 		print("Camera current: ", camera.current)
 		print("Camera FOV: ", camera.fov)
+		print("Camera far plane: ", camera.far)
+
+		# Verify camera is actually current
+		await get_tree().process_frame
+		var viewport = get_viewport()
+		if viewport:
+			var active_cam = viewport.get_camera_3d()
+			print("Viewport active camera: ", active_cam)
+			if active_cam == camera:
+				print("✓ Camera successfully activated!")
+			else:
+				print("✗ WARNING: Camera not active! Active camera is: ", active_cam)
 	else:
 		camera.current = false
 		# Show other players' meshes
