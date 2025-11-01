@@ -97,10 +97,53 @@ func _ready():
 			# Client: wait for server to spawn us
 			pass
 
+	# Initialize timers and UI for everyone
+	# Initialize and start the main timer
+	timer = Timer.new()
+	timer.wait_time = 1.0
+	timer.autostart = true
+	timer.one_shot = false
+	timer.timeout.connect(_on_timer_tick)
+	add_child(timer)
+	timer.start()
+
+	# Initialize and start the world timer
+	world_timer = Timer.new()
+	world_timer.wait_time = 1.0
+	world_timer.autostart = true
+	world_timer.one_shot = false
+	world_timer.timeout.connect(_on_world_timer_tick)
+	add_child(world_timer)
+	world_timer.start()
+
+	# Set the timer label
+	if timer_label:
+		timer_label.text = str(time_left)
+
+	# Ensure the transition_rect is initially hidden
+	if transition_rect:
+		transition_rect.visible = false
+
+	# **Important: Mark this scene as the current main scene.**
+	get_tree().set_current_scene(self)
+
 	# Only the server picks the starting world
 	if is_multiplayer and not multiplayer.is_server():
 		print("CLIENT: Waiting for server to tell us which world to start in...")
-		# Client will receive the world via RPC
+		# Client will receive the world via RPC - but still need to initialize worlds
+		# Disable all worlds initially
+		for world_name_iter in worlds.keys():
+			var world_iter = worlds[world_name_iter]
+			if world_iter:
+				world_iter.visible = false
+				_disable_interactions_in_world(world_iter, true)
+
+		# Disable all nightmares initially
+		for nightmare_name_iter in nightmares.keys():
+			var nightmare_iter = nightmares[nightmare_name_iter]
+			if nightmare_iter:
+				nightmare_iter.visible = false
+				_disable_interactions_in_world(nightmare_iter, true)
 		return
 
 	var normal_worlds = worlds.keys()  # Gets the list of worlds
@@ -141,35 +184,6 @@ func _ready():
 	if is_multiplayer and multiplayer.is_server():
 		print("SERVER: Telling clients to sync to world: ", current_world_name)
 		sync_world_to_clients.rpc(current_world_name)
-	
-	# Initialize and start the main timer
-	timer = Timer.new()
-	timer.wait_time = 1.0
-	timer.autostart = true
-	timer.one_shot = false
-	timer.timeout.connect(_on_timer_tick)
-	add_child(timer)
-	timer.start()
-	
-	# Initialize and start the world timer
-	world_timer = Timer.new()
-	world_timer.wait_time = 1.0
-	world_timer.autostart = true
-	world_timer.one_shot = false
-	world_timer.timeout.connect(_on_world_timer_tick)
-	add_child(world_timer)
-	world_timer.start()
-	
-	# Set the timer label
-	if timer_label:
-		timer_label.text = str(time_left)
-	
-	# Ensure the transition_rect is initially hidden
-	if transition_rect:
-		transition_rect.visible = false
-
-	# **Important: Mark this scene as the current main scene.**
-	get_tree().set_current_scene(self)
 
 func _disable_interactions_in_world(world: Node, disable: bool):
 	print("_disable_interactions_in_world called for:", world.name, "disable:", disable)
@@ -483,6 +497,13 @@ func sync_world_to_clients(world_name: String) -> void:
 		# Set environment
 		if world_environment and world_name in environments:
 			world_environment.environment = environments[world_name]
+
+		# If we have a player already spawned, teleport them to the world
+		var my_peer_id = multiplayer.get_unique_id()
+		if players.has(my_peer_id):
+			var spawn_pos = find_safe_spawn_position(world_name)
+			players[my_peer_id].global_position = spawn_pos
+			print("CLIENT: Teleported player to spawn position: ", spawn_pos)
 
 # Multiplayer player spawning
 func _on_player_connected(id: int) -> void:
