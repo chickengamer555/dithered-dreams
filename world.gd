@@ -131,13 +131,21 @@ func _ready():
 				_disable_interactions_in_world(starting_world, false)
 				print("SERVER: Enabled starting world: ", current_world_name)
 
+				# FIX: Set environment on server too!
+				if world_environment:
+					if current_world_name in environments:
+						world_environment.environment = environments[current_world_name]
+						print("SERVER: Set environment for: ", current_world_name)
+					else:
+						world_environment.environment = null
+
 			# Sync world state to all clients
 			sync_world_state.rpc(current_world_name)
 
-			# Spawn host player
+			# Spawn host player (CRITICAL: Use RPC so clients see the host!)
 			print("SERVER: Spawning host player...")
 			var spawn_position = find_safe_spawn_position(current_world_name)
-			spawn_player(multiplayer.get_unique_id())
+			spawn_player.rpc(multiplayer.get_unique_id())  # FIX: Added .rpc() so clients see host!
 
 			# Spawn any already-connected clients
 			print("SERVER: Checking for already-connected clients...")
