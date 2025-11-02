@@ -20,6 +20,10 @@ var voice_sample_rate: int = 48000  # Will be set by world script
 var voice_indicator_3d: Label3D = null
 var voice_indicator_timer: float = 0.0
 
+# PERFORMANCE: Jitter buffer for smooth voice playback
+var voice_jitter_buffer_target: int = 9600  # Target buffer size (0.05s at 48kHz stereo 16-bit = 9600 bytes)
+var voice_playback_started: bool = false
+
 # PERFORMANCE: Removed complex interpolation - Godot handles this automatically with physics interpolation
 
 func _ready():
@@ -164,7 +168,7 @@ func setup_voice_receiver(sample_rate: int = 48000):
 	# Create audio stream generator for voice playback
 	var stream = AudioStreamGenerator.new()
 	stream.mix_rate = voice_sample_rate
-	stream.buffer_length = 0.15  # PERFORMANCE: 150ms buffer (better stability, slightly more latency)
+	stream.buffer_length = 0.1  # PERFORMANCE: 100ms buffer (good balance of latency and stability)
 
 	voice_player_3d.stream = stream
 	voice_player_3d.play()
@@ -184,7 +188,6 @@ func setup_voice_receiver(sample_rate: int = 48000):
 func receive_voice_data(pcm_voice: PackedByteArray):
 	"""Receive and play voice data from network (stereo 16-bit PCM)"""
 	if voice_playback == null:
-		print("❌ voice_playback is null for player ", name)
 		return
 
 	# Show voice indicator
@@ -196,27 +199,41 @@ func receive_voice_data(pcm_voice: PackedByteArray):
 	voice_buffer.append_array(pcm_voice)
 
 	# PERFORMANCE: Buffer overflow protection - prevent memory leak and latency buildup
-	var max_buffer_size = voice_sample_rate * 2  # 0.5 seconds worth of stereo 16-bit samples (reduced from 1s)
+	var max_buffer_size = voice_sample_rate * 4  # 1 second worth of stereo 16-bit samples
 	if voice_buffer.size() > max_buffer_size:
-		# Clear buffer silently to avoid console spam
+		# Clear buffer and reset playback state
 		voice_buffer.clear()
+		voice_playback_started = false
 
 func process_voice_buffer():
 	"""Process voice buffer and push audio frames to the speaker - called every frame"""
 	if voice_playback == null:
-		# PERFORMANCE: Removed debug spam
 		return
 
+	# JITTER BUFFER: Wait until we have enough data before starting playback
+	# This prevents choppy audio from network jitter
+	if not voice_playback_started:
+		if voice_buffer.size() < voice_jitter_buffer_target:
+			return  # Wait for buffer to fill
+		voice_playback_started = true
+
 	if voice_buffer.size() == 0:
+		# Buffer underrun - reset playback state
+		voice_playback_started = false
 		return
 
 	# Audio data is 16-bit stereo PCM (4 bytes per frame: 2 for left, 2 for right)
 	var frames_available = voice_playback.get_frames_available()
 	if frames_available == 0:
-		# PERFORMANCE: Removed warning spam
 		return  # Audio buffer full, wait for next frame
 
+	# ADAPTIVE PLAYBACK: Push more frames when buffer is getting full to reduce latency
+	var buffer_fill_ratio = float(voice_buffer.size()) / float(voice_jitter_buffer_target)
 	var frames_to_push = min(voice_buffer.size() / 4, frames_available)
+
+	# If buffer is getting too full, push more aggressively
+	if buffer_fill_ratio > 2.0:
+		frames_to_push = min(frames_to_push * 2, frames_available)
 
 	# PERFORMANCE OPTIMIZATION: Process all frames at once, then remove in bulk
 	# This is MUCH faster than calling remove_at(0) repeatedly (O(1) vs O(n²))

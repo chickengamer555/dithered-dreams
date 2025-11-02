@@ -22,7 +22,7 @@ var voice_sample_rate: int = 48000
 var mic_player: AudioStreamPlayer = null
 var mic_effect: AudioEffectCapture = null
 var voice_send_timer: float = 0.0
-var voice_send_interval: float = 0.06  # PERFORMANCE: Send voice packets every 60ms (~17 packets/sec) - reduced network load
+var voice_send_interval: float = 0.05  # PERFORMANCE: Send voice packets every 50ms (20 packets/sec) - better sync
 
 var environments = { # Loads the environment resources for each world and nightmare
 	"world1": preload("res://envoirments/world1.tres"),
@@ -408,28 +408,44 @@ func _process(delta):
 		if voice_indicator_timer <= 0.0:
 			hide_voice_indicator()
 
-	# Update nightmare/dream values based on player movement
+	# MULTIPLAYER: Only server updates nightmare value, then syncs to clients
 	if is_multiplayer:
-		# Check if any local player is moving
-		var local_player_moving = false
-		for peer_id in players:
-			var player = players[peer_id]
-			if player and player.is_multiplayer_authority():
-				# This is the local player
-				# FIX: Check if the variable exists, not if it's a method
-				if "is_moving" in player:
-					local_player_moving = player.is_moving
-				break
-		update_nightmare_and_dream_speed(local_player_moving)
+		if multiplayer.is_server():
+			# Server: Check if ANY player is moving
+			var any_player_moving = false
+			for peer_id in players:
+				var player = players[peer_id]
+				if player and "is_moving" in player:
+					if player.is_moving:
+						any_player_moving = true
+						break
 
-	if nightmare_speed > 0:
-		nightmare_value += nightmare_speed * delta * nightmare_increment
-	elif dream_value > 0:
-		nightmare_value -= dream_value * delta * dream_increment
-	nightmare_value = clamp(nightmare_value, 0, 100)
-	nightmare_bar.value = nightmare_value
-	if nightmare_value >= 100:
-		_trigger_jumpscare()
+			update_nightmare_and_dream_speed(any_player_moving)
+
+			# Update nightmare value on server
+			if nightmare_speed > 0:
+				nightmare_value += nightmare_speed * delta * nightmare_increment
+			elif dream_value > 0:
+				nightmare_value -= dream_value * delta * dream_increment
+			nightmare_value = clamp(nightmare_value, 0, 100)
+
+			# Sync to all clients
+			sync_nightmare_value.rpc(nightmare_value)
+
+		# Update local UI (both server and clients)
+		nightmare_bar.value = nightmare_value
+		if nightmare_value >= 100:
+			_trigger_jumpscare()
+	else:
+		# Single player: original logic
+		if nightmare_speed > 0:
+			nightmare_value += nightmare_speed * delta * nightmare_increment
+		elif dream_value > 0:
+			nightmare_value -= dream_value * delta * dream_increment
+		nightmare_value = clamp(nightmare_value, 0, 100)
+		nightmare_bar.value = nightmare_value
+		if nightmare_value >= 100:
+			_trigger_jumpscare()
 
 func update_nightmare_and_dream_speed(is_moving: bool):
 	if is_in_nightmare_world():
@@ -925,6 +941,12 @@ func send_voice_packet(pcm_voice: PackedByteArray):
 		if player.has_method("receive_voice_data"):
 			player.receive_voice_data(pcm_voice)
 
+@rpc("authority", "unreliable", "call_remote")
+func sync_nightmare_value(value: float):
+	"""Sync nightmare bar value from server to clients"""
+	nightmare_value = value
+	nightmare_bar.value = value
+
 func start_voice_recording():
 	"""Start recording voice using Godot's microphone"""
 	if not is_multiplayer:
@@ -951,7 +973,7 @@ func start_voice_recording():
 
 	# Add capture effect
 	var capture_effect = AudioEffectCapture.new()
-	capture_effect.buffer_length = 0.3  # PERFORMANCE: 300ms buffer (reduced from 500ms for lower latency)
+	capture_effect.buffer_length = 0.2  # PERFORMANCE: 200ms buffer for lower latency
 	AudioServer.add_bus_effect(bus_idx, capture_effect)
 	mic_effect = capture_effect
 
