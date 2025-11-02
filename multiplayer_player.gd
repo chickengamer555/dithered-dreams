@@ -197,7 +197,7 @@ func setup_voice_receiver(sample_rate: int = 24000):
 	print("  voice_player_3d.stream_paused: ", voice_player_3d.stream_paused)
 
 func receive_voice_data(pcm_voice: PackedByteArray):
-	"""Receive and play voice data from network (stereo 16-bit PCM)"""
+	"""Receive and play voice data from network (MONO 16-bit PCM)"""
 	if voice_playback == null:
 		return
 
@@ -210,11 +210,12 @@ func receive_voice_data(pcm_voice: PackedByteArray):
 	voice_buffer.append_array(pcm_voice)
 
 	# PERFORMANCE: Buffer overflow protection - prevent memory leak and latency buildup
-	var max_buffer_size = voice_sample_rate * 4  # 1 second worth of stereo 16-bit samples
+	var max_buffer_size = voice_sample_rate * 2  # 1 second worth of MONO 16-bit samples (2 bytes per sample)
 	if voice_buffer.size() > max_buffer_size:
 		# Clear buffer and reset playback state
 		voice_buffer.clear()
 		voice_playback_started = false
+		print("⚠️ Voice buffer overflow cleared for player ", name)
 
 func process_voice_buffer():
 	"""Process voice buffer and push audio frames to the speaker - called every frame"""
