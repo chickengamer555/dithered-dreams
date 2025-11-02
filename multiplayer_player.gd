@@ -243,12 +243,20 @@ func process_voice_buffer():
 	var buffer_fill_ratio = float(voice_buffer.size()) / float(voice_jitter_buffer_target)
 	var frames_to_push = min(voice_buffer.size() / 2, frames_available)  # 2 bytes per mono sample
 
+	# Safety check: ensure we don't try to read more than available
+	if frames_to_push <= 0:
+		return
+
 	# If buffer is getting too full, push more aggressively
 	if buffer_fill_ratio > 2.0:
 		frames_to_push = min(frames_to_push * 2, frames_available)
+		frames_to_push = min(frames_to_push, voice_buffer.size() / 2)  # Ensure we don't exceed buffer
 
 	# OPTIMIZATION: Use push_buffer() instead of individual push_frame() calls (6x faster!)
 	var bytes_to_consume = frames_to_push * 2  # 2 bytes per mono sample
+
+	# Final safety check: ensure bytes_to_consume doesn't exceed buffer size
+	bytes_to_consume = min(bytes_to_consume, voice_buffer.size())
 
 	# Pre-allocate frame buffer for batch pushing
 	var audio_frames = PackedVector2Array()
@@ -266,6 +274,9 @@ func process_voice_buffer():
 
 		# Normalize to float [-1.0, 1.0]
 		var mono_amplitude: float = float(mono_raw) / 32768.0
+
+		# BOOST: Amplify volume by 3x (clamp to prevent distortion)
+		mono_amplitude = clamp(mono_amplitude * 3.0, -1.0, 1.0)
 
 		# Store frame (push SAME value to both channels for mono)
 		# AudioStreamPlayer3D will handle 3D positioning for spatial audio

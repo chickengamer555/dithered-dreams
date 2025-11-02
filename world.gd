@@ -29,8 +29,8 @@ var nightmare_sync_timer: float = 0.0
 const NIGHTMARE_SYNC_INTERVAL: float = 0.2  # Sync 5 times per second instead of 60
 
 # OPTIMIZATION: Proximity-based voice chat (send only to nearby players)
-const VOICE_HEAR_DISTANCE: float = 30.0  # Can hear players within 30 units
-const VOICE_HEAR_DISTANCE_SQ: float = 900.0  # Pre-computed squared distance
+const VOICE_HEAR_DISTANCE: float = 60.0  # Can hear players within 60 units (2x range)
+const VOICE_HEAR_DISTANCE_SQ: float = 3600.0  # Pre-computed squared distance (60*60)
 
 var environments = { # Loads the environment resources for each world and nightmare
 	"world1": preload("res://envoirments/world1.tres"),
@@ -930,7 +930,7 @@ func check_for_voice():
 
 			# Calculate RMS for Voice Activity Detection
 			var sum_squares: float = 0.0
-			const VAD_THRESHOLD = 0.01  # RMS threshold for speech detection
+			const VAD_THRESHOLD = 0.003  # Lower threshold to pick up quieter sounds (was 0.01)
 
 			# PERFORMANCE: Combined VAD + Mono conversion loop
 			for i in range(audio_data.size()):
