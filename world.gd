@@ -16,6 +16,11 @@ var multiplayer_player_scene = preload("res://multiplayer_player.tscn")
 var players = {}  # Dictionary to store player nodes by peer ID
 var is_multiplayer = false
 
+# Voice chat
+var is_recording: bool = false
+var voice_sample_rate: int = 48000
+var local_steam_id: int = 0
+
 var environments = { # Loads the environment resources for each world and nightmare
 	"world1": preload("res://envoirments/world1.tres"),
 	"nightmare1": preload("res://envoirments/nightmare1.tres"),
@@ -183,6 +188,12 @@ func _ready():
 
 		teleport_to_world(current_world_name, spawn_position)
 	
+	# Initialize voice chat for multiplayer
+	if is_multiplayer:
+		local_steam_id = Steam.getSteamID()
+		voice_sample_rate = Steam.getVoiceOptimalSampleRate()
+		print("Voice chat initialized - Sample rate: ", voice_sample_rate)
+
 	# Initialize and start the main timer
 	timer = Timer.new()
 	timer.wait_time = 1.0
@@ -379,7 +390,19 @@ func go_to_main_menu():
 	else:
 		print("Error: Main menu scene is not set.")
 
+func _input(event):
+	# Handle push-to-talk for voice chat
+	if is_multiplayer:
+		if event.is_action_pressed("push_to_talk"):
+			start_voice_recording()
+		elif event.is_action_released("push_to_talk"):
+			stop_voice_recording()
+
 func _process(delta):
+	# Check for voice data if recording
+	if is_multiplayer and is_recording:
+		check_for_voice()
+
 	# Update nightmare/dream values based on player movement
 	if is_multiplayer:
 		# Check if any local player is moving
@@ -388,7 +411,8 @@ func _process(delta):
 			var player = players[peer_id]
 			if player and player.is_multiplayer_authority():
 				# This is the local player
-				if player.has_method("is_moving"):
+				# FIX: Check if the variable exists, not if it's a method
+				if "is_moving" in player:
 					local_player_moving = player.is_moving
 				break
 		update_nightmare_and_dream_speed(local_player_moving)
@@ -816,3 +840,55 @@ func teleport_from_end_object() -> void:
 		teleport_to_world(random_world, spawn_position, false)
 	else:
 		print("ERROR: No other worlds available to teleport to!")
+
+# ============================================================================
+# VOICE CHAT FUNCTIONS
+# ============================================================================
+
+func check_for_voice():
+	"""Check for available voice data and send to network"""
+	# Get voice data (getVoice now includes availability check)
+	var voice_data: Dictionary = Steam.getVoice()
+
+	if voice_data.has('result') and voice_data['result'] == 1 and voice_data.has('written') and voice_data['written'] > 0:
+		# Send voice packet to all other peers (unreliable for low latency)
+		send_voice_packet.rpc(voice_data['buffer'])
+
+@rpc("any_peer", "unreliable", "call_remote")
+func send_voice_packet(compressed_voice: PackedByteArray):
+	"""Receive voice packet from network and decompress"""
+	var sender_id = multiplayer.get_remote_sender_id()
+
+	# Don't process our own voice
+	if sender_id == multiplayer.get_unique_id():
+		return
+
+	# Decompress voice data
+	var decompressed: Dictionary = Steam.decompressVoice(compressed_voice, voice_sample_rate)
+
+	if decompressed.has('result') and decompressed['result'] == 1 and decompressed.has('size') and decompressed['size'] > 0:
+		# Find the player who sent this voice data
+		if players.has(sender_id):
+			var player = players[sender_id]
+			if player.has_method("receive_voice_data"):
+				player.receive_voice_data(decompressed['uncompressed'])
+
+func start_voice_recording():
+	"""Start recording voice (call when push-to-talk pressed)"""
+	if not is_multiplayer:
+		return
+
+	is_recording = true
+	Steam.startVoiceRecording()
+	Steam.setInGameVoiceSpeaking(local_steam_id, true)
+	print("Voice recording started")
+
+func stop_voice_recording():
+	"""Stop recording voice (call when push-to-talk released)"""
+	if not is_multiplayer:
+		return
+
+	is_recording = false
+	Steam.stopVoiceRecording()
+	Steam.setInGameVoiceSpeaking(local_steam_id, false)
+	print("Voice recording stopped")

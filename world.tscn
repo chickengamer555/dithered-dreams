@@ -4,7 +4,6 @@
 [ext_resource type="Shader" uid="uid://coicieil24264" path="res://Shaders/Jitter.gdshader" id="3_j1e6l"]
 [ext_resource type="PackedScene" uid="uid://b73bc3j1ohpp1" path="res://player.tscn" id="3_k3laj"]
 [ext_resource type="PackedScene" path="res://end_object.tscn" id="3_mc2jv"]
-[ext_resource type="Shader" uid="uid://01rocq3auk46" path="res://Shaders/DITHERING!!!.gdshader" id="3_rqoov"]
 [ext_resource type="Texture2D" uid="uid://0jw525imc8g2" path="res://assests/SBS - Tiny Texture Pack 3 - Small/128x128/Dirt/Dirt_16-128x128.png" id="5_4whfl"]
 [ext_resource type="Shader" uid="uid://dv5dj144vttm8" path="res://Shaders/crt.gdshader" id="5_wmmxl"]
 [ext_resource type="Texture2D" uid="uid://dxup8414rdroi" path="res://models/world2/psx_tree_0.png" id="6_f688c"]
@@ -26,8 +25,82 @@
 [ext_resource type="Texture2D" uid="uid://y8hoxswlexnp" path="res://models/world3/psx_low-poly_victorian_clock_0.png" id="22_xgbmr"]
 [ext_resource type="Texture2D" uid="uid://dsbkqfejxrbae" path="res://assests/SBS - Tiny Texture Pack 3 - Small/128x128/Texture_128x128_36.png" id="23_c0vbq"]
 
+[sub_resource type="Shader" id="Shader_wjb0r"]
+code = "shader_type canvas_item;
+
+render_mode unshaded;
+
+#define MAXCOLORS 16
+
+uniform bool enabled = true;
+uniform bool dithering = true;
+uniform int colors : hint_range(1, MAXCOLORS) = 12;
+uniform int dither_size: hint_range(1, 8) = 1;
+
+float dithering_pattern(ivec2 fragcoord) {
+	const float pattern[] = {
+		0.00, 0.50, 0.10, 0.65,
+		0.75, 0.25, 0.90, 0.35,
+		0.20, 0.70, 0.05, 0.50,
+		0.95, 0.40, 0.80, 0.30
+	};
+
+	int x = fragcoord.x % 4;
+	int y = fragcoord.y % 4;
+
+	return pattern[y * 4 + x];
+}
+
+float reduce_color(float raw, float dither, int depth) {
+	float div = 1.0 / float(depth);
+	float val = 0.0;
+	int i = 0;
+
+	while (i <= MAXCOLORS)
+	{
+		if (raw > div * (float(i + 1))) {
+			i = i + 1;
+			continue;
+		}
+
+		if (raw * float(depth) - float(i) <= dither * 0.999)
+		{
+			val = div * float(i);
+		}
+		else
+		{
+			val = div * float(i + 1);
+		}
+		return val;
+
+		i = i+1;
+	}
+
+	return val;
+}
+
+void fragment() {
+	vec4 raw = texture(TEXTURE, SCREEN_UV);
+	ivec2 uv = ivec2(FRAGCOORD.xy / float(dither_size));
+
+	if (enabled == true){
+		float dithering_value = 1.0;
+		if (dithering)
+		{
+			dithering_value = dithering_pattern(uv);
+		}
+
+		COLOR.r = reduce_color(raw.r, (dithering_value - 0.5) * dithering_value + 0.5, colors - 1);
+		COLOR.g = reduce_color(raw.g, (dithering_value - 0.5) * dithering_value + 0.5, colors - 1);
+		COLOR.b = reduce_color(raw.b, (dithering_value - 0.5) * dithering_value + 0.5, colors - 1);
+
+	} else {
+		COLOR.rgb = raw.rgb;
+	}
+}"
+
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_w1pga"]
-shader = ExtResource("3_rqoov")
+shader = SubResource("Shader_wjb0r")
 shader_parameter/enabled = true
 shader_parameter/dithering = true
 shader_parameter/colors = 16
@@ -650,6 +723,12 @@ shader_parameter/vignette_opacity = 0.8
 
 [node name="world" type="Node3D"]
 script = ExtResource("1_bylj8")
+play_time = null
+time_before_nightmare = null
+nightmare_chance = null
+world_chance = null
+nightmare_increment = null
+dream_increment = null
 
 [node name="SubViewportContainer" type="SubViewportContainer" parent="."]
 material = SubResource("ShaderMaterial_w1pga")
@@ -663,7 +742,6 @@ render_target_update_mode = 4
 
 [node name="world2" type="Node3D" parent="SubViewportContainer/SubViewport"]
 transform = Transform3D(15, 0, 0, 0, 15, 0, 0, 0, 15, 0, 0, 0)
-visible = false
 
 [node name="EndObject" parent="SubViewportContainer/SubViewport/world2" instance=ExtResource("3_mc2jv")]
 transform = Transform3D(0.49999994, 0, 0, 0, 0.49999994, 0, 0, 0, 0.49999994, 7.606958, 0, -1.3891728)
