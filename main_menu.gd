@@ -377,6 +377,10 @@ func _generate_short_code() -> String:
 # Start the actual game
 func start_game() -> void:
 	if world_scene:
+		# CRITICAL: Load audio settings BEFORE instantiating world
+		# This ensures AudioStreamPlayer nodes with autoplay=true respect the volume settings
+		load_audio_settings()
+
 		var world = world_scene.instantiate()
 		get_tree().root.add_child(world)
 		queue_free()

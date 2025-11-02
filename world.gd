@@ -70,8 +70,8 @@ func _ready():
 	randomize()  # Starts random number generator
 	nightmare_bar.value = nightmare_value  # Sets up the nightmare bar based on var
 
-	# Load and apply audio settings
-	load_audio_settings()
+	# NOTE: Audio settings are now loaded in main_menu.gd BEFORE world instantiation
+	# This ensures AudioStreamPlayer nodes with autoplay=true respect the volume settings
 
 	# Check if we're in multiplayer mode
 	is_multiplayer = multiplayer.has_multiplayer_peer()
