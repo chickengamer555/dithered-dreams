@@ -700,6 +700,12 @@ func spawn_player(peer_id: int) -> void:
 	# Wait for node to be ready in the tree
 	await get_tree().process_frame
 
+	# Set up voice receiver for remote players with correct sample rate
+	if peer_id != multiplayer.get_unique_id():
+		if player.has_method("setup_voice_receiver"):
+			player.setup_voice_receiver(voice_sample_rate)
+			print("Set up voice receiver for remote player ", peer_id, " with sample rate: ", voice_sample_rate)
+
 	var spawn_pos: Vector3
 
 	# If there are already players, spawn NEAR them (but not on top)
@@ -849,7 +855,14 @@ func check_for_voice():
 	# Get voice data (getVoice now includes availability check)
 	var voice_data: Dictionary = Steam.getVoice()
 
+	# Debug: Print voice data status occasionally (every 60 frames = ~1 second)
+	if Engine.get_process_frames() % 60 == 0:
+		print("Voice check - Result: ", voice_data.get('result', 'N/A'),
+			  " Written: ", voice_data.get('written', 'N/A'),
+			  " Available: ", voice_data.get('available', 'N/A'))
+
 	if voice_data.has('result') and voice_data['result'] == 1 and voice_data.has('written') and voice_data['written'] > 0:
+		print("Sending voice packet - Size: ", voice_data['written'])
 		# Send voice packet to all other peers (unreliable for low latency)
 		send_voice_packet.rpc(voice_data['buffer'])
 
@@ -857,6 +870,7 @@ func check_for_voice():
 func send_voice_packet(compressed_voice: PackedByteArray):
 	"""Receive voice packet from network and decompress"""
 	var sender_id = multiplayer.get_remote_sender_id()
+	print("Received voice packet from peer: ", sender_id, " Size: ", compressed_voice.size())
 
 	# Don't process our own voice
 	if sender_id == multiplayer.get_unique_id():
@@ -864,23 +878,28 @@ func send_voice_packet(compressed_voice: PackedByteArray):
 
 	# Decompress voice data
 	var decompressed: Dictionary = Steam.decompressVoice(compressed_voice, voice_sample_rate)
+	print("Decompressed voice - Result: ", decompressed.get('result', 'N/A'),
+		  " Size: ", decompressed.get('size', 'N/A'))
 
 	if decompressed.has('result') and decompressed['result'] == 1 and decompressed.has('size') and decompressed['size'] > 0:
 		# Find the player who sent this voice data
 		if players.has(sender_id):
 			var player = players[sender_id]
 			if player.has_method("receive_voice_data"):
+				print("Sending voice data to player ", sender_id)
 				player.receive_voice_data(decompressed['uncompressed'])
+		else:
+			print("WARNING: No player found for sender_id: ", sender_id)
 
 func start_voice_recording():
-	"""Start recording voice (call when push-to-talk pressed)"""
+	"""Start recording voice (call when always-on voice chat enabled)"""
 	if not is_multiplayer:
 		return
 
 	is_recording = true
 	Steam.startVoiceRecording()
 	Steam.setInGameVoiceSpeaking(local_steam_id, true)
-	print("Voice recording started")
+	print("Voice recording started - Steam ID: ", local_steam_id, " Sample rate: ", voice_sample_rate)
 
 func stop_voice_recording():
 	"""Stop recording voice (call when push-to-talk released)"""

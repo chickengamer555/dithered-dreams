@@ -16,7 +16,7 @@ var is_moving = false  # Is the player moving?
 # Voice chat variables
 var voice_playback: AudioStreamGeneratorPlayback = null
 var voice_buffer: PackedByteArray = PackedByteArray()
-const VOICE_SAMPLE_RATE = 48000
+var voice_sample_rate: int = 48000  # Will be set by world script
 
 func _ready():
 	# Initialize last_position to the player's starting position
@@ -68,8 +68,7 @@ func _ready():
 		mesh.visible = true
 		print("REMOTE PLAYER: Showing mesh for peer ", name)
 
-		# Set up voice receiver for remote players
-		setup_voice_receiver()
+		# Voice receiver will be set up by world script with correct sample rate
 
 func _physics_process(delta: float) -> void:
 	# REMOTE PLAYERS: Just return, let the MultiplayerSynchronizer handle it
@@ -128,21 +127,24 @@ func _physics_process(delta: float) -> void:
 	is_moving = (current_position.distance_to(last_position) > 0.01)
 	last_position = current_position
 
-func setup_voice_receiver():
+func setup_voice_receiver(sample_rate: int = 48000):
 	"""Set up voice playback for remote players with proximity audio"""
 	if not voice_player_3d:
 		return
 
+	# Store the sample rate
+	voice_sample_rate = sample_rate
+
 	# Create audio stream generator for voice playback
 	var stream = AudioStreamGenerator.new()
-	stream.mix_rate = VOICE_SAMPLE_RATE
+	stream.mix_rate = voice_sample_rate
 	stream.buffer_length = 0.1  # 100ms buffer
 
 	voice_player_3d.stream = stream
 	voice_player_3d.play()
 	voice_playback = voice_player_3d.get_stream_playback()
 
-	print("Voice receiver set up for remote player ", name)
+	print("Voice receiver set up for remote player ", name, " with sample rate: ", voice_sample_rate)
 
 func receive_voice_data(decompressed_voice: PackedByteArray):
 	"""Receive and play voice data from network"""
