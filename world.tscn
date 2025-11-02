@@ -723,12 +723,6 @@ shader_parameter/vignette_opacity = 0.8
 
 [node name="world" type="Node3D"]
 script = ExtResource("1_bylj8")
-play_time = null
-time_before_nightmare = null
-nightmare_chance = null
-world_chance = null
-nightmare_increment = null
-dream_increment = null
 
 [node name="SubViewportContainer" type="SubViewportContainer" parent="."]
 material = SubResource("ShaderMaterial_w1pga")
@@ -748,7 +742,7 @@ transform = Transform3D(0.49999994, 0, 0, 0, 0.49999994, 0, 0, 0, 0.49999994, 7.
 interaction_distance = 3.0
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world2"]
-transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, 0, 0, 0)
+transform = Transform3D(9.999999, 0, 0, 0, 9.999999, 0, 0, 0, 9.999999, -0.0054930365, -0.0025100706, 0.00014025369)
 cast_shadow = 0
 mesh = SubResource("PlaneMesh_c1e82")
 skeleton = NodePath("../../world1")
@@ -997,6 +991,7 @@ shape = SubResource("BoxShape3D_sxn1u")
 stream = ExtResource("10_vgvs4")
 volume_db = 1.25
 autoplay = true
+bus = &"Music"
 
 [node name="nightmare2" type="Node3D" parent="SubViewportContainer/SubViewport"]
 transform = Transform3D(15, 0, 0, 0, 15, 0, 0, 0, 15, 0, 0, 0)
@@ -1248,6 +1243,7 @@ stream = ExtResource("12_0adto")
 volume_db = 0.75
 pitch_scale = 1.25
 autoplay = true
+bus = &"Music"
 
 [node name="EndObject" parent="SubViewportContainer/SubViewport/nightmare2" instance=ExtResource("3_mc2jv")]
 transform = Transform3D(0.49999994, 0, 0, 0, 0.49999994, 0, 0, 0, 0.49999994, 7.606958, 0, -1.3891728)
@@ -1262,6 +1258,7 @@ stream = ExtResource("6_uxp5i")
 volume_db = 0.75
 pitch_scale = 1.25
 autoplay = true
+bus = &"Music"
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world1"]
 transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, 0, 0, 0)
@@ -1749,6 +1746,7 @@ stream = ExtResource("6_ipbu6")
 volume_db = 0.75
 pitch_scale = 0.75
 autoplay = true
+bus = &"Music"
 
 [node name="EndObject" parent="SubViewportContainer/SubViewport/nightmare1" instance=ExtResource("3_mc2jv")]
 transform = Transform3D(0.49999988, 0, 0, 0, 0.49999988, 0, 0, 0, 0.49999988, -3.754219, 0, -1.3891726)
@@ -1838,6 +1836,7 @@ skeleton = NodePath("")
 
 [node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="SubViewportContainer/SubViewport/world3"]
 volume_db = 1.25
+bus = &"Music"
 
 [node name="Models" type="Node3D" parent="SubViewportContainer/SubViewport/world3"]
 
