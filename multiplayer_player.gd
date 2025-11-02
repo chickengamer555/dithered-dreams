@@ -89,6 +89,9 @@ func _physics_process(delta: float) -> void:
 		if voice_indicator_timer <= 0.0 and voice_indicator_3d:
 			voice_indicator_3d.visible = false
 
+	# Process voice buffer continuously
+	process_voice_buffer()
+
 	# REMOTE PLAYERS: Just return, let the MultiplayerSynchronizer handle it
 	# The synced properties will be updated automatically
 	if not is_multiplayer_authority():
@@ -170,8 +173,10 @@ func setup_voice_receiver(sample_rate: int = 48000):
 
 func receive_voice_data(pcm_voice: PackedByteArray):
 	"""Receive and play voice data from network (stereo 16-bit PCM)"""
+	print("🔊 Player ", name, " received voice data: ", pcm_voice.size(), " bytes")
+
 	if voice_playback == null:
-		print("WARNING: voice_playback is null for player ", name)
+		print("  ❌ voice_playback is null for player ", name)
 		return
 
 	# Show voice indicator
@@ -181,6 +186,7 @@ func receive_voice_data(pcm_voice: PackedByteArray):
 
 	# Add to buffer
 	voice_buffer.append_array(pcm_voice)
+	print("  📦 Buffer size now: ", voice_buffer.size(), " bytes")
 
 	# Buffer overflow protection - prevent memory leak and latency buildup
 	var max_buffer_size = voice_sample_rate * 4  # 1 second worth of stereo 16-bit samples
@@ -188,7 +194,11 @@ func receive_voice_data(pcm_voice: PackedByteArray):
 		print("Voice buffer overflow for ", name, " - clearing (size: ", voice_buffer.size(), ")")
 		voice_buffer.clear()
 
-	# Process buffer and push to audio stream
+func process_voice_buffer():
+	"""Process voice buffer and push audio frames to the speaker - called every frame"""
+	if voice_playback == null or voice_buffer.size() == 0:
+		return
+
 	# Audio data is 16-bit stereo PCM (4 bytes per frame: 2 for left, 2 for right)
 	var frames_available = voice_playback.get_frames_available()
 	if frames_available == 0:

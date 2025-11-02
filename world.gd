@@ -966,24 +966,31 @@ func check_for_voice():
 				# Show voice indicator
 				show_voice_indicator()
 				# Send voice packet
+				print("📢 Sending voice packet - Size: ", pcm_data.size(), " bytes")
 				send_voice_packet.rpc(pcm_data)
 
 @rpc("any_peer", "unreliable", "call_remote")
 func send_voice_packet(pcm_voice: PackedByteArray):
 	"""Receive voice packet from network"""
 	var sender_id = multiplayer.get_remote_sender_id()
+	print("🎤 Received voice packet from peer: ", sender_id, " Size: ", pcm_voice.size(), " bytes")
 
 	# Don't process our own voice
 	if sender_id == multiplayer.get_unique_id():
+		print("  ⏭️ Skipping own voice")
 		return
 
 	# Find the player who sent this voice data
 	if players.has(sender_id):
 		var player = players[sender_id]
 		if player.has_method("receive_voice_data"):
+			print("  ✅ Forwarding to player ", sender_id)
 			player.receive_voice_data(pcm_voice)
+		else:
+			print("  ❌ Player has no receive_voice_data method!")
 	else:
-		print("WARNING: No player found for sender_id: ", sender_id)
+		print("  ❌ No player found for sender_id: ", sender_id)
+		print("  Available players: ", players.keys())
 
 func start_voice_recording():
 	"""Start recording voice using Godot's microphone"""
