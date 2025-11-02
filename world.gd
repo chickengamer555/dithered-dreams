@@ -41,6 +41,7 @@ var interaction_progress_bar: ProgressBar = null
 # Voice chat UI
 var voice_indicator: Label = null
 var voice_indicator_timer: float = 0.0
+var voice_settings_ui: Control = null
 
 @export var play_time: int = 300
 @export var main_menu_scene: PackedScene
@@ -408,7 +409,10 @@ func go_to_main_menu():
 
 func _input(event):
 	# Voice chat is now always-on, no push-to-talk needed
-	pass
+	# Open voice settings with F1
+	if event.is_action_pressed("ui_help") or (event is InputEventKey and event.pressed and event.keycode == KEY_F1):
+		if voice_settings_ui:
+			voice_settings_ui.show_settings()
 
 func _process(delta):
 	# Check for voice data continuously in multiplayer (always-on voice chat)
@@ -837,7 +841,13 @@ func _create_interaction_ui() -> void:
 	# Add to CanvasLayer
 	$CanvasLayer.add_child(voice_indicator)
 
+	# Create voice settings UI
+	var voice_settings_scene = preload("res://voice_settings_ui.tscn")
+	voice_settings_ui = voice_settings_scene.instantiate()
+	$CanvasLayer.add_child(voice_settings_ui)
+
 	print("Interaction UI created")
+	print("Voice Settings UI created - Press F1 to open")
 
 func show_interaction_prompt(text: String) -> void:
 	if interaction_label:
@@ -908,33 +918,32 @@ func teleport_from_end_object() -> void:
 
 func check_for_voice():
 	"""Check for available voice data and send to network"""
-	# Get voice data (getVoice now includes availability check)
-	var voice_data: Dictionary = Steam.getVoice()
+	# IMPORTANT: Must call getAvailableVoice() FIRST to check if there's data!
+	var available_voice: Dictionary = Steam.getAvailableVoice()
 
 	# Debug: Print voice data status occasionally (every 60 frames = ~1 second)
 	if Engine.get_process_frames() % 60 == 0:
-		var result = voice_data.get('result', 'N/A')
-		var written = voice_data.get('written', 'N/A')
-		print("Voice check - Result: ", result, " Written: ", written)
+		var result = available_voice.get('result', 'N/A')
+		var buffer_size = available_voice.get('buffer', 'N/A')
+		print("Voice available - Result: ", result, " Buffer: ", buffer_size)
 
 		# Result codes: 1 = OK, 2 = NotRecording, 3 = NoData, 4 = BufferTooSmall, etc.
-		if result == 3:
-			# NoData - This is normal when not speaking, but if it persists, check:
-			# 1. Windows microphone permissions for Steam
-			# 2. Steam Voice settings (Steam > Settings > Voice)
-			# 3. Microphone is working and not muted
-			pass
-		elif result == 2:
+		if result == 2:
 			print("WARNING: Steam Voice is not recording! Voice recording may have stopped.")
 		elif result != 1 and result != 3:
 			print("WARNING: Unexpected voice result code: ", result)
 
-	if voice_data.has('result') and voice_data['result'] == 1 and voice_data.has('written') and voice_data['written'] > 0:
-		print("Sending voice packet - Size: ", voice_data['written'])
-		# Show voice indicator
-		show_voice_indicator()
-		# Send voice packet to all other peers (unreliable for low latency)
-		send_voice_packet.rpc(voice_data['buffer'])
+	# Only get voice data if it's available
+	if available_voice.has('result') and available_voice['result'] == 1 and available_voice.has('buffer') and available_voice['buffer'] > 0:
+		# Now get the actual voice data
+		var voice_data: Dictionary = Steam.getVoice()
+
+		if voice_data.has('result') and voice_data['result'] == 1 and voice_data.has('written') and voice_data['written'] > 0:
+			print("Sending voice packet - Size: ", voice_data['written'])
+			# Show voice indicator
+			show_voice_indicator()
+			# Send voice packet to all other peers (unreliable for low latency)
+			send_voice_packet.rpc(voice_data['buffer'])
 
 @rpc("any_peer", "unreliable", "call_remote")
 func send_voice_packet(compressed_voice: PackedByteArray):

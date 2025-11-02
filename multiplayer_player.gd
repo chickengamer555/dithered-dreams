@@ -167,6 +167,7 @@ func setup_voice_receiver(sample_rate: int = 48000):
 func receive_voice_data(decompressed_voice: PackedByteArray):
 	"""Receive and play voice data from network"""
 	if voice_playback == null:
+		print("WARNING: voice_playback is null for player ", name)
 		return
 
 	# Show voice indicator
@@ -178,17 +179,25 @@ func receive_voice_data(decompressed_voice: PackedByteArray):
 	voice_buffer.append_array(decompressed_voice)
 
 	# Process buffer and push to audio stream
-	while voice_buffer.size() >= 2 and voice_playback.get_frames_available() > 0:
-		# Convert 16-bit PCM to float amplitude (-1.0 to 1.0)
+	# Steam's audio data is 16-bit single channel PCM audio
+	var frames_to_push = min(voice_buffer.size() / 2, voice_playback.get_frames_available())
+
+	for i in range(frames_to_push):
+		if voice_buffer.size() < 2:
+			break
+
+		# Combine the low and high bits to get full 16-bit value
 		var raw_value: int = voice_buffer[0] | (voice_buffer[1] << 8)
+		# Make it a 16-bit signed integer
 		raw_value = (raw_value + 32768) & 0xffff
+		# Convert the 16-bit integer to a float from -1 to 1
 		var amplitude: float = float(raw_value - 32768) / 32768.0
 
-		# Push to both channels (mono to stereo)
+		# push_frame() takes a Vector2. x = left channel, y = right channel
 		# AudioStreamPlayer3D will handle 3D positioning
 		voice_playback.push_frame(Vector2(amplitude, amplitude))
 
-		# Remove processed samples
+		# Delete the used samples
 		voice_buffer.remove_at(0)
 		voice_buffer.remove_at(0)
 
