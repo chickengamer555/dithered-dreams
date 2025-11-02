@@ -924,37 +924,36 @@ func teleport_from_end_object() -> void:
 # ============================================================================
 
 func check_for_voice():
-	"""Check for available voice data and send to network"""
-	# Get voice data from Steam
-	var voice_data: Dictionary = Steam.getVoice()
+	"""Check for available voice data and send to network - MUST be called every frame"""
+	# STEP 1: Check if voice data is available (cheaper than getVoice)
+	var available_voice: Dictionary = Steam.getAvailableVoice()
 
-	# Debug: Print voice data status occasionally (every 120 frames = ~2 seconds)
+	# Debug: Print occasionally (every 120 frames = ~2 seconds)
 	if Engine.get_process_frames() % 120 == 0:
-		var result = voice_data.get('result', 'N/A')
-		var written = voice_data.get('written', 'N/A')
-		print("Voice check - Result: ", result, " Written: ", written)
+		var result = available_voice.get('result', 'N/A')
+		var buffer_size = available_voice.get('buffer', 0)
+		print("Voice available - Result: ", result, " Buffer: ", buffer_size, " bytes")
 
-		# Result codes: 1 = OK, 2 = NotRecording, 3 = NoData, 4 = BufferTooSmall, etc.
+		# Result codes: 1 = OK, 2 = NotRecording, 3 = NoData, 4 = BufferTooSmall
 		if result == 2 and voice_restart_cooldown <= 0.0:
-			print("WARNING: Steam Voice is not recording! Restarting voice recording...")
-			# Try to restart voice recording
+			print("WARNING: Steam Voice is not recording! Restarting...")
 			Steam.stopVoiceRecording()
 			await get_tree().create_timer(0.1).timeout
 			Steam.startVoiceRecording()
-			voice_restart_cooldown = 5.0  # Don't retry for 5 seconds
+			voice_restart_cooldown = 5.0
 		elif result == 3:
-			# NoData is normal when not speaking - no action needed
+			# NoData is normal when not speaking
 			pass
-		elif result != 1:
-			print("WARNING: Unexpected voice result code: ", result)
 
-	# Send voice data if available
-	if voice_data.has('result') and voice_data['result'] == 1 and voice_data.has('written') and voice_data['written'] > 0:
-		print("Sending voice packet - Size: ", voice_data['written'])
-		# Show voice indicator
-		show_voice_indicator()
-		# Send voice packet to all other peers (unreliable for low latency)
-		send_voice_packet.rpc(voice_data['buffer'])
+	# STEP 2: Only call getVoice() if data is actually available
+	if available_voice.has('result') and available_voice['result'] == 1 and available_voice.has('buffer') and available_voice['buffer'] > 0:
+		# Now retrieve the actual voice data
+		var voice_data: Dictionary = Steam.getVoice()
+
+		if voice_data.has('result') and voice_data['result'] == 1 and voice_data.has('written') and voice_data['written'] > 0:
+			print("Sending voice packet - Size: ", voice_data['written'])
+			show_voice_indicator()
+			send_voice_packet.rpc(voice_data['buffer'])
 
 @rpc("any_peer", "unreliable", "call_remote")
 func send_voice_packet(compressed_voice: PackedByteArray):
@@ -990,6 +989,41 @@ func start_voice_recording():
 	Steam.startVoiceRecording()
 	Steam.setInGameVoiceSpeaking(local_steam_id, true)
 	print("Voice recording started - Steam ID: ", local_steam_id, " Sample rate: ", voice_sample_rate)
+
+	# ENHANCED DIAGNOSTICS
+	print("=== STEAM VOICE INITIALIZATION DIAGNOSTICS ===")
+	await get_tree().create_timer(0.5).timeout
+
+	var optimal_rate = Steam.getVoiceOptimalSampleRate()
+	print("Optimal sample rate: ", optimal_rate, " Hz")
+
+	if optimal_rate == 0:
+		print("❌ CRITICAL ERROR: Steam voice not available!")
+		print("This usually means:")
+		print("  1. Windows microphone permissions are DENIED")
+		print("  2. No microphone device is connected")
+		print("  3. Steam initialization failed (check AppID)")
+		print("  4. Steam client is not running")
+		print("")
+		print("FIX: Windows Settings > Privacy > Microphone > Allow desktop apps")
+	else:
+		print("✓ Steam voice system initialized successfully")
+
+	# Test voice capture after 2 seconds
+	await get_tree().create_timer(2.0).timeout
+	var available = Steam.getAvailableVoice()
+	print("Voice availability test:")
+	print("  Result: ", available.get('result'), " (1=OK, 2=NotRecording, 3=NoData)")
+	print("  Buffer: ", available.get('buffer', 0), " bytes")
+
+	if available.get('result') == 2:
+		print("❌ ERROR: Voice recording not started!")
+	elif available.get('result') == 3:
+		print("✓ Voice recording active (speak into mic to test)")
+	elif available.get('result') == 1:
+		print("✓ SUCCESS: Voice data detected!")
+
+	print("===============================================")
 
 func stop_voice_recording():
 	"""Stop recording voice (call when push-to-talk released)"""
