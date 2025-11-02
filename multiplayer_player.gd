@@ -156,13 +156,17 @@ func setup_voice_receiver(sample_rate: int = 48000):
 	# Create audio stream generator for voice playback
 	var stream = AudioStreamGenerator.new()
 	stream.mix_rate = voice_sample_rate
-	stream.buffer_length = 0.1  # 100ms buffer
+	stream.buffer_length = 0.1  # 100ms buffer (balance of latency and stability)
 
 	voice_player_3d.stream = stream
 	voice_player_3d.play()
 	voice_playback = voice_player_3d.get_stream_playback()
 
-	print("Voice receiver set up for remote player ", name, " with sample rate: ", voice_sample_rate)
+	# Optimize 3D audio settings for proximity voice chat
+	voice_player_3d.attenuation_model = AudioStreamPlayer3D.ATTENUATION_LOGARITHMIC  # More realistic
+	voice_player_3d.unit_size = 8.0  # Moderate proximity range
+
+	print("Voice receiver configured for ", name, " - Sample rate: ", voice_sample_rate, "Hz")
 
 func receive_voice_data(decompressed_voice: PackedByteArray):
 	"""Receive and play voice data from network"""
@@ -178,20 +182,33 @@ func receive_voice_data(decompressed_voice: PackedByteArray):
 	# Add to buffer
 	voice_buffer.append_array(decompressed_voice)
 
+	# Buffer overflow protection - prevent memory leak and latency buildup
+	var max_buffer_size = voice_sample_rate * 2  # 1 second worth of 16-bit samples
+	if voice_buffer.size() > max_buffer_size:
+		print("Voice buffer overflow for ", name, " - clearing (size: ", voice_buffer.size(), ")")
+		voice_buffer.clear()
+
 	# Process buffer and push to audio stream
 	# Steam's audio data is 16-bit single channel PCM audio
-	var frames_to_push = min(voice_buffer.size() / 2, voice_playback.get_frames_available())
+	var frames_available = voice_playback.get_frames_available()
+	if frames_available == 0:
+		return  # Audio buffer full, wait for next frame
+
+	var frames_to_push = min(voice_buffer.size() / 2, frames_available)
 
 	for i in range(frames_to_push):
 		if voice_buffer.size() < 2:
 			break
 
-		# Combine the low and high bits to get full 16-bit value
+		# Read 16-bit little-endian sample
 		var raw_value: int = voice_buffer[0] | (voice_buffer[1] << 8)
-		# Make it a 16-bit signed integer
-		raw_value = (raw_value + 32768) & 0xffff
-		# Convert the 16-bit integer to a float from -1 to 1
-		var amplitude: float = float(raw_value - 32768) / 32768.0
+
+		# Convert unsigned to signed 16-bit (-32768 to 32767)
+		if raw_value >= 32768:
+			raw_value -= 65536
+
+		# Normalize to float [-1.0, 1.0]
+		var amplitude: float = float(raw_value) / 32768.0
 
 		# push_frame() takes a Vector2. x = left channel, y = right channel
 		# AudioStreamPlayer3D will handle 3D positioning

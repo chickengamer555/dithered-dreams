@@ -20,6 +20,7 @@ var is_multiplayer = false
 var is_recording: bool = false
 var voice_sample_rate: int = 48000
 var local_steam_id: int = 0
+var voice_restart_cooldown: float = 0.0
 
 var environments = { # Loads the environment resources for each world and nightmare
 	"world1": preload("res://envoirments/world1.tres"),
@@ -199,8 +200,10 @@ func _ready():
 	# Initialize voice chat for multiplayer
 	if is_multiplayer:
 		local_steam_id = Steam.getSteamID()
-		voice_sample_rate = Steam.getVoiceOptimalSampleRate()
-		print("Voice chat initialized - Sample rate: ", voice_sample_rate)
+		# Use minimum 32kHz for decent quality (optimal rate is often 11025 Hz which sounds terrible)
+		var optimal_rate = Steam.getVoiceOptimalSampleRate()
+		voice_sample_rate = max(optimal_rate, 32000)  # Enforce minimum 32kHz quality
+		print("Voice chat initialized - Optimal: ", optimal_rate, "Hz, Using: ", voice_sample_rate, "Hz")
 		# Start voice recording automatically (always-on proximity chat)
 		start_voice_recording()
 		print("Proximity chat enabled (always-on)")
@@ -424,6 +427,10 @@ func _process(delta):
 		voice_indicator_timer -= delta
 		if voice_indicator_timer <= 0.0:
 			hide_voice_indicator()
+
+	# Update voice restart cooldown
+	if voice_restart_cooldown > 0.0:
+		voice_restart_cooldown -= delta
 
 	# Update nightmare/dream values based on player movement
 	if is_multiplayer:
@@ -921,19 +928,20 @@ func check_for_voice():
 	# Get voice data from Steam
 	var voice_data: Dictionary = Steam.getVoice()
 
-	# Debug: Print voice data status occasionally (every 60 frames = ~1 second)
-	if Engine.get_process_frames() % 60 == 0:
+	# Debug: Print voice data status occasionally (every 120 frames = ~2 seconds)
+	if Engine.get_process_frames() % 120 == 0:
 		var result = voice_data.get('result', 'N/A')
 		var written = voice_data.get('written', 'N/A')
 		print("Voice check - Result: ", result, " Written: ", written)
 
 		# Result codes: 1 = OK, 2 = NotRecording, 3 = NoData, 4 = BufferTooSmall, etc.
-		if result == 2:
+		if result == 2 and voice_restart_cooldown <= 0.0:
 			print("WARNING: Steam Voice is not recording! Restarting voice recording...")
 			# Try to restart voice recording
 			Steam.stopVoiceRecording()
 			await get_tree().create_timer(0.1).timeout
 			Steam.startVoiceRecording()
+			voice_restart_cooldown = 5.0  # Don't retry for 5 seconds
 		elif result == 3:
 			# NoData is normal when not speaking - no action needed
 			pass
