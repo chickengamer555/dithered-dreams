@@ -11,3 +11,4 @@ res://Shaders/Jitter.gdshader
 res://Shaders/crt.gdshader
 res://multiplayer_player.gd
 res://multiplayer_player.tscn
+res://voice_settings_ui.gd

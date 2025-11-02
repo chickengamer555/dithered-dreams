@@ -19,9 +19,9 @@ func _on_close_pressed():
 
 func _on_open_steam_settings_pressed():
 	# Open Steam settings overlay
-	Steam.activateGameOverlayToWebPage("steam://settings/voice")
+	# Second parameter is OverlayToWebPageMode: 0 = Default, 1 = Modal
+	Steam.activateGameOverlayToWebPage("steam://settings/voice", Steam.OVERLAY_TO_WEB_PAGE_MODE_DEFAULT)
 	hide()
 
 func show_settings():
 	show()
-
