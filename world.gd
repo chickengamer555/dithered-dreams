@@ -924,15 +924,15 @@ func teleport_from_end_object() -> void:
 # ============================================================================
 
 func check_for_voice():
-	"""Check for available voice data and send to network - MUST be called every frame"""
-	# STEP 1: Check if voice data is available (cheaper than getVoice)
-	var available_voice: Dictionary = Steam.getAvailableVoice()
+	"""Check for available voice data and send to network - called every frame"""
+	# Get voice data from Steam
+	var voice_data: Dictionary = Steam.getVoice()
 
 	# Debug: Print occasionally (every 120 frames = ~2 seconds)
 	if Engine.get_process_frames() % 120 == 0:
-		var result = available_voice.get('result', 'N/A')
-		var buffer_size = available_voice.get('buffer', 0)
-		print("Voice available - Result: ", result, " Buffer: ", buffer_size, " bytes")
+		var result = voice_data.get('result', 'N/A')
+		var written = voice_data.get('written', 0)
+		print("Voice check - Result: ", result, " Written: ", written, " bytes")
 
 		# Result codes: 1 = OK, 2 = NotRecording, 3 = NoData, 4 = BufferTooSmall
 		if result == 2 and voice_restart_cooldown <= 0.0:
@@ -941,19 +941,12 @@ func check_for_voice():
 			await get_tree().create_timer(0.1).timeout
 			Steam.startVoiceRecording()
 			voice_restart_cooldown = 5.0
-		elif result == 3:
-			# NoData is normal when not speaking
-			pass
 
-	# STEP 2: Only call getVoice() if data is actually available
-	if available_voice.has('result') and available_voice['result'] == 1 and available_voice.has('buffer') and available_voice['buffer'] > 0:
-		# Now retrieve the actual voice data
-		var voice_data: Dictionary = Steam.getVoice()
-
-		if voice_data.has('result') and voice_data['result'] == 1 and voice_data.has('written') and voice_data['written'] > 0:
-			print("Sending voice packet - Size: ", voice_data['written'])
-			show_voice_indicator()
-			send_voice_packet.rpc(voice_data['buffer'])
+	# Send voice data if available
+	if voice_data.has('result') and voice_data['result'] == 1 and voice_data.has('written') and voice_data['written'] > 0:
+		print("Sending voice packet - Size: ", voice_data['written'])
+		show_voice_indicator()
+		send_voice_packet.rpc(voice_data['buffer'])
 
 @rpc("any_peer", "unreliable", "call_remote")
 func send_voice_packet(compressed_voice: PackedByteArray):
@@ -1011,10 +1004,10 @@ func start_voice_recording():
 
 	# Test voice capture after 2 seconds
 	await get_tree().create_timer(2.0).timeout
-	var available = Steam.getAvailableVoice()
+	var available = Steam.getVoice()
 	print("Voice availability test:")
 	print("  Result: ", available.get('result'), " (1=OK, 2=NotRecording, 3=NoData)")
-	print("  Buffer: ", available.get('buffer', 0), " bytes")
+	print("  Written: ", available.get('written', 0), " bytes")
 
 	if available.get('result') == 2:
 		print("❌ ERROR: Voice recording not started!")
