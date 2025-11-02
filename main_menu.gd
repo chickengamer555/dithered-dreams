@@ -93,6 +93,11 @@ func _on_join_game_pressed() -> void:
 	status_label.text = "Searching for lobby..."
 	print("Searching for lobby with code: ", input_text)
 
+	# CRITICAL: Set distance filter to WORLDWIDE so we can find lobbies across different regions!
+	# Without this, Steam defaults to LOBBY_DISTANCE_FILTER_DEFAULT which only searches nearby regions
+	# This is why you can't find your friend's lobby if they're in a different geographic region!
+	Steam.addRequestLobbyListDistanceFilter(Steam.LOBBY_DISTANCE_FILTER_WORLDWIDE)
+
 	# Search for lobbies with matching short code
 	# We'll use Steam's lobby list to find the matching lobby
 	Steam.addRequestLobbyListStringFilter("short_code", input_text, Steam.LOBBY_COMPARISON_EQUAL)
