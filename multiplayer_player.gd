@@ -168,8 +168,8 @@ func setup_voice_receiver(sample_rate: int = 48000):
 
 	print("Voice receiver configured for ", name, " - Sample rate: ", voice_sample_rate, "Hz")
 
-func receive_voice_data(decompressed_voice: PackedByteArray):
-	"""Receive and play voice data from network"""
+func receive_voice_data(pcm_voice: PackedByteArray):
+	"""Receive and play voice data from network (stereo 16-bit PCM)"""
 	if voice_playback == null:
 		print("WARNING: voice_playback is null for player ", name)
 		return
@@ -180,41 +180,48 @@ func receive_voice_data(decompressed_voice: PackedByteArray):
 		voice_indicator_timer = 0.2  # Keep visible for 200ms
 
 	# Add to buffer
-	voice_buffer.append_array(decompressed_voice)
+	voice_buffer.append_array(pcm_voice)
 
 	# Buffer overflow protection - prevent memory leak and latency buildup
-	var max_buffer_size = voice_sample_rate * 2  # 1 second worth of 16-bit samples
+	var max_buffer_size = voice_sample_rate * 4  # 1 second worth of stereo 16-bit samples
 	if voice_buffer.size() > max_buffer_size:
 		print("Voice buffer overflow for ", name, " - clearing (size: ", voice_buffer.size(), ")")
 		voice_buffer.clear()
 
 	# Process buffer and push to audio stream
-	# Steam's audio data is 16-bit single channel PCM audio
+	# Audio data is 16-bit stereo PCM (4 bytes per frame: 2 for left, 2 for right)
 	var frames_available = voice_playback.get_frames_available()
 	if frames_available == 0:
 		return  # Audio buffer full, wait for next frame
 
-	var frames_to_push = min(voice_buffer.size() / 2, frames_available)
+	var frames_to_push = min(voice_buffer.size() / 4, frames_available)
 
 	for i in range(frames_to_push):
-		if voice_buffer.size() < 2:
+		if voice_buffer.size() < 4:
 			break
 
-		# Read 16-bit little-endian sample
-		var raw_value: int = voice_buffer[0] | (voice_buffer[1] << 8)
+		# Read left channel (16-bit little-endian)
+		var left_raw: int = voice_buffer[0] | (voice_buffer[1] << 8)
+		# Read right channel (16-bit little-endian)
+		var right_raw: int = voice_buffer[2] | (voice_buffer[3] << 8)
 
 		# Convert unsigned to signed 16-bit (-32768 to 32767)
-		if raw_value >= 32768:
-			raw_value -= 65536
+		if left_raw >= 32768:
+			left_raw -= 65536
+		if right_raw >= 32768:
+			right_raw -= 65536
 
 		# Normalize to float [-1.0, 1.0]
-		var amplitude: float = float(raw_value) / 32768.0
+		var left_amplitude: float = float(left_raw) / 32768.0
+		var right_amplitude: float = float(right_raw) / 32768.0
 
 		# push_frame() takes a Vector2. x = left channel, y = right channel
 		# AudioStreamPlayer3D will handle 3D positioning
-		voice_playback.push_frame(Vector2(amplitude, amplitude))
+		voice_playback.push_frame(Vector2(left_amplitude, right_amplitude))
 
-		# Delete the used samples
+		# Delete the used samples (4 bytes per frame)
+		voice_buffer.remove_at(0)
+		voice_buffer.remove_at(0)
 		voice_buffer.remove_at(0)
 		voice_buffer.remove_at(0)
 

@@ -16,11 +16,13 @@ var multiplayer_player_scene = preload("res://multiplayer_player.tscn")
 var players = {}  # Dictionary to store player nodes by peer ID
 var is_multiplayer = false
 
-# Voice chat
+# Voice chat - Godot microphone-based
 var is_recording: bool = false
 var voice_sample_rate: int = 48000
-var local_steam_id: int = 0
-var voice_restart_cooldown: float = 0.0
+var mic_player: AudioStreamPlayer = null
+var mic_effect: AudioEffectCapture = null
+var voice_send_timer: float = 0.0
+var voice_send_interval: float = 0.05  # Send voice packets every 50ms (20 packets/sec)
 
 var environments = { # Loads the environment resources for each world and nightmare
 	"world1": preload("res://envoirments/world1.tres"),
@@ -199,18 +201,16 @@ func _ready():
 	
 	# Initialize voice chat for multiplayer
 	if is_multiplayer:
-		local_steam_id = Steam.getSteamID()
-		# Use minimum 32kHz for decent quality (optimal rate is often 11025 Hz which sounds terrible)
-		var optimal_rate = Steam.getVoiceOptimalSampleRate()
-		voice_sample_rate = max(optimal_rate, 32000)  # Enforce minimum 32kHz quality
-		print("Voice chat initialized - Optimal: ", optimal_rate, "Hz, Using: ", voice_sample_rate, "Hz")
+		# Use Godot's built-in microphone capture
+		voice_sample_rate = 48000  # Standard high-quality sample rate
+		print("Voice chat initialized - Sample rate: ", voice_sample_rate, "Hz")
 		# Start voice recording automatically (always-on proximity chat)
 		start_voice_recording()
 		print("Proximity chat enabled (always-on)")
 		print("")
 		print("=== PROXIMITY CHAT TROUBLESHOOTING ===")
 		print("If voice chat isn't working, check:")
-		print("1. Windows Settings > Privacy > Microphone - Allow Steam")
+		print("1. Windows Settings > Privacy > Microphone - Allow Godot")
 		print("2. Steam > Settings > Voice - Test microphone")
 		print("3. Make sure your microphone is not muted")
 		print("4. Speak into your microphone to test")
@@ -420,17 +420,16 @@ func _input(event):
 func _process(delta):
 	# Check for voice data continuously in multiplayer (always-on voice chat)
 	if is_multiplayer:
-		check_for_voice()
+		voice_send_timer += delta
+		if voice_send_timer >= voice_send_interval:
+			voice_send_timer = 0.0
+			check_for_voice()
 
 	# Update voice indicator timer
 	if voice_indicator_timer > 0.0:
 		voice_indicator_timer -= delta
 		if voice_indicator_timer <= 0.0:
 			hide_voice_indicator()
-
-	# Update voice restart cooldown
-	if voice_restart_cooldown > 0.0:
-		voice_restart_cooldown -= delta
 
 	# Update nightmare/dream values based on player movement
 	if is_multiplayer:
@@ -924,108 +923,124 @@ func teleport_from_end_object() -> void:
 # ============================================================================
 
 func check_for_voice():
-	"""Check for available voice data and send to network - called every frame"""
-	# Get voice data from Steam
-	var voice_data: Dictionary = Steam.getVoice()
+	"""Check for available voice data and send to network - called periodically"""
+	if not mic_effect or not is_recording:
+		return
 
-	# Debug: Print occasionally (every 120 frames = ~2 seconds)
-	if Engine.get_process_frames() % 120 == 0:
-		var result = voice_data.get('result', 'N/A')
-		var written = voice_data.get('written', 0)
-		print("Voice check - Result: ", result, " Written: ", written, " bytes")
+	# Get available audio frames from microphone
+	var frames_available = mic_effect.get_frames_available()
 
-		# Result codes: 1 = OK, 2 = NotRecording, 3 = NoData, 4 = BufferTooSmall
-		if result == 2 and voice_restart_cooldown <= 0.0:
-			print("WARNING: Steam Voice is not recording! Restarting...")
-			Steam.stopVoiceRecording()
-			await get_tree().create_timer(0.1).timeout
-			Steam.startVoiceRecording()
-			voice_restart_cooldown = 5.0
+	if frames_available > 0:
+		# Capture audio data (get at least 2400 frames = 50ms at 48kHz)
+		var min_frames = int(voice_sample_rate * voice_send_interval)
+		if frames_available >= min_frames:
+			# Get the audio data
+			var audio_data = mic_effect.get_buffer(min_frames)
 
-	# Send voice data if available
-	if voice_data.has('result') and voice_data['result'] == 1 and voice_data.has('written') and voice_data['written'] > 0:
-		print("Sending voice packet - Size: ", voice_data['written'])
-		show_voice_indicator()
-		send_voice_packet.rpc(voice_data['buffer'])
+			# Convert Vector2 audio frames to 16-bit PCM bytes
+			var pcm_data = PackedByteArray()
+			pcm_data.resize(audio_data.size() * 4)  # 2 bytes per channel, 2 channels
+
+			for i in range(audio_data.size()):
+				var frame = audio_data[i]
+				# Convert left channel to 16-bit signed integer
+				var left_sample = int(clamp(frame.x, -1.0, 1.0) * 32767.0)
+				# Convert right channel to 16-bit signed integer
+				var right_sample = int(clamp(frame.y, -1.0, 1.0) * 32767.0)
+
+				# Write as little-endian 16-bit values
+				var idx = i * 4
+				pcm_data[idx] = left_sample & 0xFF
+				pcm_data[idx + 1] = (left_sample >> 8) & 0xFF
+				pcm_data[idx + 2] = right_sample & 0xFF
+				pcm_data[idx + 3] = (right_sample >> 8) & 0xFF
+
+			# Check if there's actual audio (not silence)
+			var has_audio = false
+			for i in range(audio_data.size()):
+				if abs(audio_data[i].x) > 0.01 or abs(audio_data[i].y) > 0.01:
+					has_audio = true
+					break
+
+			if has_audio:
+				# Show voice indicator
+				show_voice_indicator()
+				# Send voice packet
+				send_voice_packet.rpc(pcm_data)
 
 @rpc("any_peer", "unreliable", "call_remote")
-func send_voice_packet(compressed_voice: PackedByteArray):
-	"""Receive voice packet from network and decompress"""
+func send_voice_packet(pcm_voice: PackedByteArray):
+	"""Receive voice packet from network"""
 	var sender_id = multiplayer.get_remote_sender_id()
-	print("Received voice packet from peer: ", sender_id, " Size: ", compressed_voice.size())
 
 	# Don't process our own voice
 	if sender_id == multiplayer.get_unique_id():
 		return
 
-	# Decompress voice data
-	var decompressed: Dictionary = Steam.decompressVoice(compressed_voice, voice_sample_rate)
-	print("Decompressed voice - Result: ", decompressed.get('result', 'N/A'),
-		  " Size: ", decompressed.get('size', 'N/A'))
-
-	if decompressed.has('result') and decompressed['result'] == 1 and decompressed.has('size') and decompressed['size'] > 0:
-		# Find the player who sent this voice data
-		if players.has(sender_id):
-			var player = players[sender_id]
-			if player.has_method("receive_voice_data"):
-				print("Sending voice data to player ", sender_id)
-				player.receive_voice_data(decompressed['uncompressed'])
-		else:
-			print("WARNING: No player found for sender_id: ", sender_id)
+	# Find the player who sent this voice data
+	if players.has(sender_id):
+		var player = players[sender_id]
+		if player.has_method("receive_voice_data"):
+			player.receive_voice_data(pcm_voice)
+	else:
+		print("WARNING: No player found for sender_id: ", sender_id)
 
 func start_voice_recording():
-	"""Start recording voice (call when always-on voice chat enabled)"""
+	"""Start recording voice using Godot's microphone"""
 	if not is_multiplayer:
 		return
 
+	print("=== INITIALIZING GODOT MICROPHONE ===")
+
+	# Create AudioStreamPlayer for microphone input
+	mic_player = AudioStreamPlayer.new()
+	add_child(mic_player)
+
+	# Set up microphone stream
+	var mic_stream = AudioStreamMicrophone.new()
+	mic_player.stream = mic_stream
+
+	# Add AudioEffectCapture to capture the audio data
+	var bus_idx = AudioServer.get_bus_index("Record")
+	if bus_idx == -1:
+		# Create a new bus for recording if it doesn't exist
+		bus_idx = AudioServer.bus_count
+		AudioServer.add_bus(bus_idx)
+		AudioServer.set_bus_name(bus_idx, "Record")
+		AudioServer.set_bus_mute(bus_idx, true)  # Mute so we don't hear ourselves
+
+	# Add capture effect
+	var capture_effect = AudioEffectCapture.new()
+	capture_effect.buffer_length = 0.5  # 500ms buffer
+	AudioServer.add_bus_effect(bus_idx, capture_effect)
+	mic_effect = capture_effect
+
+	# Route mic player to the Record bus
+	mic_player.bus = "Record"
+
+	# Start playing (this starts capturing microphone input)
+	mic_player.play()
+
 	is_recording = true
-	Steam.startVoiceRecording()
-	Steam.setInGameVoiceSpeaking(local_steam_id, true)
-	print("Voice recording started - Steam ID: ", local_steam_id, " Sample rate: ", voice_sample_rate)
-
-	# ENHANCED DIAGNOSTICS
-	print("=== STEAM VOICE INITIALIZATION DIAGNOSTICS ===")
-	await get_tree().create_timer(0.5).timeout
-
-	var optimal_rate = Steam.getVoiceOptimalSampleRate()
-	print("Optimal sample rate: ", optimal_rate, " Hz")
-
-	if optimal_rate == 0:
-		print("❌ CRITICAL ERROR: Steam voice not available!")
-		print("This usually means:")
-		print("  1. Windows microphone permissions are DENIED")
-		print("  2. No microphone device is connected")
-		print("  3. Steam initialization failed (check AppID)")
-		print("  4. Steam client is not running")
-		print("")
-		print("FIX: Windows Settings > Privacy > Microphone > Allow desktop apps")
-	else:
-		print("✓ Steam voice system initialized successfully")
-
-	# Test voice capture after 2 seconds
-	await get_tree().create_timer(2.0).timeout
-	var available = Steam.getVoice()
-	print("Voice availability test:")
-	print("  Result: ", available.get('result'), " (1=OK, 2=NotRecording, 3=NoData)")
-	print("  Written: ", available.get('written', 0), " bytes")
-
-	if available.get('result') == 2:
-		print("❌ ERROR: Voice recording not started!")
-	elif available.get('result') == 3:
-		print("✓ Voice recording active (speak into mic to test)")
-	elif available.get('result') == 1:
-		print("✓ SUCCESS: Voice data detected!")
-
+	print("✓ Microphone initialized successfully")
+	print("  Sample rate: ", voice_sample_rate, " Hz")
+	print("  Bus: Record (muted)")
+	print("  Speak into your microphone to test...")
 	print("===============================================")
 
 func stop_voice_recording():
-	"""Stop recording voice (call when push-to-talk released)"""
+	"""Stop recording voice"""
 	if not is_multiplayer:
 		return
 
 	is_recording = false
-	Steam.stopVoiceRecording()
-	Steam.setInGameVoiceSpeaking(local_steam_id, false)
+
+	if mic_player:
+		mic_player.stop()
+		mic_player.queue_free()
+		mic_player = null
+
+	mic_effect = null
 	print("Voice recording stopped")
 
 func load_audio_settings():
