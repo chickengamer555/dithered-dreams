@@ -83,13 +83,8 @@ func _ready():
 
 	# Check if we're in multiplayer mode
 	is_multiplayer = multiplayer.has_multiplayer_peer()
-	print("World _ready - is_multiplayer: ", is_multiplayer)
 
-	# Debug viewport setup
 	var viewport = $SubViewportContainer/SubViewport
-	print("Viewport size: ", viewport.size)
-	print("Viewport render mode: ", viewport.render_target_update_mode)
-	print("Viewport handle_input_locally: ", viewport.handle_input_locally)
 
 	if is_multiplayer:
 		print("Multiplayer mode detected!")
@@ -115,12 +110,10 @@ func _ready():
 			var old_camera = old_player.get_node_or_null("Camera3D")
 			if old_camera:
 				old_camera.current = false
-				print("Disabled single-player camera")
 
 			# Remove it from the scene tree immediately
 			old_player.get_parent().remove_child(old_player)
 			old_player.queue_free()
-			print("Removed single-player player node")
 
 	# Disable all worlds initially
 	for _world_name in worlds.keys():
@@ -128,7 +121,6 @@ func _ready():
 		if world_iter:
 			world_iter.visible = false
 			_disable_interactions_in_world(world_iter, true)
-			print("Disabled interactions for world:", _world_name)
 
 	# Disable all nightmares initially
 	for _nightmare_name in nightmares.keys():
@@ -136,7 +128,6 @@ func _ready():
 		if nightmare_iter:
 			nightmare_iter.visible = false
 			_disable_interactions_in_world(nightmare_iter, true)
-			print("Disabled interactions for nightmare:", _nightmare_name)
 
 	# Initialize world state
 	if is_multiplayer:
@@ -148,20 +139,16 @@ func _ready():
 			else:
 				current_world_name = "world1"
 
-			print("SERVER: Selected starting world: ", current_world_name)
-
 			# Enable the starting world on server
 			var starting_world = worlds[current_world_name]
 			if starting_world:
 				starting_world.visible = true
 				_disable_interactions_in_world(starting_world, false)
-				print("SERVER: Enabled starting world: ", current_world_name)
 
 				# FIX: Set environment on server too!
 				if world_environment:
 					if current_world_name in environments:
 						world_environment.environment = environments[current_world_name]
-						print("SERVER: Set environment for: ", current_world_name)
 					else:
 						world_environment.environment = null
 
@@ -169,17 +156,11 @@ func _ready():
 			sync_world_state.rpc(current_world_name)
 
 			# Spawn host player (CRITICAL: Use RPC so clients see the host!)
-			print("SERVER: Spawning host player...")
 			spawn_player.rpc(multiplayer.get_unique_id())  # FIX: Added .rpc() so clients see host!
 
 			# Spawn any already-connected clients
-			print("SERVER: Checking for already-connected clients...")
 			for peer_id in multiplayer.get_peers():
-				print("SERVER: Spawning client ", peer_id)
 				spawn_player.rpc(peer_id)
-		else:
-			# Client waits for server to sync world state
-			print("CLIENT: Waiting for server to sync world state...")
 	else:
 		# Single player mode
 		var normal_worlds = worlds.keys()
@@ -195,7 +176,6 @@ func _ready():
 		if starting_world:
 			starting_world.visible = true
 			_disable_interactions_in_world(starting_world, false)
-			print("Enabled interactions for starting world:", current_world_name)
 
 		teleport_to_world(current_world_name, spawn_position)
 	
@@ -250,7 +230,6 @@ func _ready():
 	get_tree().set_current_scene(self)
 
 func _disable_interactions_in_world(world: Node, disable: bool):
-	print("_disable_interactions_in_world called for:", world.name, "disable:", disable)
 	for child in world.get_children():
 		if child is Area3D:
 			child.set_deferred("monitoring", !disable)
@@ -343,13 +322,11 @@ func _do_teleport_to_world(world_name: String, spawn_position: Vector3, keep_pla
 		if world_iter:
 			world_iter.visible = false
 			_disable_interactions_in_world(world_iter, true)
-			print("Disabled interactions for world:", _world_name)
 	for _nightmare_name in nightmares.keys():
 		var nightmare_iter = nightmares[_nightmare_name]
 		if nightmare_iter:
 			nightmare_iter.visible = false
 			_disable_interactions_in_world(nightmare_iter, true)
-			print("Disabled interactions for nightmare:", _nightmare_name)
 	if world_name in worlds or world_name in nightmares:
 		var target_world = worlds.get(world_name, nightmares.get(world_name, null))
 		if target_world:
@@ -502,10 +479,8 @@ func find_spawn_near_player(player_pos: Vector3, attempts: int = 50) -> Vector3:
 
 		# Check if safe (not inside walls, not on top of other players)
 		if pos != null and is_position_safe(pos, 1.5):
-			print("Found safe spawn near player at distance: ", distance, " angle: ", rad_to_deg(angle))
 			return pos
 
-	print("Warning: Could not find spawn near player after ", attempts, " attempts. Using offset position.")
 	# Fallback: just offset to the side
 	return player_pos + Vector3(5, 0, 0)
 
@@ -515,7 +490,6 @@ func find_safe_spawn_position(world_name: String, attempts: int = 50, radius: fl
 		pos = adjust_position_to_ground(pos)
 		if pos != null and is_position_safe(pos, radius):
 			return pos
-	print("Warning: Could not find a safe spawn position after", attempts, "attempts.")
 	return Vector3(0, 10, 0)  # Or some predefined safe position
 
 func adjust_position_to_ground(pos: Vector3):
@@ -641,26 +615,22 @@ func _on_player_connected(id: int) -> void:
 	print("SERVER: Peer ", id, " connected to network (waiting for client_ready signal...)")
 
 func _on_player_disconnected(id: int) -> void:
-	print("Player disconnected: ", id)
 	if players.has(id):
 		players[id].queue_free()
 		players.erase(id)
 
 func _on_connected_to_server() -> void:
-	print("Client connected to server! World scene loaded. Notifying server...")
 	# Tell the server that this client is ready to receive world state
 	client_ready.rpc_id(1)  # 1 is always the server ID
 
 # Helper function to notify server when client world is ready
 func _notify_server_ready() -> void:
-	print("CLIENT: Sending client_ready to server...")
 	client_ready.rpc_id(1)  # 1 is always the server ID
 
 # Client tells server it's ready to receive world state
 @rpc("any_peer", "call_remote", "reliable")
 func client_ready() -> void:
 	var client_id = multiplayer.get_remote_sender_id()
-	print("SERVER: Client ", client_id, " is ready! Syncing world state...")
 
 	# Sync the current world state to the client
 	sync_world_state.rpc_id(client_id, current_world_name)
@@ -668,15 +638,12 @@ func client_ready() -> void:
 	# Wait for world state to sync
 	await get_tree().create_timer(0.5).timeout
 
-	print("SERVER: Spawning player for client ", client_id)
 	# Spawn the player for everyone
 	spawn_player.rpc(client_id)
 
 # Sync world state from server to clients
 @rpc("authority", "call_remote", "reliable")
 func sync_world_state(world_name: String) -> void:
-	print("CLIENT: Received world state sync - world: ", world_name)
-
 	# Disable all worlds
 	for _world_name in worlds.keys():
 		var world_iter = worlds[_world_name]
@@ -699,7 +666,6 @@ func sync_world_state(world_name: String) -> void:
 	if target_world:
 		target_world.visible = true
 		_disable_interactions_in_world(target_world, false)
-		print("CLIENT: Enabled world: ", world_name)
 
 		# Set environment
 		if world_environment:
@@ -707,16 +673,11 @@ func sync_world_state(world_name: String) -> void:
 				world_environment.environment = environments[world_name]
 			else:
 				world_environment.environment = null
-	else:
-		print("CLIENT ERROR: Could not find world: ", world_name)
 
 @rpc("any_peer", "call_local", "reliable")
 func spawn_player(peer_id: int) -> void:
-	print("spawn_player called for peer: ", peer_id)
-
 	# Don't spawn if already exists
 	if players.has(peer_id):
-		print("Player ", peer_id, " already spawned!")
 		return
 
 	var player = multiplayer_player_scene.instantiate()
@@ -733,7 +694,6 @@ func spawn_player(peer_id: int) -> void:
 	if peer_id != multiplayer.get_unique_id():
 		if player.has_method("setup_voice_receiver"):
 			player.setup_voice_receiver(voice_sample_rate)
-			print("Set up voice receiver for remote player ", peer_id, " with sample rate: ", voice_sample_rate)
 
 	var spawn_pos: Vector3
 
@@ -742,36 +702,14 @@ func spawn_player(peer_id: int) -> void:
 		# Get the first player's position
 		var first_player = players.values()[0]
 		spawn_pos = find_spawn_near_player(first_player.global_position)
-		print("Spawning player ", peer_id, " NEAR first player at: ", spawn_pos)
 	else:
 		# First player - spawn at random safe position
 		spawn_pos = find_safe_spawn_position(current_world_name, 100, 2.0)
-		print("Spawning FIRST player ", peer_id, " at: ", spawn_pos)
 
 	player.global_position = spawn_pos
 
 	# THEN add to players dictionary (so next spawn can check against this player)
 	players[peer_id] = player
-
-	print("Player ", peer_id, " spawned at: ", spawn_pos)
-	print("Total players now: ", players.size())
-	print("Viewport size: ", viewport.size)
-	print("Viewport render mode: ", viewport.render_target_update_mode)
-
-	# Wait for player to be ready and camera to be set up
-	await get_tree().create_timer(0.2).timeout
-
-	# Debug: List all cameras in viewport
-	print("=== CAMERA DEBUG ===")
-	for child in viewport.get_children():
-		if child is CharacterBody3D:
-			var cam = child.get_node_or_null("Camera3D")
-			if cam:
-				print("Found camera in ", child.name, " - Current: ", cam.current, " Position: ", cam.global_position)
-
-	var active_cam = viewport.get_camera_3d()
-	print("Viewport active camera: ", active_cam)
-	print("=== END CAMERA DEBUG ===")
 
 # ========== INTERACTION SYSTEM ==========
 
@@ -852,14 +790,10 @@ func _create_interaction_ui() -> void:
 	voice_settings_ui = voice_settings_scene.instantiate()
 	$CanvasLayer.add_child(voice_settings_ui)
 
-	print("Interaction UI created")
-	print("Voice Settings UI created - Press F1 to open")
-
 func show_interaction_prompt(text: String) -> void:
 	if interaction_label:
 		interaction_label.text = text
 		interaction_label.visible = true
-		print("Showing interaction prompt: ", text)
 
 func hide_interaction_prompt() -> void:
 	if interaction_label:
@@ -902,21 +836,16 @@ func teleport_from_end_object() -> void:
 		teleport_from_end_object.rpc_id(1)
 		return
 
-	print("Teleporting to random dream world from end object...")
-
 	# Teleport to a random NORMAL world (not nightmare)
 	var available_worlds = worlds.keys()
 	available_worlds.erase(current_world_name)  # Don't teleport to current world
 
 	if available_worlds.size() > 0:
 		var random_world = available_worlds[randi() % available_worlds.size()]
-		print("Selected random world: ", random_world)
 
 		# Teleport with random spawn positions (NOT keeping positions)
 		var spawn_position = find_safe_spawn_position(random_world)
 		teleport_to_world(random_world, spawn_position, false)
-	else:
-		print("ERROR: No other worlds available to teleport to!")
 
 # ============================================================================
 # VOICE CHAT FUNCTIONS
@@ -969,13 +898,20 @@ func check_for_voice():
 			if has_audio:
 				# Show voice indicator
 				show_voice_indicator()
-				# Send voice packet (removed debug spam)
+				# Send voice packet
 				send_voice_packet.rpc(pcm_data)
 
 @rpc("any_peer", "unreliable", "call_remote")
 func send_voice_packet(pcm_voice: PackedByteArray):
 	"""Receive voice packet from network"""
 	var sender_id = multiplayer.get_remote_sender_id()
+
+	print("🎙️ VOICE DEBUG: Received packet - sender_id=", sender_id, " my_id=", multiplayer.get_unique_id(), " players=", players.keys())
+
+	# get_remote_sender_id() returns 0 if called locally
+	if sender_id == 0:
+		print("❌ VOICE ERROR: sender_id is 0!")
+		return
 
 	# Don't process our own voice
 	if sender_id == multiplayer.get_unique_id():
@@ -986,10 +922,8 @@ func send_voice_packet(pcm_voice: PackedByteArray):
 		var player = players[sender_id]
 		if player.has_method("receive_voice_data"):
 			player.receive_voice_data(pcm_voice)
-		else:
-			print("❌ Player has no receive_voice_data method!")
 	else:
-		print("❌ No player found for sender_id: ", sender_id)
+		print("❌ VOICE ERROR: No player found for sender_id: ", sender_id, " Available: ", players.keys())
 
 func start_voice_recording():
 	"""Start recording voice using Godot's microphone"""
@@ -1051,7 +985,6 @@ func stop_voice_recording():
 
 func load_audio_settings():
 	"""Load and apply saved audio settings"""
-	print("=== LOADING AUDIO SETTINGS ===")
 	var config = ConfigFile.new()
 	var err = config.load("user://settings.cfg")
 
@@ -1061,39 +994,27 @@ func load_audio_settings():
 	const BUS_SFX = 2
 	const BUS_VOICES = 3
 
-	print("Config load result: ", err, " (OK=", OK, ")")
-
 	if err == OK:
 		var music_volume = config.get_value("audio", "music_volume", 100)
 		var sfx_volume = config.get_value("audio", "sfx_volume", 100)
 		var voices_volume = config.get_value("audio", "voices_volume", 100)
 
-		print("Loaded values - Music: ", music_volume, "% SFX: ", sfx_volume, "% Voices: ", voices_volume, "%")
-
 		set_bus_volume(BUS_MUSIC, music_volume)
 		set_bus_volume(BUS_SFX, sfx_volume)
 		set_bus_volume(BUS_VOICES, voices_volume)
-
-		print("Audio settings applied!")
 	else:
 		# Use defaults (100%)
-		print("No saved settings found, using defaults (100%)")
 		set_bus_volume(BUS_MUSIC, 100)
 		set_bus_volume(BUS_SFX, 100)
 		set_bus_volume(BUS_VOICES, 100)
 
 func set_bus_volume(bus_index: int, volume_percent: float):
 	"""Set audio bus volume from percentage (0-100)"""
-	var bus_name = AudioServer.get_bus_name(bus_index)
-	print("Setting bus ", bus_index, " (", bus_name, ") to ", volume_percent, "%")
-
 	if volume_percent <= 0:
 		AudioServer.set_bus_mute(bus_index, true)
-		print("  -> MUTED bus ", bus_index, " (", bus_name, ")")
 	else:
 		AudioServer.set_bus_mute(bus_index, false)
 		# Convert percentage to decibels with logarithmic curve
 		var normalized = volume_percent / 100.0
 		var db = -40 + (40 * normalized * normalized)
 		AudioServer.set_bus_volume_db(bus_index, db)
-		print("  -> Set bus ", bus_index, " (", bus_name, ") to ", db, " dB")
