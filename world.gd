@@ -948,12 +948,16 @@ func check_for_voice():
 				# Convert right channel to 16-bit signed integer
 				var right_sample = int(clamp(frame.y, -1.0, 1.0) * 32767.0)
 
+				# Convert signed to unsigned 16-bit for transmission
+				var left_unsigned = left_sample if left_sample >= 0 else left_sample + 65536
+				var right_unsigned = right_sample if right_sample >= 0 else right_sample + 65536
+
 				# Write as little-endian 16-bit values
 				var idx = i * 4
-				pcm_data[idx] = left_sample & 0xFF
-				pcm_data[idx + 1] = (left_sample >> 8) & 0xFF
-				pcm_data[idx + 2] = right_sample & 0xFF
-				pcm_data[idx + 3] = (right_sample >> 8) & 0xFF
+				pcm_data[idx] = left_unsigned & 0xFF
+				pcm_data[idx + 1] = (left_unsigned >> 8) & 0xFF
+				pcm_data[idx + 2] = right_unsigned & 0xFF
+				pcm_data[idx + 3] = (right_unsigned >> 8) & 0xFF
 
 			# Check if there's actual audio (not silence)
 			var has_audio = false
@@ -965,32 +969,27 @@ func check_for_voice():
 			if has_audio:
 				# Show voice indicator
 				show_voice_indicator()
-				# Send voice packet
-				print("📢 Sending voice packet - Size: ", pcm_data.size(), " bytes")
+				# Send voice packet (removed debug spam)
 				send_voice_packet.rpc(pcm_data)
 
 @rpc("any_peer", "unreliable", "call_remote")
 func send_voice_packet(pcm_voice: PackedByteArray):
 	"""Receive voice packet from network"""
 	var sender_id = multiplayer.get_remote_sender_id()
-	print("🎤 Received voice packet from peer: ", sender_id, " Size: ", pcm_voice.size(), " bytes")
 
 	# Don't process our own voice
 	if sender_id == multiplayer.get_unique_id():
-		print("  ⏭️ Skipping own voice")
 		return
 
 	# Find the player who sent this voice data
 	if players.has(sender_id):
 		var player = players[sender_id]
 		if player.has_method("receive_voice_data"):
-			print("  ✅ Forwarding to player ", sender_id)
 			player.receive_voice_data(pcm_voice)
 		else:
-			print("  ❌ Player has no receive_voice_data method!")
+			print("❌ Player has no receive_voice_data method!")
 	else:
-		print("  ❌ No player found for sender_id: ", sender_id)
-		print("  Available players: ", players.keys())
+		print("❌ No player found for sender_id: ", sender_id)
 
 func start_voice_recording():
 	"""Start recording voice using Godot's microphone"""

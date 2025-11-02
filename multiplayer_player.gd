@@ -150,7 +150,10 @@ func _physics_process(delta: float) -> void:
 
 func setup_voice_receiver(sample_rate: int = 48000):
 	"""Set up voice playback for remote players with proximity audio"""
+	print("🎧 Setting up voice receiver for player ", name)
+
 	if not voice_player_3d:
+		print("  ❌ voice_player_3d is NULL!")
 		return
 
 	# Store the sample rate
@@ -169,14 +172,16 @@ func setup_voice_receiver(sample_rate: int = 48000):
 	voice_player_3d.attenuation_model = AudioStreamPlayer3D.ATTENUATION_LOGARITHMIC  # More realistic
 	voice_player_3d.unit_size = 8.0  # Moderate proximity range
 
-	print("Voice receiver configured for ", name, " - Sample rate: ", voice_sample_rate, "Hz")
+	print("✅ Voice receiver configured for ", name)
+	print("  Sample rate: ", voice_sample_rate, "Hz")
+	print("  voice_playback is null: ", voice_playback == null)
+	print("  voice_player_3d.playing: ", voice_player_3d.playing)
+	print("  voice_player_3d.stream_paused: ", voice_player_3d.stream_paused)
 
 func receive_voice_data(pcm_voice: PackedByteArray):
 	"""Receive and play voice data from network (stereo 16-bit PCM)"""
-	print("🔊 Player ", name, " received voice data: ", pcm_voice.size(), " bytes")
-
 	if voice_playback == null:
-		print("  ❌ voice_playback is null for player ", name)
+		print("❌ voice_playback is null for player ", name)
 		return
 
 	# Show voice indicator
@@ -186,22 +191,29 @@ func receive_voice_data(pcm_voice: PackedByteArray):
 
 	# Add to buffer
 	voice_buffer.append_array(pcm_voice)
-	print("  📦 Buffer size now: ", voice_buffer.size(), " bytes")
 
 	# Buffer overflow protection - prevent memory leak and latency buildup
 	var max_buffer_size = voice_sample_rate * 4  # 1 second worth of stereo 16-bit samples
 	if voice_buffer.size() > max_buffer_size:
-		print("Voice buffer overflow for ", name, " - clearing (size: ", voice_buffer.size(), ")")
+		print("⚠️ Voice buffer overflow for ", name, " - clearing (size: ", voice_buffer.size(), ")")
 		voice_buffer.clear()
 
 func process_voice_buffer():
 	"""Process voice buffer and push audio frames to the speaker - called every frame"""
-	if voice_playback == null or voice_buffer.size() == 0:
+	if voice_playback == null:
+		if voice_buffer.size() > 0:
+			print("⚠️ Player ", name, " - voice_playback is NULL but buffer has ", voice_buffer.size(), " bytes!")
+		return
+
+	if voice_buffer.size() == 0:
 		return
 
 	# Audio data is 16-bit stereo PCM (4 bytes per frame: 2 for left, 2 for right)
 	var frames_available = voice_playback.get_frames_available()
 	if frames_available == 0:
+		# Only print this warning occasionally to avoid spam
+		if voice_buffer.size() > 48000:  # Only warn if buffer is getting large
+			print("⚠️ Player ", name, " - No frames available! Buffer size: ", voice_buffer.size())
 		return  # Audio buffer full, wait for next frame
 
 	var frames_to_push = min(voice_buffer.size() / 4, frames_available)
