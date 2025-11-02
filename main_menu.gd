@@ -25,6 +25,9 @@ func _process(_delta: float) -> void:
 	Steam.run_callbacks()
 
 func _ready() -> void:
+	# Load and apply audio settings
+	load_audio_settings()
+
 	# Initialize Steam
 	var initialize_response: Dictionary = Steam.steamInitEx()
 	print("Steam Init Response: ", initialize_response)
@@ -384,3 +387,44 @@ func start_game() -> void:
 # Open settings menu
 func _on_settings_pressed() -> void:
 	get_tree().change_scene_to_file("res://settings_menu.tscn")
+
+func load_audio_settings():
+	"""Load and apply saved audio settings"""
+	var config = ConfigFile.new()
+	var err = config.load("user://settings.cfg")
+
+	# Audio bus indices
+	const BUS_MASTER = 0
+	const BUS_MUSIC = 1
+	const BUS_SFX = 2
+	const BUS_VOICES = 3
+
+	if err == OK:
+		var music_volume = config.get_value("audio", "music_volume", 100)
+		var sfx_volume = config.get_value("audio", "sfx_volume", 100)
+		var voices_volume = config.get_value("audio", "voices_volume", 100)
+
+		set_bus_volume(BUS_MUSIC, music_volume)
+		set_bus_volume(BUS_SFX, sfx_volume)
+		set_bus_volume(BUS_VOICES, voices_volume)
+
+		print("Audio settings loaded - Music: ", music_volume, "% SFX: ", sfx_volume, "% Voices: ", voices_volume, "%")
+	else:
+		# Use defaults (100%)
+		set_bus_volume(BUS_MUSIC, 100)
+		set_bus_volume(BUS_SFX, 100)
+		set_bus_volume(BUS_VOICES, 100)
+		print("No saved audio settings found, using defaults")
+
+func set_bus_volume(bus_index: int, volume_percent: float):
+	"""Set audio bus volume from percentage (0-100)"""
+	if volume_percent <= 0:
+		AudioServer.set_bus_mute(bus_index, true)
+		print("Muted bus ", bus_index)
+	else:
+		AudioServer.set_bus_mute(bus_index, false)
+		# Convert percentage to decibels with logarithmic curve
+		var normalized = volume_percent / 100.0
+		var db = -40 + (40 * normalized * normalized)
+		AudioServer.set_bus_volume_db(bus_index, db)
+		print("Set bus ", bus_index, " to ", volume_percent, "% (", db, " dB)")
