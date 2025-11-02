@@ -168,9 +168,10 @@ func setup_voice_receiver(sample_rate: int = 48000):
 	voice_player_3d.play()
 	voice_playback = voice_player_3d.get_stream_playback()
 
-	# Optimize 3D audio settings for proximity voice chat
+	# Optimize 3D audio settings for proximity voice chat - DREAMY EXTENDED RANGE
 	voice_player_3d.attenuation_model = AudioStreamPlayer3D.ATTENUATION_LOGARITHMIC  # More realistic
-	voice_player_3d.unit_size = 8.0  # Moderate proximity range
+	voice_player_3d.unit_size = 16.0  # Extended proximity range (doubled)
+	voice_player_3d.max_distance = 100.0  # Can hear voices from much further away
 
 	print("✅ Voice receiver configured for ", name)
 	print("  Sample rate: ", voice_sample_rate, "Hz")
