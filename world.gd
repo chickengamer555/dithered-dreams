@@ -918,32 +918,35 @@ func teleport_from_end_object() -> void:
 
 func check_for_voice():
 	"""Check for available voice data and send to network"""
-	# IMPORTANT: Must call getAvailableVoice() FIRST to check if there's data!
-	var available_voice: Dictionary = Steam.getAvailableVoice()
+	# Get voice data from Steam
+	var voice_data: Dictionary = Steam.getVoice()
 
 	# Debug: Print voice data status occasionally (every 60 frames = ~1 second)
 	if Engine.get_process_frames() % 60 == 0:
-		var result = available_voice.get('result', 'N/A')
-		var buffer_size = available_voice.get('buffer', 'N/A')
-		print("Voice available - Result: ", result, " Buffer: ", buffer_size)
+		var result = voice_data.get('result', 'N/A')
+		var written = voice_data.get('written', 'N/A')
+		print("Voice check - Result: ", result, " Written: ", written)
 
 		# Result codes: 1 = OK, 2 = NotRecording, 3 = NoData, 4 = BufferTooSmall, etc.
 		if result == 2:
-			print("WARNING: Steam Voice is not recording! Voice recording may have stopped.")
-		elif result != 1 and result != 3:
+			print("WARNING: Steam Voice is not recording! Restarting voice recording...")
+			# Try to restart voice recording
+			Steam.stopVoiceRecording()
+			await get_tree().create_timer(0.1).timeout
+			Steam.startVoiceRecording()
+		elif result == 3:
+			# NoData is normal when not speaking - no action needed
+			pass
+		elif result != 1:
 			print("WARNING: Unexpected voice result code: ", result)
 
-	# Only get voice data if it's available
-	if available_voice.has('result') and available_voice['result'] == 1 and available_voice.has('buffer') and available_voice['buffer'] > 0:
-		# Now get the actual voice data
-		var voice_data: Dictionary = Steam.getVoice()
-
-		if voice_data.has('result') and voice_data['result'] == 1 and voice_data.has('written') and voice_data['written'] > 0:
-			print("Sending voice packet - Size: ", voice_data['written'])
-			# Show voice indicator
-			show_voice_indicator()
-			# Send voice packet to all other peers (unreliable for low latency)
-			send_voice_packet.rpc(voice_data['buffer'])
+	# Send voice data if available
+	if voice_data.has('result') and voice_data['result'] == 1 and voice_data.has('written') and voice_data['written'] > 0:
+		print("Sending voice packet - Size: ", voice_data['written'])
+		# Show voice indicator
+		show_voice_indicator()
+		# Send voice packet to all other peers (unreliable for low latency)
+		send_voice_packet.rpc(voice_data['buffer'])
 
 @rpc("any_peer", "unreliable", "call_remote")
 func send_voice_packet(compressed_voice: PackedByteArray):
