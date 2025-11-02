@@ -1,6 +1,7 @@
-[gd_scene load_steps=90 format=4 uid="uid://5s5tymjjs4cf"]
+[gd_scene load_steps=91 format=4 uid="uid://5s5tymjjs4cf"]
 
 [ext_resource type="Script" uid="uid://pkt703rm8s13" path="res://world.gd" id="1_bylj8"]
+[ext_resource type="PackedScene" path="res://dream_helper.tscn" id="3_dream"]
 [ext_resource type="Shader" uid="uid://coicieil24264" path="res://Shaders/Jitter.gdshader" id="3_j1e6l"]
 [ext_resource type="PackedScene" uid="uid://b73bc3j1ohpp1" path="res://player.tscn" id="3_k3laj"]
 [ext_resource type="PackedScene" path="res://end_object.tscn" id="3_mc2jv"]
@@ -737,6 +738,16 @@ render_target_update_mode = 4
 
 [node name="world2" type="Node3D" parent="SubViewportContainer/SubViewport"]
 transform = Transform3D(15, 0, 0, 0, 15, 0, 0, 0, 15, 0, 0, 0)
+visible = false
+
+[node name="DreamHelper1" parent="SubViewportContainer/SubViewport/world2" instance=ExtResource("3_dream")]
+transform = Transform3D(0.15, 0, 0, 0, 0.15, 0, 0, 0, 0.15, 4, 1, 4)
+
+[node name="DreamHelper2" parent="SubViewportContainer/SubViewport/world2" instance=ExtResource("3_dream")]
+transform = Transform3D(0.15, 0, 0, 0, 0.15, 0, 0, 0, 0.15, -6, 1, 2)
+
+[node name="DreamHelper3" parent="SubViewportContainer/SubViewport/world2" instance=ExtResource("3_dream")]
+transform = Transform3D(0.15, 0, 0, 0, 0.15, 0, 0, 0, 0.15, 2, 1, -5)
 
 [node name="EndObject" parent="SubViewportContainer/SubViewport/world2" instance=ExtResource("3_mc2jv")]
 transform = Transform3D(0.49999994, 0, 0, 0, 0.49999994, 0, 0, 0, 0.49999994, 7.606958, 0, -1.3891728)
@@ -992,7 +1003,6 @@ shape = SubResource("BoxShape3D_sxn1u")
 stream = ExtResource("10_vgvs4")
 volume_db = 1.25
 autoplay = true
-bus = &"Music"
 
 [node name="nightmare2" type="Node3D" parent="SubViewportContainer/SubViewport"]
 transform = Transform3D(15, 0, 0, 0, 15, 0, 0, 0, 15, 0, 0, 0)
@@ -1244,7 +1254,6 @@ stream = ExtResource("12_0adto")
 volume_db = 0.75
 pitch_scale = 1.25
 autoplay = true
-bus = &"Music"
 
 [node name="EndObject" parent="SubViewportContainer/SubViewport/nightmare2" instance=ExtResource("3_mc2jv")]
 transform = Transform3D(0.49999994, 0, 0, 0, 0.49999994, 0, 0, 0, 0.49999994, 7.606958, 0, -1.3891728)
@@ -1259,7 +1268,6 @@ stream = ExtResource("6_uxp5i")
 volume_db = 0.75
 pitch_scale = 1.25
 autoplay = true
-bus = &"Music"
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world1"]
 transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, 0, 0, 0)
@@ -1339,6 +1347,7 @@ mesh = SubResource("ArrayMesh_isqn2")
 skeleton = NodePath("")
 
 [node name="Collisions" type="Node3D" parent="SubViewportContainer/SubViewport/world1"]
+visible = false
 
 [node name="StaticBody3D" type="StaticBody3D" parent="SubViewportContainer/SubViewport/world1/Collisions"]
 
@@ -1453,6 +1462,15 @@ transform = Transform3D(0.707107, 0, 0.707107, 0, 1, 0, -0.707107, 0, 0.707107, 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/world1/areas/Area3D9"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.0783558, 0, -1.02006)
 shape = SubResource("BoxShape3D_y2ymk")
+
+[node name="DreamHelper1" parent="SubViewportContainer/SubViewport/world1" instance=ExtResource("3_dream")]
+transform = Transform3D(0.15, 0, 0, 0, 0.15, 0, 0, 0, 0.15, 3, 1, 3)
+
+[node name="DreamHelper2" parent="SubViewportContainer/SubViewport/world1" instance=ExtResource("3_dream")]
+transform = Transform3D(0.14999999, 0, 0, 0, 0.14999999, 0, 0, 0, 0.14999999, -4.9999995, 0.612047, 4.9999995)
+
+[node name="DreamHelper3" parent="SubViewportContainer/SubViewport/world1" instance=ExtResource("3_dream")]
+transform = Transform3D(0.15, 0, 0, 0, 0.15, 0, 0, 0, 0.15, 0, 1, -6)
 
 [node name="EndObject" parent="SubViewportContainer/SubViewport/world1" instance=ExtResource("3_mc2jv")]
 transform = Transform3D(0.49999988, 0, 0, 0, 0.49999988, 0, 0, 0, 0.49999988, -3.754219, 0, -1.3891726)
@@ -1747,7 +1765,6 @@ stream = ExtResource("6_ipbu6")
 volume_db = 0.75
 pitch_scale = 0.75
 autoplay = true
-bus = &"Music"
 
 [node name="EndObject" parent="SubViewportContainer/SubViewport/nightmare1" instance=ExtResource("3_mc2jv")]
 transform = Transform3D(0.49999988, 0, 0, 0, 0.49999988, 0, 0, 0, 0.49999988, -3.754219, 0, -1.3891726)
@@ -1837,7 +1854,6 @@ skeleton = NodePath("")
 
 [node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="SubViewportContainer/SubViewport/world3"]
 volume_db = 1.25
-bus = &"Music"
 
 [node name="Models" type="Node3D" parent="SubViewportContainer/SubViewport/world3"]
 

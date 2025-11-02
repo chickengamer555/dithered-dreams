@@ -59,9 +59,7 @@ var voice_settings_ui: Control = null
 var time_left: int = play_time
 var timer: Timer
 
-var world_timer: Timer
-var time_in_world: float = 0.0
-@export var time_before_nightmare: float = 45.0
+# REMOVED: world_timer and time_in_world - no longer using time-based nightmare transitions
 
 @export var nightmare_chance: float = 25.0
 @export var world_chance: float = 75.0
@@ -86,11 +84,17 @@ func _ready():
 	randomize()  # Starts random number generator
 	nightmare_bar.value = nightmare_value  # Sets up the nightmare bar based on var
 
-	# NOTE: Audio settings are now loaded in main_menu.gd BEFORE world instantiation
-	# This ensures AudioStreamPlayer nodes with autoplay=true respect the volume settings
+	# Load audio settings for both single player and multiplayer
+	# This ensures volume sliders work correctly regardless of mode
+	load_audio_settings()
 
-	# Check if we're in multiplayer mode
+	# This is now a multiplayer-only game
 	is_multiplayer = multiplayer.has_multiplayer_peer()
+
+	if not is_multiplayer:
+		print("ERROR: This game requires multiplayer! Please use Host or Join from main menu.")
+		go_to_main_menu()
+		return
 
 	var viewport = $SubViewportContainer/SubViewport
 
@@ -169,25 +173,8 @@ func _ready():
 			# Spawn any already-connected clients
 			for peer_id in multiplayer.get_peers():
 				spawn_player.rpc(peer_id)
-	else:
-		# Single player mode
-		var normal_worlds = worlds.keys()
-		if normal_worlds.size() > 0:
-			current_world_name = normal_worlds[randi() % normal_worlds.size()]
-		else:
-			return
 
-		var spawn_position = find_safe_spawn_position(current_world_name)
-
-		# Enable the starting world
-		var starting_world = worlds[current_world_name]
-		if starting_world:
-			starting_world.visible = true
-			_disable_interactions_in_world(starting_world, false)
-
-		teleport_to_world(current_world_name, spawn_position)
-	
-	# Initialize voice chat for multiplayer
+	# Initialize voice chat (always runs since this is multiplayer-only)
 	if is_multiplayer:
 		# Use Godot's built-in microphone capture
 		voice_sample_rate = 48000  # Standard high-quality sample rate
@@ -213,15 +200,8 @@ func _ready():
 	timer.timeout.connect(_on_timer_tick)
 	add_child(timer)
 	timer.start()
-	
-	# Initialize and start the world timer
-	world_timer = Timer.new()
-	world_timer.wait_time = 1.0
-	world_timer.autostart = true
-	world_timer.one_shot = false
-	world_timer.timeout.connect(_on_world_timer_tick)
-	add_child(world_timer)
-	world_timer.start()
+
+	# REMOVED: world_timer - no longer using time-based nightmare transitions
 	
 	# Set the timer label
 	if timer_label:
@@ -265,31 +245,8 @@ func _disable_interactions_in_world(world: Node, disable: bool):
 		if child.get_child_count() > 0:
 			_disable_interactions_in_world(child, disable)
 
-func _on_world_timer_tick():
-	# Only server controls world transitions in multiplayer
-	if is_multiplayer and not multiplayer.is_server():
-		return
-
-	time_in_world += 1.0
-	if time_in_world >= time_before_nightmare:
-		teleport_to_nightmare_world(current_world_name)
-		time_in_world = 0.0
-
-func teleport_to_nightmare_world(world_name: String):
-	# Only server controls world transitions in multiplayer
-	if is_multiplayer and not multiplayer.is_server():
-		return
-
-	var nightmare_world_name = ""
-	if world_name.begins_with("world"):
-		var world_number = world_name.substr(5)
-		nightmare_world_name = "nightmare" + world_number
-	else:
-		return
-	if nightmare_world_name in nightmares:
-		# FIX: Don't teleport players, keep them in same position!
-		# Just switch the world with a black fade
-		teleport_to_world(nightmare_world_name, Vector3.ZERO, true)  # true = keep player positions
+	# REMOVED: _on_world_timer_tick and teleport_to_nightmare_world
+	# No longer using time-based nightmare transitions
 
 func teleport_to_random_world():
 	# Only server controls world transitions in multiplayer
@@ -320,11 +277,11 @@ func teleport_to_random_normal_world():
 		var spawn_position = find_safe_spawn_position(random_world)
 		teleport_to_world(random_world, spawn_position)
 
-func teleport_to_world(world_name: String, spawn_position: Vector3, keep_player_positions: bool = false):
+func teleport_to_world(world_name: String, spawn_position: Vector3, keep_player_positions: bool = false, reset_nightmare: float = -1.0):
 	is_transitioning = true
-	play_transition_effect(Callable(self, "_do_teleport_to_world").bind(world_name, spawn_position, keep_player_positions))
+	play_transition_effect(Callable(self, "_do_teleport_to_world").bind(world_name, spawn_position, keep_player_positions, reset_nightmare))
 
-func _do_teleport_to_world(world_name: String, spawn_position: Vector3, keep_player_positions: bool = false):
+func _do_teleport_to_world(world_name: String, spawn_position: Vector3, keep_player_positions: bool = false, reset_nightmare: float = -1.0):
 	for _world_name in worlds.keys():
 		var world_iter = worlds[_world_name]
 		if world_iter:
@@ -342,7 +299,17 @@ func _do_teleport_to_world(world_name: String, spawn_position: Vector3, keep_pla
 			_disable_interactions_in_world(target_world, false)
 			print("Enabled interactions for world:", world_name)
 			current_world_name = world_name
-			time_in_world = 0.0
+			# REMOVED: time_in_world reset - no longer using time-based transitions
+
+			# Reset nightmare value if requested (after world change)
+			if reset_nightmare >= 0.0:
+				nightmare_value = reset_nightmare
+				nightmare_bar.value = nightmare_value
+				print("Nightmare value reset to: ", nightmare_value, "%")
+
+				# Sync to clients in multiplayer
+				if is_multiplayer and multiplayer.is_server():
+					sync_nightmare_value.rpc(nightmare_value)
 
 			# Assign the corresponding environment
 			if world_environment:
@@ -368,11 +335,6 @@ func _do_teleport_to_world(world_name: String, spawn_position: Vector3, keep_pla
 							var unique_spawn = find_safe_spawn_position(world_name, 50, 2.0)
 							player.global_transform.origin = unique_spawn
 							print("Teleported player ", peer_id, " to unique position: ", unique_spawn)
-				else:
-					# Teleport single-player player
-					var player = get_node_or_null("SubViewportContainer/SubViewport/Player")
-					if player:
-						player.global_transform.origin = spawn_position
 			else:
 				# Keep player positions (for nightmare transitions)
 				print("Keeping player positions during world transition")
@@ -401,6 +363,10 @@ func _input(event):
 	if event is InputEventKey and event.pressed and event.keycode == KEY_F1:
 		if voice_settings_ui:
 			voice_settings_ui.show_settings()
+
+	# Open settings menu with ESC
+	if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
+		open_settings_menu()
 
 func _process(delta):
 	# Check for voice data continuously in multiplayer (always-on voice chat)
@@ -431,11 +397,16 @@ func _process(delta):
 			update_nightmare_and_dream_speed(any_player_moving)
 
 			# Update nightmare value on server
-			if nightmare_speed > 0:
-				nightmare_value += nightmare_speed * delta * nightmare_increment
-			elif dream_value > 0:
-				nightmare_value -= dream_value * delta * dream_increment
-			nightmare_value = clamp(nightmare_value, 0, 100)
+			# NEW: In nightmare worlds, keep nightmare at 100%
+			if is_in_nightmare_world():
+				nightmare_value = 100.0
+			else:
+				# In dream worlds, nightmare slowly increases
+				if nightmare_speed > 0:
+					nightmare_value += nightmare_speed * delta * nightmare_increment
+				elif dream_value > 0:
+					nightmare_value -= dream_value * delta * dream_increment
+				nightmare_value = clamp(nightmare_value, 0, 100)
 
 			# OPTIMIZATION: Rate-limited sync - only send updates 5 times per second
 			nightmare_sync_timer += delta
@@ -445,40 +416,59 @@ func _process(delta):
 
 		# Update local UI (both server and clients)
 		nightmare_bar.value = nightmare_value
-		if nightmare_value >= 100:
+		if nightmare_value >= 100 and not is_in_nightmare_world():
 			_trigger_jumpscare()
 	else:
-		# Single player: original logic
-		if nightmare_speed > 0:
-			nightmare_value += nightmare_speed * delta * nightmare_increment
-		elif dream_value > 0:
-			nightmare_value -= dream_value * delta * dream_increment
-		nightmare_value = clamp(nightmare_value, 0, 100)
+		# SINGLE PLAYER: Update nightmare/dream speeds based on player movement
+		var single_player = get_node_or_null("SubViewportContainer/SubViewport/Player")
+		var is_player_moving = false
+		if single_player and "is_moving" in single_player:
+			is_player_moving = single_player.is_moving
+
+		update_nightmare_and_dream_speed(is_player_moving)
+
+		# In nightmare worlds, nightmare doesn't change (stays where it is)
+		# In dream worlds, nightmare slowly increases
+		if not is_in_nightmare_world():
+			if nightmare_speed > 0:
+				nightmare_value += nightmare_speed * delta * nightmare_increment
+			elif dream_value > 0:
+				nightmare_value -= dream_value * delta * dream_increment
+			nightmare_value = clamp(nightmare_value, 0, 100)
+
 		nightmare_bar.value = nightmare_value
-		if nightmare_value >= 100:
+		if nightmare_value >= 100 and not is_in_nightmare_world():
 			_trigger_jumpscare()
 
 func update_nightmare_and_dream_speed(is_moving: bool):
+	# NEW GAMEPLAY: In nightmare world, nightmare stays at 100%
+	# In dream world, nightmare slowly ticks up regardless of movement
 	if is_in_nightmare_world():
-		nightmare_speed = 1.0
+		nightmare_speed = 0.0  # Don't increase in nightmare
 		dream_value = 0.0
 	else:
-		if is_moving:
-			nightmare_speed = 0.0
-			dream_value = 1.0
-		else:
-			nightmare_speed = 0.5
-			dream_value = 0.0
+		# In dream worlds, nightmare always slowly increases
+		nightmare_speed = 0.3  # Slow constant increase
+		dream_value = 0.0
 
 func is_in_nightmare_world() -> bool:
 	return current_world_name in nightmares
 
 func _trigger_jumpscare():
-	nightmare_value = 0.0
-	nightmare_bar.value = nightmare_value
-	# Because we've marked the current scene as main in _ready(), 
-	# this will properly replace the current scene with the jumpscare scene.
-	get_tree().change_scene_to_file("res://Jumpscare.tscn")
+	# NEW GAMEPLAY: At 100% nightmare, teleport to nightmare version of current world
+	# Keep nightmare at 100% (don't reset to 0)
+
+	# Only trigger if we're NOT already in a nightmare world
+	if not is_in_nightmare_world():
+		# Find the nightmare version of the current world
+		var nightmare_world_name = ""
+		if current_world_name.begins_with("world"):
+			var world_number = current_world_name.substr(5)
+			nightmare_world_name = "nightmare" + world_number
+
+			if nightmare_world_name in nightmares:
+				# Teleport to nightmare world, keeping player positions
+				teleport_to_world(nightmare_world_name, Vector3.ZERO, true)
 
 
 
@@ -529,11 +519,6 @@ func adjust_position_to_ground(pos: Vector3):
 	query.from = from_point
 	query.to = to_point
 
-	# Only exclude single-player player if it exists
-	var single_player = get_node_or_null("SubViewportContainer/SubViewport/Player")
-	if single_player:
-		query.exclude = [ single_player ]
-
 	query.collision_mask = 0xFFFFFFFF
 	query.collide_with_bodies = true
 	query.collide_with_areas = false
@@ -572,11 +557,6 @@ func is_position_safe(pos: Vector3, radius: float) -> bool:
 	query.shape = sphere_shape
 	query.transform = transform
 	query.margin = 0.1
-
-	# Only exclude single-player player if it exists
-	var single_player = get_node_or_null("SubViewportContainer/SubViewport/Player")
-	if single_player:
-		query.exclude = [ single_player ]
 
 	query.collision_mask = 0xFFFFFFFF
 	query.collide_with_bodies = true
@@ -644,9 +624,13 @@ func _on_player_connected(id: int) -> void:
 	print("SERVER: Peer ", id, " connected to network (waiting for client_ready signal...)")
 
 func _on_player_disconnected(id: int) -> void:
+	print("Player ", id, " disconnected - removing from game")
 	if players.has(id):
-		players[id].queue_free()
+		var player = players[id]
+		if player:
+			player.queue_free()
 		players.erase(id)
+		print("Player ", id, " fully removed. Remaining players: ", players.keys())
 
 func _on_connected_to_server() -> void:
 	# Tell the server that this client is ready to receive world state
@@ -851,30 +835,77 @@ func update_interaction_progress(progress: float) -> void:
 
 # Get total player count (for end_object to check if all players are ready)
 func get_total_player_count() -> int:
-	if is_multiplayer:
-		return players.size()
-	else:
-		return 1  # Single player
+	return players.size()
 
-# Called by end_object when player activates it
+# Called by dream_helper when player collects it
+@rpc("any_peer", "call_local", "reliable")
+func reduce_nightmare_from_item(reduction_amount: float) -> void:
+	# Only server handles the actual reduction in multiplayer
+	if is_multiplayer and not multiplayer.is_server():
+		# Client sends request to server
+		reduce_nightmare_from_item.rpc_id(1, reduction_amount)
+		return
+
+	# Reduce nightmare value
+	nightmare_value -= reduction_amount
+	nightmare_value = clamp(nightmare_value, 0, 100)
+	nightmare_bar.value = nightmare_value
+
+	print("Nightmare reduced by ", reduction_amount, "% (now at ", nightmare_value, "%)")
+
+	# Sync to clients in multiplayer
+	if is_multiplayer and multiplayer.is_server():
+		sync_nightmare_value.rpc(nightmare_value)
+
+# Called by end_object when player activates it (bed)
 @rpc("any_peer", "call_local", "reliable")
 func teleport_from_end_object() -> void:
+	print("=== TELEPORT FROM END OBJECT CALLED ===")
+	print("is_multiplayer: ", is_multiplayer)
+	if is_multiplayer:
+		print("is_server: ", multiplayer.is_server())
+
 	# Only server handles the actual teleportation
 	if is_multiplayer and not multiplayer.is_server():
 		# Client sends request to server
+		print("Client sending teleport request to server")
 		teleport_from_end_object.rpc_id(1)
 		return
+
+	# NEW GAMEPLAY:
+	# - If in nightmare world: Reset nightmare to 0%
+	# - If in dream world: Reduce nightmare by 75%
+	print("Current world: ", current_world_name)
+	print("Is in nightmare world: ", is_in_nightmare_world())
+	print("Nightmare value before: ", nightmare_value)
+
+	# Calculate the new nightmare value
+	var new_nightmare_value: float
+	if is_in_nightmare_world():
+		new_nightmare_value = 0.0
+		print("In nightmare world - will reset nightmare to 0%")
+	else:
+		# In dream world - reduce by 75%
+		new_nightmare_value = max(nightmare_value - 75.0, 0.0)
+		print("In dream world - will reduce nightmare by 75%")
 
 	# Teleport to a random NORMAL world (not nightmare)
 	var available_worlds = worlds.keys()
 	available_worlds.erase(current_world_name)  # Don't teleport to current world
 
+	# If currently in a nightmare, also exclude the corresponding dream world
+	if is_in_nightmare_world():
+		var world_number = current_world_name.substr(9)  # Get number from "nightmare1"
+		var corresponding_world = "world" + world_number
+		available_worlds.erase(corresponding_world)
+
 	if available_worlds.size() > 0:
 		var random_world = available_worlds[randi() % available_worlds.size()]
 
 		# Teleport with random spawn positions (NOT keeping positions)
+		# Pass the new nightmare value to be set AFTER the world transition
 		var spawn_position = find_safe_spawn_position(random_world)
-		teleport_to_world(random_world, spawn_position, false)
+		teleport_to_world(random_world, spawn_position, false, new_nightmare_value)
 
 # ============================================================================
 # VOICE CHAT FUNCTIONS
@@ -1073,19 +1104,34 @@ func load_audio_settings():
 		set_bus_volume(BUS_MUSIC, music_volume)
 		set_bus_volume(BUS_SFX, sfx_volume)
 		set_bus_volume(BUS_VOICES, voices_volume)
+
+		print("Audio settings loaded - Music: ", music_volume, "% SFX: ", sfx_volume, "% Voices: ", voices_volume, "%")
 	else:
 		# Use defaults (100%)
 		set_bus_volume(BUS_MUSIC, 100)
 		set_bus_volume(BUS_SFX, 100)
 		set_bus_volume(BUS_VOICES, 100)
+		print("No saved audio settings found, using defaults")
 
 func set_bus_volume(bus_index: int, volume_percent: float):
 	"""Set audio bus volume from percentage (0-100)"""
 	if volume_percent <= 0:
 		AudioServer.set_bus_mute(bus_index, true)
+		print("Muted bus ", bus_index)
 	else:
 		AudioServer.set_bus_mute(bus_index, false)
 		# Convert percentage to decibels with logarithmic curve
 		var normalized = volume_percent / 100.0
 		var db = -40 + (40 * normalized * normalized)
 		AudioServer.set_bus_volume_db(bus_index, db)
+		print("Set bus ", bus_index, " to ", volume_percent, "% (", db, " dB)")
+
+func open_settings_menu():
+	"""Open settings menu as overlay without leaving the game"""
+	var settings_scene = load("res://settings_menu.tscn")
+	if settings_scene:
+		var settings = settings_scene.instantiate()
+		# Add as child to CanvasLayer so it appears on top
+		$CanvasLayer.add_child(settings)
+		# Pause the game while in settings
+		get_tree().paused = true

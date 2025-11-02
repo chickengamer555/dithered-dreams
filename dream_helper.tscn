@@ -1,0 +1,38 @@
+[gd_scene load_steps=5 format=3 uid="uid://dream_helper_scene"]
+
+[ext_resource type="Script" path="res://dream_helper.gd" id="1_dream_helper"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_collect"]
+radius = 3.0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_glow"]
+albedo_color = Color(0.2, 1, 0.8, 1)
+emission_enabled = true
+emission = Color(0.2, 1, 0.8, 1)
+emission_energy_multiplier = 2.0
+
+[sub_resource type="SphereMesh" id="SphereMesh_helper"]
+material = SubResource("StandardMaterial3D_glow")
+radius = 1.0
+height = 2.0
+
+[node name="DreamHelper" type="Area3D"]
+script = ExtResource("1_dream_helper")
+nightmare_reduction_min = 5.0
+nightmare_reduction_max = 20.0
+rotation_speed = 2.0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("SphereShape3D_collect")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+mesh = SubResource("SphereMesh_helper")
+
+[node name="Label3D" type="Label3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+billboard = 1
+text = "Dream Helper"
+font_size = 32
+outline_size = 8
+
