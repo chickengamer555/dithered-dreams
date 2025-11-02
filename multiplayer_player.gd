@@ -17,6 +17,8 @@ var is_moving = false  # Is the player moving?
 var voice_playback: AudioStreamGeneratorPlayback = null
 var voice_buffer: PackedByteArray = PackedByteArray()
 var voice_sample_rate: int = 48000  # Will be set by world script
+var voice_indicator_3d: Label3D = null
+var voice_indicator_timer: float = 0.0
 
 func _ready():
 	# Initialize last_position to the player's starting position
@@ -70,7 +72,23 @@ func _ready():
 
 		# Voice receiver will be set up by world script with correct sample rate
 
+		# Create 3D voice indicator above player's head
+		voice_indicator_3d = Label3D.new()
+		voice_indicator_3d.text = "🎤"
+		voice_indicator_3d.visible = false
+		voice_indicator_3d.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+		voice_indicator_3d.modulate = Color(0.2, 1.0, 0.2)  # Green
+		voice_indicator_3d.pixel_size = 0.01
+		voice_indicator_3d.position = Vector3(0, 1.5, 0)  # Above player's head
+		add_child(voice_indicator_3d)
+
 func _physics_process(delta: float) -> void:
+	# Update voice indicator timer for remote players
+	if voice_indicator_timer > 0.0:
+		voice_indicator_timer -= delta
+		if voice_indicator_timer <= 0.0 and voice_indicator_3d:
+			voice_indicator_3d.visible = false
+
 	# REMOTE PLAYERS: Just return, let the MultiplayerSynchronizer handle it
 	# The synced properties will be updated automatically
 	if not is_multiplayer_authority():
@@ -150,6 +168,11 @@ func receive_voice_data(decompressed_voice: PackedByteArray):
 	"""Receive and play voice data from network"""
 	if voice_playback == null:
 		return
+
+	# Show voice indicator
+	if voice_indicator_3d:
+		voice_indicator_3d.visible = true
+		voice_indicator_timer = 0.2  # Keep visible for 200ms
 
 	# Add to buffer
 	voice_buffer.append_array(decompressed_voice)

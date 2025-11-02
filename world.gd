@@ -38,6 +38,10 @@ var environments = { # Loads the environment resources for each world and nightm
 var interaction_label: Label = null
 var interaction_progress_bar: ProgressBar = null
 
+# Voice chat UI
+var voice_indicator: Label = null
+var voice_indicator_timer: float = 0.0
+
 @export var play_time: int = 300
 @export var main_menu_scene: PackedScene
 var time_left: int = play_time
@@ -199,6 +203,15 @@ func _ready():
 		# Start voice recording automatically (always-on proximity chat)
 		start_voice_recording()
 		print("Proximity chat enabled (always-on)")
+		print("")
+		print("=== PROXIMITY CHAT TROUBLESHOOTING ===")
+		print("If voice chat isn't working, check:")
+		print("1. Windows Settings > Privacy > Microphone - Allow Steam")
+		print("2. Steam > Settings > Voice - Test microphone")
+		print("3. Make sure your microphone is not muted")
+		print("4. Speak into your microphone to test")
+		print("======================================")
+		print("")
 
 	# Initialize and start the main timer
 	timer = Timer.new()
@@ -401,6 +414,12 @@ func _process(delta):
 	# Check for voice data continuously in multiplayer (always-on voice chat)
 	if is_multiplayer:
 		check_for_voice()
+
+	# Update voice indicator timer
+	if voice_indicator_timer > 0.0:
+		voice_indicator_timer -= delta
+		if voice_indicator_timer <= 0.0:
+			hide_voice_indicator()
 
 	# Update nightmare/dream values based on player movement
 	if is_multiplayer:
@@ -794,6 +813,30 @@ func _create_interaction_ui() -> void:
 	# Add to CanvasLayer
 	$CanvasLayer.add_child(interaction_progress_bar)
 
+	# Create voice indicator (top left corner)
+	voice_indicator = Label.new()
+	voice_indicator.name = "VoiceIndicator"
+	voice_indicator.text = ""
+	voice_indicator.visible = false
+	voice_indicator.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	voice_indicator.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+
+	# Position at top left
+	voice_indicator.anchor_left = 0.0
+	voice_indicator.anchor_right = 0.0
+	voice_indicator.anchor_top = 0.0
+	voice_indicator.anchor_bottom = 0.0
+	voice_indicator.offset_left = 10
+	voice_indicator.offset_right = 200
+	voice_indicator.offset_top = 50
+	voice_indicator.offset_bottom = 80
+
+	# Style the label
+	voice_indicator.add_theme_color_override("font_color", Color(0.2, 1.0, 0.2))  # Green color
+
+	# Add to CanvasLayer
+	$CanvasLayer.add_child(voice_indicator)
+
 	print("Interaction UI created")
 
 func show_interaction_prompt(text: String) -> void:
@@ -808,6 +851,19 @@ func hide_interaction_prompt() -> void:
 	if interaction_progress_bar:
 		interaction_progress_bar.visible = false
 		interaction_progress_bar.value = 0.0
+
+func show_voice_indicator() -> void:
+	"""Show the voice transmission indicator"""
+	if voice_indicator:
+		voice_indicator.text = "🎤 Speaking..."
+		voice_indicator.visible = true
+		voice_indicator_timer = 0.2  # Keep visible for 200ms after last voice packet
+
+func hide_voice_indicator() -> void:
+	"""Hide the voice transmission indicator"""
+	if voice_indicator:
+		voice_indicator.visible = false
+		voice_indicator.text = ""
 
 func update_interaction_progress(progress: float) -> void:
 	if interaction_progress_bar:
@@ -857,12 +913,26 @@ func check_for_voice():
 
 	# Debug: Print voice data status occasionally (every 60 frames = ~1 second)
 	if Engine.get_process_frames() % 60 == 0:
-		print("Voice check - Result: ", voice_data.get('result', 'N/A'),
-			  " Written: ", voice_data.get('written', 'N/A'),
-			  " Available: ", voice_data.get('available', 'N/A'))
+		var result = voice_data.get('result', 'N/A')
+		var written = voice_data.get('written', 'N/A')
+		print("Voice check - Result: ", result, " Written: ", written)
+
+		# Result codes: 1 = OK, 2 = NotRecording, 3 = NoData, 4 = BufferTooSmall, etc.
+		if result == 3:
+			# NoData - This is normal when not speaking, but if it persists, check:
+			# 1. Windows microphone permissions for Steam
+			# 2. Steam Voice settings (Steam > Settings > Voice)
+			# 3. Microphone is working and not muted
+			pass
+		elif result == 2:
+			print("WARNING: Steam Voice is not recording! Voice recording may have stopped.")
+		elif result != 1 and result != 3:
+			print("WARNING: Unexpected voice result code: ", result)
 
 	if voice_data.has('result') and voice_data['result'] == 1 and voice_data.has('written') and voice_data['written'] > 0:
 		print("Sending voice packet - Size: ", voice_data['written'])
+		# Show voice indicator
+		show_voice_indicator()
 		# Send voice packet to all other peers (unreliable for low latency)
 		send_voice_packet.rpc(voice_data['buffer'])
 
