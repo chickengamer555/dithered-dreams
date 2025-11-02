@@ -196,6 +196,9 @@ func _ready():
 		local_steam_id = Steam.getSteamID()
 		voice_sample_rate = Steam.getVoiceOptimalSampleRate()
 		print("Voice chat initialized - Sample rate: ", voice_sample_rate)
+		# Start voice recording automatically (always-on proximity chat)
+		start_voice_recording()
+		print("Proximity chat enabled (always-on)")
 
 	# Initialize and start the main timer
 	timer = Timer.new()
@@ -391,16 +394,12 @@ func go_to_main_menu():
 		print("Error: Main menu scene is not set.")
 
 func _input(event):
-	# Handle push-to-talk for voice chat
-	if is_multiplayer:
-		if event.is_action_pressed("push_to_talk"):
-			start_voice_recording()
-		elif event.is_action_released("push_to_talk"):
-			stop_voice_recording()
+	# Voice chat is now always-on, no push-to-talk needed
+	pass
 
 func _process(delta):
-	# Check for voice data if recording
-	if is_multiplayer and is_recording:
+	# Check for voice data continuously in multiplayer (always-on voice chat)
+	if is_multiplayer:
 		check_for_voice()
 
 	# Update nightmare/dream values based on player movement
