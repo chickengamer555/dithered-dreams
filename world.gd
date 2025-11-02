@@ -250,13 +250,10 @@ func _disable_interactions_in_world(world: Node, disable: bool):
 					child.set_deferred("collision_layer", original_collision_layers[child.get_instance_id()])
 				if original_collision_masks.has(child.get_instance_id()):
 					child.set_deferred("collision_mask", original_collision_masks[child.get_instance_id()])
-		elif child is AudioStreamPlayer:
-			child.stream_paused = disable
-			if disable:
-				print("Paused AudioStreamPlayer:", child.name, "in", world.name)
-			else:
-				print("Playing AudioStreamPlayer:", child.name, "in", world.name)
-		
+		# NOTE: Removed AudioStreamPlayer pause/unpause logic
+		# Audio volume is now controlled by the audio bus system (Music/SFX/Voices buses)
+		# This allows the settings menu volume sliders to work correctly
+
 		# Recursively disable interactions for child nodes
 		if child.get_child_count() > 0:
 			_disable_interactions_in_world(child, disable)
@@ -898,6 +895,7 @@ func stop_voice_recording():
 
 func load_audio_settings():
 	"""Load and apply saved audio settings"""
+	print("=== LOADING AUDIO SETTINGS ===")
 	var config = ConfigFile.new()
 	var err = config.load("user://settings.cfg")
 
@@ -907,32 +905,39 @@ func load_audio_settings():
 	const BUS_SFX = 2
 	const BUS_VOICES = 3
 
+	print("Config load result: ", err, " (OK=", OK, ")")
+
 	if err == OK:
 		var music_volume = config.get_value("audio", "music_volume", 100)
 		var sfx_volume = config.get_value("audio", "sfx_volume", 100)
 		var voices_volume = config.get_value("audio", "voices_volume", 100)
 
+		print("Loaded values - Music: ", music_volume, "% SFX: ", sfx_volume, "% Voices: ", voices_volume, "%")
+
 		set_bus_volume(BUS_MUSIC, music_volume)
 		set_bus_volume(BUS_SFX, sfx_volume)
 		set_bus_volume(BUS_VOICES, voices_volume)
 
-		print("Audio settings loaded - Music: ", music_volume, "% SFX: ", sfx_volume, "% Voices: ", voices_volume, "%")
+		print("Audio settings applied!")
 	else:
 		# Use defaults (100%)
+		print("No saved settings found, using defaults (100%)")
 		set_bus_volume(BUS_MUSIC, 100)
 		set_bus_volume(BUS_SFX, 100)
 		set_bus_volume(BUS_VOICES, 100)
-		print("No saved audio settings found, using defaults")
 
 func set_bus_volume(bus_index: int, volume_percent: float):
 	"""Set audio bus volume from percentage (0-100)"""
+	var bus_name = AudioServer.get_bus_name(bus_index)
+	print("Setting bus ", bus_index, " (", bus_name, ") to ", volume_percent, "%")
+
 	if volume_percent <= 0:
 		AudioServer.set_bus_mute(bus_index, true)
-		print("Muted bus ", bus_index)
+		print("  -> MUTED bus ", bus_index, " (", bus_name, ")")
 	else:
 		AudioServer.set_bus_mute(bus_index, false)
 		# Convert percentage to decibels with logarithmic curve
 		var normalized = volume_percent / 100.0
 		var db = -40 + (40 * normalized * normalized)
 		AudioServer.set_bus_volume_db(bus_index, db)
-		print("Set bus ", bus_index, " to ", volume_percent, "% (", db, " dB)")
+		print("  -> Set bus ", bus_index, " (", bus_name, ") to ", db, " dB")
