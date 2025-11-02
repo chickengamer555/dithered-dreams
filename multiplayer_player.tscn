@@ -42,6 +42,7 @@ near = 0.1
 far = 500.0
 
 [node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="."]
+replication_interval = 0.05
 replication_config = SubResource("SceneReplicationConfig_sync")
 
 [node name="VoicePlayer3D" type="AudioStreamPlayer3D" parent="."]

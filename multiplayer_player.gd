@@ -20,6 +20,8 @@ var voice_sample_rate: int = 48000  # Will be set by world script
 var voice_indicator_3d: Label3D = null
 var voice_indicator_timer: float = 0.0
 
+# PERFORMANCE: Removed complex interpolation - Godot handles this automatically with physics interpolation
+
 func _ready():
 	# Initialize last_position to the player's starting position
 	last_position = global_transform.origin
@@ -92,8 +94,8 @@ func _physics_process(delta: float) -> void:
 	# Process voice buffer continuously
 	process_voice_buffer()
 
-	# REMOTE PLAYERS: Just return, let the MultiplayerSynchronizer handle it
-	# The synced properties will be updated automatically
+	# REMOTE PLAYERS: Let MultiplayerSynchronizer handle updates
+	# PERFORMANCE: Godot's built-in physics interpolation handles smoothing
 	if not is_multiplayer_authority():
 		return
 
@@ -162,7 +164,7 @@ func setup_voice_receiver(sample_rate: int = 48000):
 	# Create audio stream generator for voice playback
 	var stream = AudioStreamGenerator.new()
 	stream.mix_rate = voice_sample_rate
-	stream.buffer_length = 0.1  # 100ms buffer (balance of latency and stability)
+	stream.buffer_length = 0.15  # PERFORMANCE: 150ms buffer (better stability, slightly more latency)
 
 	voice_player_3d.stream = stream
 	voice_player_3d.play()
@@ -193,17 +195,16 @@ func receive_voice_data(pcm_voice: PackedByteArray):
 	# Add to buffer
 	voice_buffer.append_array(pcm_voice)
 
-	# Buffer overflow protection - prevent memory leak and latency buildup
-	var max_buffer_size = voice_sample_rate * 4  # 1 second worth of stereo 16-bit samples
+	# PERFORMANCE: Buffer overflow protection - prevent memory leak and latency buildup
+	var max_buffer_size = voice_sample_rate * 2  # 0.5 seconds worth of stereo 16-bit samples (reduced from 1s)
 	if voice_buffer.size() > max_buffer_size:
-		print("⚠️ Voice buffer overflow for ", name, " - clearing (size: ", voice_buffer.size(), ")")
+		# Clear buffer silently to avoid console spam
 		voice_buffer.clear()
 
 func process_voice_buffer():
 	"""Process voice buffer and push audio frames to the speaker - called every frame"""
 	if voice_playback == null:
-		if voice_buffer.size() > 0:
-			print("⚠️ Player ", name, " - voice_playback is NULL but buffer has ", voice_buffer.size(), " bytes!")
+		# PERFORMANCE: Removed debug spam
 		return
 
 	if voice_buffer.size() == 0:
@@ -212,21 +213,22 @@ func process_voice_buffer():
 	# Audio data is 16-bit stereo PCM (4 bytes per frame: 2 for left, 2 for right)
 	var frames_available = voice_playback.get_frames_available()
 	if frames_available == 0:
-		# Only print this warning occasionally to avoid spam
-		if voice_buffer.size() > 48000:  # Only warn if buffer is getting large
-			print("⚠️ Player ", name, " - No frames available! Buffer size: ", voice_buffer.size())
+		# PERFORMANCE: Removed warning spam
 		return  # Audio buffer full, wait for next frame
 
 	var frames_to_push = min(voice_buffer.size() / 4, frames_available)
 
+	# PERFORMANCE OPTIMIZATION: Process all frames at once, then remove in bulk
+	# This is MUCH faster than calling remove_at(0) repeatedly (O(1) vs O(n²))
+	var bytes_to_consume = frames_to_push * 4
+
 	for i in range(frames_to_push):
-		if voice_buffer.size() < 4:
-			break
+		var offset = i * 4
 
 		# Read left channel (16-bit little-endian)
-		var left_raw: int = voice_buffer[0] | (voice_buffer[1] << 8)
+		var left_raw: int = voice_buffer[offset] | (voice_buffer[offset + 1] << 8)
 		# Read right channel (16-bit little-endian)
-		var right_raw: int = voice_buffer[2] | (voice_buffer[3] << 8)
+		var right_raw: int = voice_buffer[offset + 2] | (voice_buffer[offset + 3] << 8)
 
 		# Convert unsigned to signed 16-bit (-32768 to 32767)
 		if left_raw >= 32768:
@@ -242,9 +244,5 @@ func process_voice_buffer():
 		# AudioStreamPlayer3D will handle 3D positioning
 		voice_playback.push_frame(Vector2(left_amplitude, right_amplitude))
 
-		# Delete the used samples (4 bytes per frame)
-		voice_buffer.remove_at(0)
-		voice_buffer.remove_at(0)
-		voice_buffer.remove_at(0)
-		voice_buffer.remove_at(0)
-
+	# PERFORMANCE: Remove all processed bytes at once (single O(n) operation instead of O(n²))
+	voice_buffer = voice_buffer.slice(bytes_to_consume)

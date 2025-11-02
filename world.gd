@@ -22,7 +22,7 @@ var voice_sample_rate: int = 48000
 var mic_player: AudioStreamPlayer = null
 var mic_effect: AudioEffectCapture = null
 var voice_send_timer: float = 0.0
-var voice_send_interval: float = 0.05  # Send voice packets every 50ms (20 packets/sec)
+var voice_send_interval: float = 0.06  # PERFORMANCE: Send voice packets every 60ms (~17 packets/sec) - reduced network load
 
 var environments = { # Loads the environment resources for each world and nightmare
 	"world1": preload("res://envoirments/world1.tres"),
@@ -866,10 +866,22 @@ func check_for_voice():
 			# Get the audio data
 			var audio_data = mic_effect.get_buffer(min_frames)
 
+			# PERFORMANCE: Check for silence FIRST before doing expensive PCM conversion
+			var has_audio = false
+			for i in range(audio_data.size()):
+				if abs(audio_data[i].x) > 0.01 or abs(audio_data[i].y) > 0.01:
+					has_audio = true
+					break
+
+			# Skip conversion and transmission if silent
+			if not has_audio:
+				return
+
 			# Convert Vector2 audio frames to 16-bit PCM bytes
 			var pcm_data = PackedByteArray()
 			pcm_data.resize(audio_data.size() * 4)  # 2 bytes per channel, 2 channels
 
+			# PERFORMANCE: Combined conversion loop - no redundant iterations
 			for i in range(audio_data.size()):
 				var frame = audio_data[i]
 				# Convert left channel to 16-bit signed integer
@@ -888,29 +900,19 @@ func check_for_voice():
 				pcm_data[idx + 2] = right_unsigned & 0xFF
 				pcm_data[idx + 3] = (right_unsigned >> 8) & 0xFF
 
-			# Check if there's actual audio (not silence)
-			var has_audio = false
-			for i in range(audio_data.size()):
-				if abs(audio_data[i].x) > 0.01 or abs(audio_data[i].y) > 0.01:
-					has_audio = true
-					break
-
-			if has_audio:
-				# Show voice indicator
-				show_voice_indicator()
-				# Send voice packet
-				send_voice_packet.rpc(pcm_data)
+			# Show voice indicator
+			show_voice_indicator()
+			# Send voice packet
+			send_voice_packet.rpc(pcm_data)
 
 @rpc("any_peer", "unreliable", "call_remote")
 func send_voice_packet(pcm_voice: PackedByteArray):
 	"""Receive voice packet from network"""
 	var sender_id = multiplayer.get_remote_sender_id()
 
-	print("🎙️ VOICE DEBUG: Received packet - sender_id=", sender_id, " my_id=", multiplayer.get_unique_id(), " players=", players.keys())
-
+	# PERFORMANCE: Removed debug logging - was causing massive console spam
 	# get_remote_sender_id() returns 0 if called locally
 	if sender_id == 0:
-		print("❌ VOICE ERROR: sender_id is 0!")
 		return
 
 	# Don't process our own voice
@@ -922,8 +924,6 @@ func send_voice_packet(pcm_voice: PackedByteArray):
 		var player = players[sender_id]
 		if player.has_method("receive_voice_data"):
 			player.receive_voice_data(pcm_voice)
-	else:
-		print("❌ VOICE ERROR: No player found for sender_id: ", sender_id, " Available: ", players.keys())
 
 func start_voice_recording():
 	"""Start recording voice using Godot's microphone"""
@@ -951,7 +951,7 @@ func start_voice_recording():
 
 	# Add capture effect
 	var capture_effect = AudioEffectCapture.new()
-	capture_effect.buffer_length = 0.5  # 500ms buffer
+	capture_effect.buffer_length = 0.3  # PERFORMANCE: 300ms buffer (reduced from 500ms for lower latency)
 	AudioServer.add_bus_effect(bus_idx, capture_effect)
 	mic_effect = capture_effect
 
