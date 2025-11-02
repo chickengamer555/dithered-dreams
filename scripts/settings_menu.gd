@@ -6,6 +6,9 @@ const BUS_MUSIC = 1
 const BUS_SFX = 2
 const BUS_VOICES = 3
 
+# Track if we're opened as an overlay (from in-game) or as a scene change (from main menu)
+var is_overlay: bool = false
+
 # UI References
 @onready var music_slider = $VBoxContainer/MusicContainer/MusicSlider
 @onready var sfx_slider = $VBoxContainer/SFXContainer/SFXSlider
@@ -16,6 +19,11 @@ const BUS_VOICES = 3
 @onready var back_button = $VBoxContainer/BackButton
 
 func _ready():
+	# Detect if we're an overlay (parent is CanvasLayer) or a scene change (parent is root)
+	# When opened from in-game via ESC, we're added to world's CanvasLayer
+	# When opened from main menu, we're the root scene
+	is_overlay = get_parent() is CanvasLayer
+
 	# Load saved settings
 	load_settings()
 
@@ -24,6 +32,13 @@ func _ready():
 	sfx_slider.value_changed.connect(_on_sfx_changed)
 	voices_slider.value_changed.connect(_on_voices_changed)
 	back_button.pressed.connect(_on_back_pressed)
+
+func _input(event):
+	# Close settings menu with ESC key
+	if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
+		if is_overlay:
+			_on_back_pressed()
+			get_viewport().set_input_as_handled()  # Prevent ESC from propagating
 
 func load_settings():
 	# Load from config file or use defaults
@@ -94,5 +109,16 @@ func _on_voices_changed(value: float):
 	save_settings()
 
 func _on_back_pressed():
-	# Return to main menu
-	get_tree().change_scene_to_file("res://main_menu.tscn")
+	if is_overlay:
+		# We're an overlay (from in-game or from main menu), just close
+		# Notify world that we're closing if we're in-game
+		if get_parent() is CanvasLayer:
+			var world = get_parent().get_parent()
+			if world and world.has_method("close_settings_menu"):
+				world.close_settings_menu()
+				return  # World will handle cleanup
+		# Game stays unpaused - no pause/unpause logic needed
+		queue_free()
+	else:
+		# We're a scene change (shouldn't happen anymore, but keep for safety)
+		get_tree().change_scene_to_file("res://scenes/main_menu.tscn")

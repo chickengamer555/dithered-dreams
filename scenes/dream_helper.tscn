@@ -1,6 +1,6 @@
 [gd_scene load_steps=5 format=3 uid="uid://dream_helper_scene"]
 
-[ext_resource type="Script" path="res://dream_helper.gd" id="1_dream_helper"]
+[ext_resource type="Script" path="res://scripts/dream_helper.gd" id="1_dream_helper"]
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_collect"]
 radius = 3.0

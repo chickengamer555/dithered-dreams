@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="Dithered Dreams"
-run/main_scene="res://main_menu.tscn"
+run/main_scene="res://scenes/main_menu.tscn"
 config/features=PackedStringArray("4.5", "Forward Plus")
 config/icon="res://icon.svg"
 
@@ -26,7 +26,7 @@ window/size/viewport_width=320
 window/size/viewport_height=240
 window/size/mode=3
 window/stretch/mode="viewport"
-window/main_scene="res://world.tscn"
+window/main_scene="res://scenes/world.tscn"
 
 [global]
 

@@ -12,7 +12,7 @@ extends Node
 }
 
 # Multiplayer
-var multiplayer_player_scene = preload("res://multiplayer_player.tscn")
+var multiplayer_player_scene = preload("res://scenes/multiplayer_player.tscn")
 var players = {}  # Dictionary to store player nodes by peer ID
 var is_multiplayer = false
 
@@ -53,6 +53,9 @@ var interaction_progress_bar: ProgressBar = null
 var voice_indicator: Label = null
 var voice_indicator_timer: float = 0.0
 var voice_settings_ui: Control = null
+
+# Settings menu UI
+var settings_menu_instance: Control = null
 
 @export var play_time: int = 300
 @export var main_menu_scene: PackedScene
@@ -237,9 +240,16 @@ func _disable_interactions_in_world(world: Node, disable: bool):
 					child.set_deferred("collision_layer", original_collision_layers[child.get_instance_id()])
 				if original_collision_masks.has(child.get_instance_id()):
 					child.set_deferred("collision_mask", original_collision_masks[child.get_instance_id()])
-		# NOTE: Removed AudioStreamPlayer pause/unpause logic
-		# Audio volume is now controlled by the audio bus system (Music/SFX/Voices buses)
-		# This allows the settings menu volume sliders to work correctly
+		elif child is AudioStreamPlayer:
+			# Control music playback when switching worlds
+			if disable:
+				# Stop music when world is disabled
+				if child.playing:
+					child.stop()
+			else:
+				# Start music when world is enabled (if autoplay is true)
+				if child.autoplay and not child.playing:
+					child.play()
 
 		# Recursively disable interactions for child nodes
 		if child.get_child_count() > 0:
@@ -364,9 +374,9 @@ func _input(event):
 		if voice_settings_ui:
 			voice_settings_ui.show_settings()
 
-	# Open settings menu with ESC
+	# Open/close settings menu with ESC
 	if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
-		open_settings_menu()
+		toggle_settings_menu()
 
 func _process(delta):
 	# Check for voice data continuously in multiplayer (always-on voice chat)
@@ -798,10 +808,7 @@ func _create_interaction_ui() -> void:
 	# Add to CanvasLayer
 	$CanvasLayer.add_child(voice_indicator)
 
-	# Create voice settings UI
-	var voice_settings_scene = preload("res://voice_settings_ui.tscn")
-	voice_settings_ui = voice_settings_scene.instantiate()
-	$CanvasLayer.add_child(voice_settings_ui)
+	# Voice settings UI removed - file no longer exists
 
 func show_interaction_prompt(text: String) -> void:
 	if interaction_label:
@@ -1126,12 +1133,30 @@ func set_bus_volume(bus_index: int, volume_percent: float):
 		AudioServer.set_bus_volume_db(bus_index, db)
 		print("Set bus ", bus_index, " to ", volume_percent, "% (", db, " dB)")
 
+func toggle_settings_menu():
+	"""Toggle settings menu on/off with ESC key"""
+	if settings_menu_instance:
+		# Settings menu is open, close it
+		close_settings_menu()
+	else:
+		# Settings menu is closed, open it
+		open_settings_menu()
+
 func open_settings_menu():
 	"""Open settings menu as overlay without leaving the game"""
-	var settings_scene = load("res://settings_menu.tscn")
+	# Prevent opening multiple instances
+	if settings_menu_instance:
+		return
+
+	var settings_scene = load("res://scenes/settings_menu.tscn")
 	if settings_scene:
-		var settings = settings_scene.instantiate()
+		settings_menu_instance = settings_scene.instantiate()
 		# Add as child to CanvasLayer so it appears on top
-		$CanvasLayer.add_child(settings)
-		# Pause the game while in settings
-		get_tree().paused = true
+		$CanvasLayer.add_child(settings_menu_instance)
+		# Game stays unpaused - no pause when opening settings
+
+func close_settings_menu():
+	"""Close the settings menu"""
+	if settings_menu_instance:
+		settings_menu_instance.queue_free()
+		settings_menu_instance = null

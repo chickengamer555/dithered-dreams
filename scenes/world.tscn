@@ -1,10 +1,10 @@
-[gd_scene load_steps=91 format=4 uid="uid://5s5tymjjs4cf"]
+[gd_scene load_steps=92 format=4 uid="uid://5s5tymjjs4cf"]
 
-[ext_resource type="Script" uid="uid://pkt703rm8s13" path="res://world.gd" id="1_bylj8"]
-[ext_resource type="PackedScene" path="res://dream_helper.tscn" id="3_dream"]
+[ext_resource type="Script" uid="uid://pkt703rm8s13" path="res://scripts/world.gd" id="1_bylj8"]
+[ext_resource type="PackedScene" path="res://scenes/dream_helper.tscn" id="3_dream"]
 [ext_resource type="Shader" uid="uid://coicieil24264" path="res://Shaders/Jitter.gdshader" id="3_j1e6l"]
-[ext_resource type="PackedScene" uid="uid://b73bc3j1ohpp1" path="res://player.tscn" id="3_k3laj"]
-[ext_resource type="PackedScene" path="res://end_object.tscn" id="3_mc2jv"]
+[ext_resource type="PackedScene" uid="uid://b73bc3j1ohpp1" path="res://scenes/player.tscn" id="3_k3laj"]
+[ext_resource type="PackedScene" path="res://scenes/end_object.tscn" id="3_mc2jv"]
 [ext_resource type="Texture2D" uid="uid://0jw525imc8g2" path="res://assests/SBS - Tiny Texture Pack 3 - Small/128x128/Dirt/Dirt_16-128x128.png" id="5_4whfl"]
 [ext_resource type="Shader" uid="uid://dv5dj144vttm8" path="res://Shaders/crt.gdshader" id="5_wmmxl"]
 [ext_resource type="Texture2D" uid="uid://dxup8414rdroi" path="res://models/world2/psx_tree_0.png" id="6_f688c"]
@@ -25,6 +25,7 @@
 [ext_resource type="AudioStream" uid="uid://cungn35kso3bd" path="res://sounds/whispers-loop-41891.mp3.wav" id="12_0adto"]
 [ext_resource type="Texture2D" uid="uid://y8hoxswlexnp" path="res://models/world3/psx_low-poly_victorian_clock_0.png" id="22_xgbmr"]
 [ext_resource type="Texture2D" uid="uid://dsbkqfejxrbae" path="res://assests/SBS - Tiny Texture Pack 3 - Small/128x128/Texture_128x128_36.png" id="23_c0vbq"]
+[ext_resource type="Environment" uid="uid://depamicaiy7qg" path="res://envoirments/world2.tres" id="26_bo7i5"]
 
 [sub_resource type="Shader" id="Shader_wjb0r"]
 code = "shader_type canvas_item;
@@ -738,7 +739,6 @@ render_target_update_mode = 4
 
 [node name="world2" type="Node3D" parent="SubViewportContainer/SubViewport"]
 transform = Transform3D(15, 0, 0, 0, 15, 0, 0, 0, 15, 0, 0, 0)
-visible = false
 
 [node name="DreamHelper1" parent="SubViewportContainer/SubViewport/world2" instance=ExtResource("3_dream")]
 transform = Transform3D(0.15, 0, 0, 0, 0.15, 0, 0, 0, 0.15, 4, 1, 4)
@@ -1003,6 +1003,7 @@ shape = SubResource("BoxShape3D_sxn1u")
 stream = ExtResource("10_vgvs4")
 volume_db = 1.25
 autoplay = true
+bus = &"Music"
 
 [node name="nightmare2" type="Node3D" parent="SubViewportContainer/SubViewport"]
 transform = Transform3D(15, 0, 0, 0, 15, 0, 0, 0, 15, 0, 0, 0)
@@ -1254,6 +1255,7 @@ stream = ExtResource("12_0adto")
 volume_db = 0.75
 pitch_scale = 1.25
 autoplay = true
+bus = &"Music"
 
 [node name="EndObject" parent="SubViewportContainer/SubViewport/nightmare2" instance=ExtResource("3_mc2jv")]
 transform = Transform3D(0.49999994, 0, 0, 0, 0.49999994, 0, 0, 0, 0.49999994, 7.606958, 0, -1.3891728)
@@ -1268,6 +1270,7 @@ stream = ExtResource("6_uxp5i")
 volume_db = 0.75
 pitch_scale = 1.25
 autoplay = true
+bus = &"Music"
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world1"]
 transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, 0, 0, 0)
@@ -1765,6 +1768,7 @@ stream = ExtResource("6_ipbu6")
 volume_db = 0.75
 pitch_scale = 0.75
 autoplay = true
+bus = &"Music"
 
 [node name="EndObject" parent="SubViewportContainer/SubViewport/nightmare1" instance=ExtResource("3_mc2jv")]
 transform = Transform3D(0.49999988, 0, 0, 0, 0.49999988, 0, 0, 0, 0.49999988, -3.754219, 0, -1.3891726)
@@ -1854,6 +1858,7 @@ skeleton = NodePath("")
 
 [node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="SubViewportContainer/SubViewport/world3"]
 volume_db = 1.25
+bus = &"Music"
 
 [node name="Models" type="Node3D" parent="SubViewportContainer/SubViewport/world3"]
 
@@ -1939,6 +1944,7 @@ grow_vertical = 2
 color = Color(0, 0, 0, 1)
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = ExtResource("26_bo7i5")
 
 [connection signal="body_entered" from="SubViewportContainer/SubViewport/world2/models/Mushroom2/Area3D4" to="." method="_on_area_3d_body_entered"]
 [connection signal="body_entered" from="SubViewportContainer/SubViewport/world2/models/Mushroom3/Area3D4" to="." method="_on_area_3d_body_entered"]

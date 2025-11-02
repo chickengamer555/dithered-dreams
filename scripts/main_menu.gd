@@ -1,7 +1,6 @@
 extends Control
 
 # UI References
-@onready var start_button = $VBoxContainer/SinglePlayerButton
 @onready var host_button = $VBoxContainer/HostGameButton
 @onready var join_button = $VBoxContainer/JoinGameButton
 @onready var start_multiplayer_button = $VBoxContainer/StartMultiplayerButton
@@ -11,7 +10,7 @@ extends Control
 @onready var lobby_input = $VBoxContainer/LobbyInput
 @onready var status_label = $VBoxContainer/StatusLabel
 
-var world_scene: PackedScene = load("res://world.tscn")
+var world_scene: PackedScene = load("res://scenes/world.tscn")
 var lobby_id: int = 0
 var is_host: bool = false
 var lobby_members: Array = []
@@ -71,10 +70,6 @@ func _ready() -> void:
 	copy_button.hide()
 	players_label.hide()
 
-# Single player - just start the game
-func _on_single_player_pressed() -> void:
-	start_game()
-
 # Host a multiplayer game
 func _on_host_game_pressed() -> void:
 	status_label.text = "Creating lobby..."
@@ -128,7 +123,6 @@ func _on_lobby_created(connect_status: int, created_lobby_id: int) -> void:
 		status_label.text = "Lobby created! Share the code with your friend!"
 
 		# Hide main menu buttons, show start button and players
-		start_button.hide()
 		host_button.hide()
 		join_button.hide()
 		lobby_input.hide()
@@ -160,7 +154,6 @@ func _on_lobby_joined(lobby_id_joined: int, _permissions: int, _locked: bool, re
 		status_label.text = "Joined lobby! Waiting for host to start..."
 
 		# Hide buttons, show players
-		start_button.hide()
 		host_button.hide()
 		join_button.hide()
 		lobby_input.hide()
@@ -390,7 +383,14 @@ func start_game() -> void:
 
 # Open settings menu
 func _on_settings_pressed() -> void:
-	get_tree().change_scene_to_file("res://settings_menu.tscn")
+	# Open settings as an overlay to preserve lobby state
+	var settings_scene = load("res://scenes/settings_menu.tscn")
+	if settings_scene:
+		var settings = settings_scene.instantiate()
+		# Add as child to main menu so it appears on top
+		add_child(settings)
+		# Mark it as overlay so it knows to come back here
+		settings.is_overlay = true
 
 func load_audio_settings():
 	"""Load and apply saved audio settings"""

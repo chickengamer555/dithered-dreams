@@ -1,0 +1,13 @@
+res://main_menu.gd
+res://world.gd
+res://world.tscn
+res://Shaders/sky.gdshader
+res://envoirments/world1.tres
+res://envoirments/nightmare1.tres
+res://envoirments/world2.tres
+res://envoirments/nightmare2.tres
+res://Shaders/Jitter.gdshader
+res://Shaders/crt.gdshader
+res://scripts/main_menu.gd
+res://scripts/settings_menu.gd
+res://scripts/world.gd
