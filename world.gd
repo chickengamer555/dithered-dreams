@@ -18,11 +18,19 @@ var is_multiplayer = false
 
 # Voice chat - Godot microphone-based
 var is_recording: bool = false
-var voice_sample_rate: int = 48000
+var voice_sample_rate: int = 24000  # OPTIMIZATION: 24kHz is ideal for voice (48kHz is overkill)
 var mic_player: AudioStreamPlayer = null
 var mic_effect: AudioEffectCapture = null
 var voice_send_timer: float = 0.0
 var voice_send_interval: float = 0.05  # PERFORMANCE: Send voice packets every 50ms (20 packets/sec) - better sync
+
+# OPTIMIZATION: Rate limiting for nightmare value sync
+var nightmare_sync_timer: float = 0.0
+const NIGHTMARE_SYNC_INTERVAL: float = 0.2  # Sync 5 times per second instead of 60
+
+# OPTIMIZATION: Proximity-based voice chat (send only to nearby players)
+const VOICE_HEAR_DISTANCE: float = 30.0  # Can hear players within 30 units
+const VOICE_HEAR_DISTANCE_SQ: float = 900.0  # Pre-computed squared distance
 
 var environments = { # Loads the environment resources for each world and nightmare
 	"world1": preload("res://envoirments/world1.tres"),
@@ -390,7 +398,7 @@ func go_to_main_menu():
 func _input(event):
 	# Voice chat is now always-on, no push-to-talk needed
 	# Open voice settings with F1
-	if event.is_action_pressed("ui_help") or (event is InputEventKey and event.pressed and event.keycode == KEY_F1):
+	if event is InputEventKey and event.pressed and event.keycode == KEY_F1:
 		if voice_settings_ui:
 			voice_settings_ui.show_settings()
 
@@ -429,8 +437,11 @@ func _process(delta):
 				nightmare_value -= dream_value * delta * dream_increment
 			nightmare_value = clamp(nightmare_value, 0, 100)
 
-			# Sync to all clients
-			sync_nightmare_value.rpc(nightmare_value)
+			# OPTIMIZATION: Rate-limited sync - only send updates 5 times per second
+			nightmare_sync_timer += delta
+			if nightmare_sync_timer >= NIGHTMARE_SYNC_INTERVAL:
+				nightmare_sync_timer = 0.0
+				sync_nightmare_value.rpc(nightmare_value)
 
 		# Update local UI (both server and clients)
 		nightmare_bar.value = nightmare_value
@@ -539,13 +550,15 @@ func is_position_safe(pos: Vector3, radius: float) -> bool:
 	# Check if any existing players are too close
 	# Minimum distance is 2.5 units to prevent spawning on top of each other
 	var min_distance = max(radius * 2.0, 2.5)
+	var min_distance_sq = min_distance * min_distance  # OPTIMIZATION: Pre-square for faster comparison
 
 	for peer_id in players:
 		var player = players[peer_id]
 		if player:
-			var distance = pos.distance_to(player.global_position)
-			if distance < min_distance:
-				print("Position too close to player ", peer_id, " (distance: ", distance, ", min: ", min_distance, ")")
+			# OPTIMIZATION: Use distance_squared_to() - 4-5x faster than distance_to()
+			var distance_sq = pos.distance_squared_to(player.global_position)
+			if distance_sq < min_distance_sq:
+				print("Position too close to player ", peer_id, " (distance: ", sqrt(distance_sq), ", min: ", min_distance, ")")
 				return false
 
 	var world = get_tree().root.get_world_3d()
@@ -867,6 +880,35 @@ func teleport_from_end_object() -> void:
 # VOICE CHAT FUNCTIONS
 # ============================================================================
 
+func get_nearby_peers() -> Array:
+	"""Get peer IDs of players within voice range - OPTIMIZATION: Proximity-based voice chat"""
+	var nearby = []
+
+	if not is_multiplayer:
+		return nearby
+
+	var my_peer_id = multiplayer.get_unique_id()
+	if not players.has(my_peer_id):
+		return nearby
+
+	var my_position = players[my_peer_id].global_position
+
+	for peer_id in players:
+		if peer_id == my_peer_id:
+			continue  # Don't send to ourselves
+
+		var other_player = players[peer_id]
+		if not other_player:
+			continue
+
+		# OPTIMIZATION: Use distance_squared_to() - 4-5x faster than distance_to()
+		var distance_sq = my_position.distance_squared_to(other_player.global_position)
+
+		if distance_sq <= VOICE_HEAR_DISTANCE_SQ:
+			nearby.append(peer_id)
+
+	return nearby
+
 func check_for_voice():
 	"""Check for available voice data and send to network - called periodically"""
 	if not mic_effect or not is_recording:
@@ -882,48 +924,55 @@ func check_for_voice():
 			# Get the audio data
 			var audio_data = mic_effect.get_buffer(min_frames)
 
-			# PERFORMANCE: Check for silence FIRST before doing expensive PCM conversion
-			var has_audio = false
-			for i in range(audio_data.size()):
-				if abs(audio_data[i].x) > 0.01 or abs(audio_data[i].y) > 0.01:
-					has_audio = true
-					break
-
-			# Skip conversion and transmission if silent
-			if not has_audio:
-				return
-
-			# Convert Vector2 audio frames to 16-bit PCM bytes
+			# OPTIMIZATION: Convert to MONO and use RMS-based VAD for better quality
 			var pcm_data = PackedByteArray()
-			pcm_data.resize(audio_data.size() * 4)  # 2 bytes per channel, 2 channels
+			pcm_data.resize(audio_data.size() * 2)  # 2 bytes per sample (mono = 50% bandwidth savings!)
 
-			# PERFORMANCE: Combined conversion loop - no redundant iterations
+			# Calculate RMS for Voice Activity Detection
+			var sum_squares: float = 0.0
+			const VAD_THRESHOLD = 0.01  # RMS threshold for speech detection
+
+			# PERFORMANCE: Combined VAD + Mono conversion loop
 			for i in range(audio_data.size()):
 				var frame = audio_data[i]
-				# Convert left channel to 16-bit signed integer
-				var left_sample = int(clamp(frame.x, -1.0, 1.0) * 32767.0)
-				# Convert right channel to 16-bit signed integer
-				var right_sample = int(clamp(frame.y, -1.0, 1.0) * 32767.0)
+
+				# Convert stereo to mono by averaging channels (50% bandwidth savings)
+				var mono_sample = (frame.x + frame.y) * 0.5
+
+				# Accumulate for RMS calculation
+				sum_squares += mono_sample * mono_sample
+
+				# Convert to 16-bit signed integer
+				var sample_int = int(clamp(mono_sample, -1.0, 1.0) * 32767.0)
 
 				# Convert signed to unsigned 16-bit for transmission
-				var left_unsigned = left_sample if left_sample >= 0 else left_sample + 65536
-				var right_unsigned = right_sample if right_sample >= 0 else right_sample + 65536
+				var sample_unsigned = sample_int if sample_int >= 0 else sample_int + 65536
 
-				# Write as little-endian 16-bit values
-				var idx = i * 4
-				pcm_data[idx] = left_unsigned & 0xFF
-				pcm_data[idx + 1] = (left_unsigned >> 8) & 0xFF
-				pcm_data[idx + 2] = right_unsigned & 0xFF
-				pcm_data[idx + 3] = (right_unsigned >> 8) & 0xFF
+				# Write as little-endian 16-bit value (mono = 2 bytes instead of 4)
+				var idx = i * 2
+				pcm_data[idx] = sample_unsigned & 0xFF
+				pcm_data[idx + 1] = (sample_unsigned >> 8) & 0xFF
+
+			# Check RMS against threshold
+			var rms = sqrt(sum_squares / audio_data.size())
+			if rms < VAD_THRESHOLD:
+				return  # Silent audio - don't transmit
 
 			# Show voice indicator
 			show_voice_indicator()
-			# Send voice packet
-			send_voice_packet.rpc(pcm_data)
 
-@rpc("any_peer", "unreliable", "call_remote")
+			# OPTIMIZATION: Proximity-based voice - only send to nearby players
+			var nearby_peers = get_nearby_peers()
+			if nearby_peers.size() == 0:
+				return  # No one nearby to hear us - save bandwidth!
+
+			# Send to each nearby peer individually (targeted RPC)
+			for peer_id in nearby_peers:
+				send_voice_packet.rpc_id(peer_id, pcm_data)
+
+@rpc("any_peer", "unreliable_ordered", "call_remote")
 func send_voice_packet(pcm_voice: PackedByteArray):
-	"""Receive voice packet from network"""
+	"""Receive voice packet from network - OPTIMIZATION: unreliable_ordered prevents out-of-order packets"""
 	var sender_id = multiplayer.get_remote_sender_id()
 
 	# PERFORMANCE: Removed debug logging - was causing massive console spam
