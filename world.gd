@@ -369,7 +369,7 @@ func _do_teleport_to_world(world_name: String, spawn_position: Vector3, keep_pla
 				# Keep player positions (for nightmare transitions)
 				print("Keeping player positions during world transition")
 
-func _on_area_3d_body_entered(body: Node3D):
+func _on_area_3d_body_entered(_body: Node3D):
 	# DISABLED: Old automatic teleportation on area trigger
 	# Now using end_object interaction system instead
 	pass
@@ -580,35 +580,35 @@ func get_random_spawn_position(world_name: String) -> Vector3:
 	else:
 		return Vector3.ZERO
 
-func get_random_spawn_position_in_world(world_name: String) -> Vector3:
+func get_random_spawn_position_in_world(_world_name: String) -> Vector3:
 	var min_x = -100
 	var max_x = 100
 	var min_y = 10.0
 	var max_y = 50.0
 	var min_z = -100
 	var max_z = 100
-	
+
 	var random_x = randf_range(min_x, max_x)
 	var random_y = randf_range(min_y, max_y)
 	var random_z = randf_range(min_z, max_z)
-	
+
 	return Vector3(random_x, random_y, random_z)
 
-func get_random_spawn_position_in_nightmare(nightmare_name: String) -> Vector3:
+func get_random_spawn_position_in_nightmare(_nightmare_name: String) -> Vector3:
 	var min_x = -100
 	var max_x = 100
 	var min_y = 10.0
 	var max_y = 50.0
 	var min_z = -100
 	var max_z = 100
-	
+
 	var random_x = randf_range(min_x, max_x)
 	var random_y = randf_range(min_y, max_y)
 	var random_z = randf_range(min_z, max_z)
-	
+
 	return Vector3(random_x, random_y, random_z)
 
-func _on_area_3d_area_entered(area: Area3D) -> void:
+func _on_area_3d_area_entered(_area: Area3D) -> void:
 	pass
 
 func play_transition_effect(completion_callback: Callable):
