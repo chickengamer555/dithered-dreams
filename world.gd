@@ -84,7 +84,13 @@ func _ready():
 		# Set up multiplayer callbacks
 		multiplayer.peer_connected.connect(_on_player_connected)
 		multiplayer.peer_disconnected.connect(_on_player_disconnected)
-		multiplayer.connected_to_server.connect(_on_connected_to_server)
+
+		# FIX: If we're a client and already connected, notify server immediately
+		# (the connected_to_server signal may have already fired in main_menu)
+		if not multiplayer.is_server():
+			print("CLIENT: World loaded, notifying server we're ready...")
+			# Use call_deferred to ensure world is fully initialized first
+			call_deferred("_notify_server_ready")
 
 		# IMMEDIATELY disable and remove the original single-player player
 		var old_player = $SubViewportContainer/SubViewport/Player
@@ -591,6 +597,11 @@ func _on_player_disconnected(id: int) -> void:
 func _on_connected_to_server() -> void:
 	print("Client connected to server! World scene loaded. Notifying server...")
 	# Tell the server that this client is ready to receive world state
+	client_ready.rpc_id(1)  # 1 is always the server ID
+
+# Helper function to notify server when client world is ready
+func _notify_server_ready() -> void:
+	print("CLIENT: Sending client_ready to server...")
 	client_ready.rpc_id(1)  # 1 is always the server ID
 
 # Client tells server it's ready to receive world state
