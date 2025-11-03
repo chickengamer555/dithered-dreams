@@ -383,18 +383,14 @@ func leave_game():
 				player.queue_free()
 			players.erase(my_peer_id)
 
-		# If we're in a Steam lobby, leave it
-		if Steam:
-			var current_lobby = Steam.getLobbyByIndex(0)
-			if current_lobby != 0:
-				print("[World] Leaving Steam lobby: ", current_lobby)
-				Steam.leaveLobby(current_lobby)
-
-		# Disconnect from multiplayer peer
+		# Disconnect from multiplayer peer (this will trigger peer_disconnected on other clients)
 		if multiplayer.multiplayer_peer:
 			multiplayer.multiplayer_peer.close()
 			multiplayer.multiplayer_peer = null
 			print("[World] Multiplayer peer closed")
+
+		# Note: Steam lobby cleanup happens automatically when the peer is closed
+		# The SteamMultiplayerPeer handles leaving the lobby when close() is called
 
 	# Return to main menu
 	go_to_main_menu()
@@ -564,13 +560,7 @@ func _player_killed(player: Node3D):
 	# Mark player as dead
 	dead_players[peer_id] = player
 
-	# Trigger jumpscare for the killed player
-	if peer_id == multiplayer.get_unique_id():
-		# If it's the local player (host), call locally
-		trigger_jumpscare_for_player()
-	else:
-		# If it's a remote player, call via RPC
-		trigger_jumpscare_for_player.rpc_id(peer_id)
+
 
 	# Check if any other players are still alive
 	var alive_players = []
@@ -602,19 +592,8 @@ func _player_killed(player: Node3D):
 		go_to_jumpscare_then_menu()
 
 @rpc("authority", "call_remote", "reliable")
-func trigger_jumpscare_for_player():
-	"""Trigger jumpscare effect for a specific player (called on client)"""
-	print("[World] Jumpscare triggered for this player!")
-	# You can add a visual/audio jumpscare effect here
-	# For now, just a flash or screen shake could work
-	if transition_rect:
-		transition_rect.visible = true
-		transition_rect.modulate = Color(1, 0, 0, 0.8)  # Red flash
-		await get_tree().create_timer(0.3).timeout
-		transition_rect.modulate = Color(1, 1, 1, 1)  # Reset to white
-		transition_rect.visible = false
 
-@rpc("authority", "call_remote", "reliable")
+
 func start_spectating(target_peer_id: int):
 	"""Make this player spectate another player in 3rd person"""
 	print("[World] Starting 3rd person spectate mode for peer ", target_peer_id)
