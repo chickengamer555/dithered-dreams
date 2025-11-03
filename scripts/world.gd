@@ -398,6 +398,23 @@ func _process(delta):
 		if voice_indicator_timer <= 0.0:
 			hide_voice_indicator()
 
+	# Update spectator camera position if spectating
+	if has_meta("spectator_camera") and has_meta("spectator_target_id"):
+		var spectator_camera = get_meta("spectator_camera")
+		var target_id = get_meta("spectator_target_id")
+
+		if spectator_camera and is_instance_valid(spectator_camera) and players.has(target_id):
+			var target_player = players[target_id]
+			if target_player and is_instance_valid(target_player):
+				# Position camera behind and above the target player
+				var offset = Vector3(0, 3, 5)
+				# Rotate offset based on player's rotation
+				var player_basis = target_player.global_transform.basis
+				var rotated_offset = player_basis * offset
+
+				spectator_camera.global_position = target_player.global_position + rotated_offset
+				spectator_camera.look_at(target_player.global_position + Vector3(0, 1, 0))
+
 	# MULTIPLAYER: Only server updates nightmare value, then syncs to clients
 	if is_multiplayer:
 		if multiplayer.is_server():
@@ -561,8 +578,8 @@ func trigger_jumpscare_for_player():
 
 @rpc("authority", "call_remote", "reliable")
 func start_spectating(target_peer_id: int):
-	"""Make this player spectate another player"""
-	print("[World] Starting spectate mode for peer ", target_peer_id)
+	"""Make this player spectate another player in 3rd person"""
+	print("[World] Starting 3rd person spectate mode for peer ", target_peer_id)
 
 	# Disable local player's camera and input
 	var local_player_id = multiplayer.get_unique_id()
@@ -571,22 +588,31 @@ func start_spectating(target_peer_id: int):
 		if local_player.has_method("disable_controls"):
 			local_player.disable_controls()
 
-	# Switch camera to target player
+		# Disable local player's first-person camera
+		var local_camera = local_player.get_node_or_null("Camera3D")
+		if local_camera:
+			local_camera.current = false
+
+	# Create a 3rd person spectator camera
 	if players.has(target_peer_id):
 		var target_player = players[target_peer_id]
-		var target_camera = target_player.get_node_or_null("Camera3D")
-		if target_camera:
-			# Disable all other cameras first
-			for peer_id in players:
-				var p = players[peer_id]
-				var cam = p.get_node_or_null("Camera3D")
-				if cam:
-					cam.current = false
 
-			# Enable target camera
-			target_camera.current = true
-			target_camera.make_current()
-			print("[World] Now spectating player ", target_peer_id)
+		# Create a new camera for spectating
+		var spectator_camera = Camera3D.new()
+		spectator_camera.name = "SpectatorCamera"
+		add_child(spectator_camera)
+
+		# Position camera behind and above the target player
+		spectator_camera.global_position = target_player.global_position + Vector3(0, 3, 5)
+		spectator_camera.look_at(target_player.global_position + Vector3(0, 1, 0))
+		spectator_camera.current = true
+		spectator_camera.make_current()
+
+		# Store reference to update camera position each frame
+		set_meta("spectator_camera", spectator_camera)
+		set_meta("spectator_target_id", target_peer_id)
+
+		print("[World] Now spectating player ", target_peer_id, " in 3rd person")
 
 @rpc("authority", "call_local", "reliable")
 func all_players_dead_go_to_menu():
@@ -1012,6 +1038,14 @@ func teleport_from_end_object() -> void:
 	# Reset dead players - everyone respawns when sleeping
 	dead_players.clear()
 	print("Dead players cleared - all players respawned")
+
+	# Clean up spectator camera if it exists
+	if has_meta("spectator_camera"):
+		var spectator_camera = get_meta("spectator_camera")
+		if spectator_camera and is_instance_valid(spectator_camera):
+			spectator_camera.queue_free()
+		remove_meta("spectator_camera")
+		remove_meta("spectator_target_id")
 
 	# Re-enable controls for all players
 	for peer_id in players:
