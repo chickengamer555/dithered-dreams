@@ -361,6 +361,44 @@ func go_to_main_menu():
 	if get_tree():
 		get_tree().change_scene_to_file("res://scenes/main_menu.tscn")
 
+func leave_game():
+	"""Properly disconnect from multiplayer and return to main menu"""
+	print("[World] Player leaving game...")
+
+	# Close settings menu if open
+	if settings_menu_instance:
+		settings_menu_instance.queue_free()
+		settings_menu_instance = null
+
+	# If in multiplayer, properly disconnect
+	if is_multiplayer:
+		var my_peer_id = multiplayer.get_unique_id()
+		print("[World] Disconnecting peer ", my_peer_id)
+
+		# Notify other players that we're leaving (server will handle cleanup via peer_disconnected signal)
+		# Remove our player from the local players dictionary
+		if players.has(my_peer_id):
+			var player = players[my_peer_id]
+			if player and is_instance_valid(player):
+				player.queue_free()
+			players.erase(my_peer_id)
+
+		# If we're in a Steam lobby, leave it
+		if Steam:
+			var current_lobby = Steam.getLobbyByIndex(0)
+			if current_lobby != 0:
+				print("[World] Leaving Steam lobby: ", current_lobby)
+				Steam.leaveLobby(current_lobby)
+
+		# Disconnect from multiplayer peer
+		if multiplayer.multiplayer_peer:
+			multiplayer.multiplayer_peer.close()
+			multiplayer.multiplayer_peer = null
+			print("[World] Multiplayer peer closed")
+
+	# Return to main menu
+	go_to_main_menu()
+
 func _input(event):
 	# Voice chat is now always-on, no push-to-talk needed
 	# Voice settings removed (F1 key no longer used)
@@ -792,13 +830,27 @@ func _on_player_connected(id: int) -> void:
 	print("SERVER: Peer ", id, " connected to network (waiting for client_ready signal...)")
 
 func _on_player_disconnected(id: int) -> void:
-	print("Player ", id, " disconnected - removing from game")
+	"""Called when a player disconnects (Alt+F4, network issue, or intentional leave)"""
+	print("[World] Player ", id, " disconnected - removing from game")
+
+	# Remove player from players dictionary
 	if players.has(id):
 		var player = players[id]
-		if player:
+		if player and is_instance_valid(player):
+			print("[World] Removing player node for peer ", id)
 			player.queue_free()
 		players.erase(id)
-		print("Player ", id, " fully removed. Remaining players: ", players.keys())
+
+	# Remove from dead players if they were dead
+	if dead_players.has(id):
+		dead_players.erase(id)
+		print("[World] Removed peer ", id, " from dead players list")
+
+	print("[World] Player ", id, " fully removed. Remaining players: ", players.keys())
+
+	# If all players have disconnected and we're the server, we might want to handle that
+	if is_multiplayer and multiplayer.is_server() and players.size() == 0:
+		print("[World] All players have disconnected from server")
 
 func _on_connected_to_server() -> void:
 	# Tell the server that this client is ready to receive world state

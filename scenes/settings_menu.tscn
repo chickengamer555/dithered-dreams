@@ -104,6 +104,10 @@ text = "100%"
 horizontal_alignment = 2
 vertical_alignment = 1
 
+[node name="LeaveGameButton" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+text = "Leave Game"
+
 [node name="BackButton" type="Button" parent="VBoxContainer"]
 layout_mode = 2
 text = "Back"

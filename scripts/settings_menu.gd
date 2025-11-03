@@ -16,6 +16,7 @@ var is_overlay: bool = false
 @onready var music_value_label = $VBoxContainer/MusicContainer/ValueLabel
 @onready var sfx_value_label = $VBoxContainer/SFXContainer/ValueLabel
 @onready var voices_value_label = $VBoxContainer/VoicesContainer/ValueLabel
+@onready var leave_game_button = $VBoxContainer/LeaveGameButton
 @onready var back_button = $VBoxContainer/BackButton
 
 func _ready():
@@ -31,7 +32,12 @@ func _ready():
 	music_slider.value_changed.connect(_on_music_changed)
 	sfx_slider.value_changed.connect(_on_sfx_changed)
 	voices_slider.value_changed.connect(_on_voices_changed)
+	leave_game_button.pressed.connect(_on_leave_game_pressed)
 	back_button.pressed.connect(_on_back_pressed)
+
+	# Only show leave game button when in-game (overlay mode)
+	if not is_overlay:
+		leave_game_button.visible = false
 
 func _input(event):
 	# Close settings menu with ESC key
@@ -107,6 +113,19 @@ func _on_voices_changed(value: float):
 	set_bus_volume(BUS_VOICES, value)
 	voices_value_label.text = str(int(value)) + "%"
 	save_settings()
+
+func _on_leave_game_pressed():
+	"""Leave the current game and return to main menu"""
+	print("[Settings] Leave game button pressed")
+
+	# Get reference to world script
+	if get_parent() is CanvasLayer:
+		var world = get_parent().get_parent()
+		if world and world.has_method("leave_game"):
+			world.leave_game()
+		else:
+			# Fallback: just go to main menu
+			get_tree().change_scene_to_file("res://scenes/main_menu.tscn")
 
 func _on_back_pressed():
 	if is_overlay:

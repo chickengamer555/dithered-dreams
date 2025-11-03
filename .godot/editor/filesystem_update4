@@ -11,3 +11,4 @@ res://scripts/monster_base.gd
 res://scripts/chaser_jumpscare.gd
 res://scripts/chaser_lethal.gd
 res://scripts/jumpscare.gd
+res://scripts/settings_menu.gd
