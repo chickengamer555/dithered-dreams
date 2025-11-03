@@ -1,4 +1,4 @@
-[gd_resource type="AudioBusLayout" load_steps=3 format=3 uid="uid://cnioubael4bfw"]
+[gd_resource type="AudioBusLayout" load_steps=3 format=3 uid="uid://du66pk4e7voou"]
 
 [sub_resource type="AudioEffectReverb" id="AudioEffectReverb_voices"]
 predelay_msec = 20.0

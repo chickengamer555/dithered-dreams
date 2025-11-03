@@ -1,10 +1,13 @@
-[gd_scene load_steps=92 format=4 uid="uid://5s5tymjjs4cf"]
+[gd_scene load_steps=95 format=4 uid="uid://5s5tymjjs4cf"]
 
 [ext_resource type="Script" uid="uid://pkt703rm8s13" path="res://scripts/world.gd" id="1_bylj8"]
-[ext_resource type="PackedScene" path="res://scenes/dream_helper.tscn" id="3_dream"]
+[ext_resource type="PackedScene" path="res://scenes/monster_base.tscn" id="2_ts3gi"]
+[ext_resource type="PackedScene" uid="uid://bqhvqk01g8woi" path="res://models/Couch2.glb" id="3_0nbtd"]
+[ext_resource type="PackedScene" uid="uid://c8k3nan2p5q7r" path="res://scenes/dream_helper.tscn" id="3_dream"]
 [ext_resource type="Shader" uid="uid://coicieil24264" path="res://Shaders/Jitter.gdshader" id="3_j1e6l"]
 [ext_resource type="PackedScene" uid="uid://b73bc3j1ohpp1" path="res://scenes/player.tscn" id="3_k3laj"]
-[ext_resource type="PackedScene" path="res://scenes/end_object.tscn" id="3_mc2jv"]
+[ext_resource type="PackedScene" uid="uid://ctxhxhkry6fb5" path="res://scenes/end_object.tscn" id="3_mc2jv"]
+[ext_resource type="PackedScene" uid="uid://d3lg8i5nyfspr" path="res://models/ps1.test.glb" id="3_ts3gi"]
 [ext_resource type="Texture2D" uid="uid://0jw525imc8g2" path="res://assests/SBS - Tiny Texture Pack 3 - Small/128x128/Dirt/Dirt_16-128x128.png" id="5_4whfl"]
 [ext_resource type="Shader" uid="uid://dv5dj144vttm8" path="res://Shaders/crt.gdshader" id="5_wmmxl"]
 [ext_resource type="Texture2D" uid="uid://dxup8414rdroi" path="res://models/world2/psx_tree_0.png" id="6_f688c"]
@@ -25,7 +28,6 @@
 [ext_resource type="AudioStream" uid="uid://cungn35kso3bd" path="res://sounds/whispers-loop-41891.mp3.wav" id="12_0adto"]
 [ext_resource type="Texture2D" uid="uid://y8hoxswlexnp" path="res://models/world3/psx_low-poly_victorian_clock_0.png" id="22_xgbmr"]
 [ext_resource type="Texture2D" uid="uid://dsbkqfejxrbae" path="res://assests/SBS - Tiny Texture Pack 3 - Small/128x128/Texture_128x128_36.png" id="23_c0vbq"]
-[ext_resource type="Environment" uid="uid://depamicaiy7qg" path="res://envoirments/world2.tres" id="26_bo7i5"]
 
 [sub_resource type="Shader" id="Shader_wjb0r"]
 code = "shader_type canvas_item;
@@ -107,6 +109,17 @@ shader_parameter/enabled = true
 shader_parameter/dithering = true
 shader_parameter/colors = 16
 shader_parameter/dither_size = 1
+
+[sub_resource type="NavigationMesh" id="NavigationMesh_nav"]
+vertices = PackedVector3Array(-150, 0.5, -150, 150, 0.5, -150, 150, 0.5, 150, -150, 0.5, 150)
+polygons = [PackedInt32Array(1, 0, 3), PackedInt32Array(1, 3, 2)]
+geometry_parsed_geometry_type = 0
+agent_height = 2.0
+agent_max_climb = 0.9
+edge_max_length = 12.0
+filter_low_hanging_obstacles = true
+filter_ledge_spans = true
+filter_walkable_low_height_spans = true
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_8iyq3"]
 render_priority = 0
@@ -740,6 +753,15 @@ render_target_update_mode = 4
 [node name="world2" type="Node3D" parent="SubViewportContainer/SubViewport"]
 transform = Transform3D(15, 0, 0, 0, 15, 0, 0, 0, 15, 0, 0, 0)
 
+[node name="NavigationRegion3D" type="NavigationRegion3D" parent="SubViewportContainer/SubViewport/world2"]
+navigation_mesh = SubResource("NavigationMesh_nav")
+
+[node name="MonsterBase" parent="SubViewportContainer/SubViewport/world2" instance=ExtResource("2_ts3gi")]
+transform = Transform3D(0.09999998, 0, 0, 0, 0.09999998, 0, 0, 0, 0.09999998, -5.077635, 1.4796224, 0)
+monster_type = 1
+speed = 10.0
+model_scene = ExtResource("3_ts3gi")
+
 [node name="DreamHelper1" parent="SubViewportContainer/SubViewport/world2" instance=ExtResource("3_dream")]
 transform = Transform3D(0.15, 0, 0, 0, 0.15, 0, 0, 0, 0.15, 4, 1, 4)
 
@@ -1009,6 +1031,26 @@ bus = &"Music"
 transform = Transform3D(15, 0, 0, 0, 15, 0, 0, 0, 15, 0, 0, 0)
 visible = false
 
+[node name="NavigationRegion3D" type="NavigationRegion3D" parent="SubViewportContainer/SubViewport/nightmare2"]
+navigation_mesh = SubResource("NavigationMesh_nav")
+
+[node name="MonsterLethal1" parent="SubViewportContainer/SubViewport/nightmare2" instance=ExtResource("2_ts3gi")]
+transform = Transform3D(0.09999999, 0, 0, 0, 0.09999999, 0, 0, 0, 0.09999999, 5, 1.5, -3)
+monster_type = 1
+speed = 5.5
+model_scene = ExtResource("3_0nbtd")
+
+[node name="MonsterJumpscare1" parent="SubViewportContainer/SubViewport/nightmare2" instance=ExtResource("2_ts3gi")]
+transform = Transform3D(0.09999999, 0, 0, 0, 0.09999999, 0, 0, 0, 0.09999999, -5, 1.5, 4)
+speed = 6.5
+model_scene = ExtResource("3_0nbtd")
+
+[node name="MonsterLethal2" parent="SubViewportContainer/SubViewport/nightmare2" instance=ExtResource("2_ts3gi")]
+transform = Transform3D(0.09999999, 0, 0, 0, 0.09999999, 0, 0, 0, 0.09999999, -2, 1.5, -6)
+monster_type = 1
+speed = 4.5
+model_scene = ExtResource("3_0nbtd")
+
 [node name="MeshInstance3D" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare2"]
 transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, 0, 0, 0)
 cast_shadow = 0
@@ -1265,6 +1307,9 @@ interaction_distance = 3.0
 transform = Transform3D(15, 0, 0, 0, 15, 0, 0, 0, 15, 0, 0, 0)
 visible = false
 
+[node name="NavigationRegion3D" type="NavigationRegion3D" parent="SubViewportContainer/SubViewport/world1"]
+navigation_mesh = SubResource("NavigationMesh_nav")
+
 [node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="SubViewportContainer/SubViewport/world1"]
 stream = ExtResource("6_uxp5i")
 volume_db = 0.75
@@ -1482,6 +1527,20 @@ interaction_distance = 3.0
 [node name="nightmare1" type="Node3D" parent="SubViewportContainer/SubViewport"]
 transform = Transform3D(15, 0, 0, 0, 15, 0, 0, 0, 15, 0, 0, 0)
 visible = false
+
+[node name="NavigationRegion3D" type="NavigationRegion3D" parent="SubViewportContainer/SubViewport/nightmare1"]
+navigation_mesh = SubResource("NavigationMesh_nav")
+
+[node name="MonsterLethal1" parent="SubViewportContainer/SubViewport/nightmare1" instance=ExtResource("2_ts3gi")]
+transform = Transform3D(0.09999999, 0, 0, 0, 0.09999999, 0, 0, 0, 0.09999999, -3, 1.5, 3)
+monster_type = 1
+speed = 5.0
+model_scene = ExtResource("3_0nbtd")
+
+[node name="MonsterJumpscare1" parent="SubViewportContainer/SubViewport/nightmare1" instance=ExtResource("2_ts3gi")]
+transform = Transform3D(0.09999999, 0, 0, 0, 0.09999999, 0, 0, 0, 0.09999999, 4, 1.5, -4)
+speed = 6.0
+model_scene = ExtResource("3_0nbtd")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1"]
 transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, 0, 0, 0)
@@ -1780,6 +1839,9 @@ interaction_distance = 3.0
 transform = Transform3D(15, 0, 0, 0, 15, 0, 0, 0, 15, 0, 0, 0)
 visible = false
 
+[node name="NavigationRegion3D" type="NavigationRegion3D" parent="SubViewportContainer/SubViewport/world3"]
+navigation_mesh = SubResource("NavigationMesh_nav")
+
 [node name="MeshInstance3D" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world3"]
 transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, 0, 0, 0)
 cast_shadow = 0
@@ -1901,17 +1963,31 @@ anchor_bottom = 0.99375
 offset_right = -0.333344
 offset_bottom = 1.5
 
-[node name="Label" type="Label" parent="CanvasLayer"]
-anchors_preset = 5
+[node name="SprintBar" type="ProgressBar" parent="CanvasLayer"]
+anchors_preset = 7
 anchor_left = 0.5
+anchor_top = 1.0
 anchor_right = 0.5
-offset_left = -20.0
-offset_right = 20.0
-offset_bottom = 23.0
+anchor_bottom = 1.0
+offset_left = -68.0
+offset_top = -57.0
+offset_right = 130.0
+offset_bottom = -34.0
 grow_horizontal = 2
+grow_vertical = 0
 size_flags_horizontal = 4
-text = "Time"
-clip_text = true
+value = 100.0
+show_percentage = false
+
+[node name="Sprint" type="Label" parent="CanvasLayer"]
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_top = -53.0
+offset_right = 84.0
+offset_bottom = -30.0
+grow_vertical = 0
+text = "Sprint:"
 
 [node name="NightmareBar" type="ProgressBar" parent="CanvasLayer"]
 anchors_preset = 7
@@ -1944,7 +2020,6 @@ grow_vertical = 2
 color = Color(0, 0, 0, 1)
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
-environment = ExtResource("26_bo7i5")
 
 [connection signal="body_entered" from="SubViewportContainer/SubViewport/world2/models/Mushroom2/Area3D4" to="." method="_on_area_3d_body_entered"]
 [connection signal="body_entered" from="SubViewportContainer/SubViewport/world2/models/Mushroom3/Area3D4" to="." method="_on_area_3d_body_entered"]

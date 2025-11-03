@@ -1,0 +1,25 @@
+[gd_scene load_steps=3 format=3 uid="uid://monster_base_scene"]
+
+[ext_resource type="Script" path="res://scripts/monster_base.gd" id="1_monster"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_monster"]
+radius = 0.5
+height = 2.0
+
+[node name="MonsterBase" type="CharacterBody3D"]
+collision_layer = 2
+collision_mask = 3
+motion_mode = 0
+floor_stop_on_slope = true
+floor_constant_speed = false
+floor_block_on_wall = true
+floor_max_angle = 0.785398
+wall_min_slide_angle = 0.261799
+up_direction = Vector3(0, 1, 0)
+script = ExtResource("1_monster")
+monster_type = 0
+speed = 4.0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+shape = SubResource("CapsuleShape3D_monster")

@@ -1,6 +1,5 @@
 extends Node2D
 
-@export var main_menu_scene: PackedScene
 var text_to_type_1 = "It was all a dream"
 var text_to_type_2 = "or was it?"
 var typing_speed = 0.1  # seconds per character
@@ -37,12 +36,8 @@ func _type_second_line():
 	start_typing(text_to_type_2)
 
 func go_to_main_menu():
-	if main_menu_scene:
-		var menu = main_menu_scene.instantiate()
-		get_tree().root.add_child(menu)
-		get_tree().current_scene.queue_free()
-	else:
-		print("Error: Main menu scene not set in Jumpscare.")
+	if get_tree():
+		get_tree().change_scene_to_file("res://scenes/main_menu.tscn")
 
 func play_transition_effect(completion_callback: Callable):
 	var transition_rect = $CanvasLayer/TransitionRect

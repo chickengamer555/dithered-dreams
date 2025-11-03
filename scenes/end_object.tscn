@@ -1,4 +1,4 @@
-[gd_scene load_steps=4 format=3 uid="uid://bed_object_scene"]
+[gd_scene load_steps=4 format=3 uid="uid://ctxhxhkry6fb5"]
 
 [ext_resource type="Script" path="res://scripts/end_object.gd" id="1_end_obj"]
 

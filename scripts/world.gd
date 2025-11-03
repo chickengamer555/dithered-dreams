@@ -14,6 +14,7 @@ extends Node
 # Multiplayer
 var multiplayer_player_scene = preload("res://scenes/multiplayer_player.tscn")
 var players = {}  # Dictionary to store player nodes by peer ID
+var dead_players = {}  # Dictionary to track dead players by peer ID
 var is_multiplayer = false
 
 # Voice chat - Godot microphone-based
@@ -41,8 +42,8 @@ var environments = { # Loads the environment resources for each world and nightm
 }
 @onready var world_environment = $WorldEnvironment  # Reference to the WorldEnvironment node
 
-@onready var timer_label = $CanvasLayer/Label
 @onready var nightmare_bar = $CanvasLayer/NightmareBar
+@onready var sprint_bar = $CanvasLayer/SprintBar
 @onready var transition_rect = $CanvasLayer/ColorRect  # Reference to the ColorRect for transitions
 
 # Interaction UI (will be created dynamically)
@@ -52,13 +53,14 @@ var interaction_progress_bar: ProgressBar = null
 # Voice chat UI
 var voice_indicator: Label = null
 var voice_indicator_timer: float = 0.0
-var voice_settings_ui: Control = null
 
 # Settings menu UI
 var settings_menu_instance: Control = null
 
+# Dev terminal UI
+var dev_terminal_instance: Control = null
+
 @export var play_time: int = 300
-@export var main_menu_scene: PackedScene
 var time_left: int = play_time
 var timer: Timer
 
@@ -205,11 +207,7 @@ func _ready():
 	timer.start()
 
 	# REMOVED: world_timer - no longer using time-based nightmare transitions
-	
-	# Set the timer label
-	if timer_label:
-		timer_label.text = str(time_left)
-	
+
 	# Ensure the transition_rect is initially hidden
 	if transition_rect:
 		transition_rect.visible = false
@@ -356,27 +354,35 @@ func _on_area_3d_body_entered(_body: Node3D):
 
 func _on_timer_tick():
 	time_left -= 1
-	if timer_label:
-		timer_label.text = str(time_left)
 	if time_left <= 0:
 		go_to_main_menu()
 
 func go_to_main_menu():
-	if main_menu_scene:
-		get_tree().change_scene_to_packed(main_menu_scene)
-	else:
-		print("Error: Main menu scene is not set.")
+	if get_tree():
+		get_tree().change_scene_to_file("res://scenes/main_menu.tscn")
 
 func _input(event):
 	# Voice chat is now always-on, no push-to-talk needed
-	# Open voice settings with F1
-	if event is InputEventKey and event.pressed and event.keycode == KEY_F1:
-		if voice_settings_ui:
-			voice_settings_ui.show_settings()
+	# Voice settings removed (F1 key no longer used)
 
-	# Open/close settings menu with ESC
+	# Handle ESC key - close dev terminal if open, otherwise toggle settings
 	if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
-		toggle_settings_menu()
+		if dev_terminal_instance and dev_terminal_instance.visible:
+			# Close dev terminal with ESC
+			close_dev_terminal()
+			get_viewport().set_input_as_handled()
+			return
+		else:
+			# Open/close settings menu with ESC (only if terminal not open)
+			toggle_settings_menu()
+		return
+
+	# Open dev terminal with T key (only if not already open)
+	if event is InputEventKey and event.pressed and event.keycode == KEY_T:
+		if not dev_terminal_instance or not dev_terminal_instance.visible:
+			open_dev_terminal()
+			get_viewport().set_input_as_handled()
+		return
 
 func _process(delta):
 	# Check for voice data continuously in multiplayer (always-on voice chat)
@@ -461,6 +467,11 @@ func update_nightmare_and_dream_speed(is_moving: bool):
 		nightmare_speed = 0.3  # Slow constant increase
 		dream_value = 0.0
 
+func update_sprint_meter(stamina_value: float):
+	"""Update the sprint meter UI with the current stamina value"""
+	if sprint_bar:
+		sprint_bar.value = stamina_value
+
 func is_in_nightmare_world() -> bool:
 	return current_world_name in nightmares
 
@@ -480,7 +491,102 @@ func _trigger_jumpscare():
 				# Teleport to nightmare world, keeping player positions
 				teleport_to_world(nightmare_world_name, Vector3.ZERO, true)
 
+func _player_killed(player: Node3D):
+	"""Called when a lethal chaser kills a player"""
+	if not player or not is_instance_valid(player):
+		print("[World] _player_killed called with invalid player")
+		return
 
+	print("[World] Player killed: ", player.name)
+
+	# In multiplayer, only server handles death
+	if is_multiplayer and not multiplayer.is_server():
+		return
+
+	# Get the peer ID from the player node name
+	var peer_id = int(player.name)
+
+	# Mark player as dead
+	dead_players[peer_id] = player
+
+	# Trigger jumpscare for the killed player
+	trigger_jumpscare_for_player.rpc_id(peer_id)
+
+	# Check if any other players are still alive
+	var alive_players = []
+	for p_id in players:
+		if not dead_players.has(p_id):
+			alive_players.append(p_id)
+
+	if alive_players.size() > 0:
+		# There are alive players - make dead player spectate
+		print("[World] Player ", peer_id, " will spectate. Alive players: ", alive_players)
+
+		# Tell the dead player to spectate a random alive player
+		var spectate_target_id = alive_players[randi() % alive_players.size()]
+		start_spectating.rpc_id(peer_id, spectate_target_id)
+	else:
+		# No alive players - everyone is dead, go to main menu
+		print("[World] All players dead! Going to main menu...")
+
+		# Trigger jumpscare for all players, then go to main menu
+		all_players_dead_go_to_menu.rpc()
+
+		# Also trigger for server/host
+		go_to_jumpscare_then_menu()
+
+@rpc("authority", "call_remote", "reliable")
+func trigger_jumpscare_for_player():
+	"""Trigger jumpscare effect for a specific player (called on client)"""
+	print("[World] Jumpscare triggered for this player!")
+	# You can add a visual/audio jumpscare effect here
+	# For now, just a flash or screen shake could work
+	if transition_rect:
+		transition_rect.visible = true
+		transition_rect.modulate = Color(1, 0, 0, 0.8)  # Red flash
+		await get_tree().create_timer(0.3).timeout
+		transition_rect.modulate = Color(1, 1, 1, 1)  # Reset to white
+		transition_rect.visible = false
+
+@rpc("authority", "call_remote", "reliable")
+func start_spectating(target_peer_id: int):
+	"""Make this player spectate another player"""
+	print("[World] Starting spectate mode for peer ", target_peer_id)
+
+	# Disable local player's camera and input
+	var local_player_id = multiplayer.get_unique_id()
+	if players.has(local_player_id):
+		var local_player = players[local_player_id]
+		if local_player.has_method("disable_controls"):
+			local_player.disable_controls()
+
+	# Switch camera to target player
+	if players.has(target_peer_id):
+		var target_player = players[target_peer_id]
+		var target_camera = target_player.get_node_or_null("Camera3D")
+		if target_camera:
+			# Disable all other cameras first
+			for peer_id in players:
+				var p = players[peer_id]
+				var cam = p.get_node_or_null("Camera3D")
+				if cam:
+					cam.current = false
+
+			# Enable target camera
+			target_camera.current = true
+			target_camera.make_current()
+			print("[World] Now spectating player ", target_peer_id)
+
+@rpc("authority", "call_local", "reliable")
+func all_players_dead_go_to_menu():
+	"""All players are dead - trigger jumpscare then go to main menu"""
+	print("[World] All players dead! Going to jumpscare then menu...")
+	go_to_jumpscare_then_menu()
+
+func go_to_jumpscare_then_menu():
+	"""Transition to jumpscare scene, then to main menu"""
+	if get_tree():
+		get_tree().change_scene_to_file("res://scenes/Jumpscare.tscn")
 
 func find_spawn_near_player(player_pos: Vector3, attempts: int = 50) -> Vector3:
 	# Try to spawn in a circle around the player
@@ -841,8 +947,13 @@ func update_interaction_progress(progress: float) -> void:
 		interaction_progress_bar.value = progress
 
 # Get total player count (for end_object to check if all players are ready)
+# Only counts alive players (not dead/spectating)
 func get_total_player_count() -> int:
-	return players.size()
+	var alive_count = 0
+	for peer_id in players:
+		if not dead_players.has(peer_id):
+			alive_count += 1
+	return alive_count
 
 # Called by dream_helper when player collects it
 @rpc("any_peer", "call_local", "reliable")
@@ -882,9 +993,20 @@ func teleport_from_end_object() -> void:
 	# NEW GAMEPLAY:
 	# - If in nightmare world: Reset nightmare to 0%
 	# - If in dream world: Reduce nightmare by 75%
+	# - Reset all dead players (they respawn when sleeping)
 	print("Current world: ", current_world_name)
 	print("Is in nightmare world: ", is_in_nightmare_world())
 	print("Nightmare value before: ", nightmare_value)
+
+	# Reset dead players - everyone respawns when sleeping
+	dead_players.clear()
+	print("Dead players cleared - all players respawned")
+
+	# Re-enable controls for all players
+	for peer_id in players:
+		var player = players[peer_id]
+		if player and player.has_method("enable_controls"):
+			player.enable_controls()
 
 	# Calculate the new nightmare value
 	var new_nightmare_value: float
@@ -1004,12 +1126,20 @@ func check_for_voice():
 			if nearby_peers.size() == 0:
 				return  # No one nearby to hear us - save bandwidth!
 
-			# Send to each nearby peer individually (targeted RPC)
+			# Check if local player is sprinting
+			var local_player_id = multiplayer.get_unique_id()
+			var is_sprinting = false
+			if players.has(local_player_id):
+				var local_player = players[local_player_id]
+				if "is_sprinting" in local_player:
+					is_sprinting = local_player.is_sprinting
+
+			# Send to each nearby peer individually (targeted RPC) with sprint status
 			for peer_id in nearby_peers:
-				send_voice_packet.rpc_id(peer_id, pcm_data)
+				send_voice_packet.rpc_id(peer_id, pcm_data, is_sprinting)
 
 @rpc("any_peer", "unreliable_ordered", "call_remote")
-func send_voice_packet(pcm_voice: PackedByteArray):
+func send_voice_packet(pcm_voice: PackedByteArray, is_sprinting: bool = false):
 	"""Receive voice packet from network - OPTIMIZATION: unreliable_ordered prevents out-of-order packets"""
 	var sender_id = multiplayer.get_remote_sender_id()
 
@@ -1026,7 +1156,7 @@ func send_voice_packet(pcm_voice: PackedByteArray):
 	if players.has(sender_id):
 		var player = players[sender_id]
 		if player.has_method("receive_voice_data"):
-			player.receive_voice_data(pcm_voice)
+			player.receive_voice_data(pcm_voice, is_sprinting)
 
 @rpc("authority", "unreliable", "call_remote")
 func sync_nightmare_value(value: float):
@@ -1160,3 +1290,26 @@ func close_settings_menu():
 	if settings_menu_instance:
 		settings_menu_instance.queue_free()
 		settings_menu_instance = null
+
+func open_dev_terminal():
+	"""Open dev terminal as overlay"""
+	# Prevent opening multiple instances
+	if dev_terminal_instance:
+		return
+
+	var terminal_scene = load("res://scenes/dev_terminal.tscn")
+	if terminal_scene:
+		dev_terminal_instance = terminal_scene.instantiate()
+		# Add as child to CanvasLayer so it appears on top
+		$CanvasLayer.add_child(dev_terminal_instance)
+		# Show the terminal
+		if dev_terminal_instance.has_method("show_terminal"):
+			dev_terminal_instance.show_terminal()
+
+func close_dev_terminal():
+	"""Close the dev terminal"""
+	if dev_terminal_instance:
+		if dev_terminal_instance.has_method("hide_terminal"):
+			dev_terminal_instance.hide_terminal()
+		dev_terminal_instance.queue_free()
+		dev_terminal_instance = null
