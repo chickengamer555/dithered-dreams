@@ -1,4 +1,4 @@
-[gd_scene load_steps=95 format=4 uid="uid://5s5tymjjs4cf"]
+[gd_scene load_steps=94 format=4 uid="uid://5s5tymjjs4cf"]
 
 [ext_resource type="Script" uid="uid://pkt703rm8s13" path="res://scripts/world.gd" id="1_bylj8"]
 [ext_resource type="PackedScene" path="res://scenes/monster_base.tscn" id="2_ts3gi"]
@@ -7,7 +7,6 @@
 [ext_resource type="Shader" uid="uid://coicieil24264" path="res://Shaders/Jitter.gdshader" id="3_j1e6l"]
 [ext_resource type="PackedScene" uid="uid://b73bc3j1ohpp1" path="res://scenes/player.tscn" id="3_k3laj"]
 [ext_resource type="PackedScene" uid="uid://ctxhxhkry6fb5" path="res://scenes/end_object.tscn" id="3_mc2jv"]
-[ext_resource type="PackedScene" uid="uid://d3lg8i5nyfspr" path="res://models/ps1.test.glb" id="3_ts3gi"]
 [ext_resource type="Texture2D" uid="uid://0jw525imc8g2" path="res://assests/SBS - Tiny Texture Pack 3 - Small/128x128/Dirt/Dirt_16-128x128.png" id="5_4whfl"]
 [ext_resource type="Shader" uid="uid://dv5dj144vttm8" path="res://Shaders/crt.gdshader" id="5_wmmxl"]
 [ext_resource type="Texture2D" uid="uid://dxup8414rdroi" path="res://models/world2/psx_tree_0.png" id="6_f688c"]
@@ -755,12 +754,6 @@ transform = Transform3D(15, 0, 0, 0, 15, 0, 0, 0, 15, 0, 0, 0)
 
 [node name="NavigationRegion3D" type="NavigationRegion3D" parent="SubViewportContainer/SubViewport/world2"]
 navigation_mesh = SubResource("NavigationMesh_nav")
-
-[node name="MonsterBase" parent="SubViewportContainer/SubViewport/world2" instance=ExtResource("2_ts3gi")]
-transform = Transform3D(0.09999998, 0, 0, 0, 0.09999998, 0, 0, 0, 0.09999998, -5.077635, 1.4796224, 0)
-monster_type = 1
-speed = 10.0
-model_scene = ExtResource("3_ts3gi")
 
 [node name="DreamHelper1" parent="SubViewportContainer/SubViewport/world2" instance=ExtResource("3_dream")]
 transform = Transform3D(0.15, 0, 0, 0, 0.15, 0, 0, 0, 0.15, 4, 1, 4)
