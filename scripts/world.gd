@@ -343,9 +343,11 @@ func _do_teleport_to_world(world_name: String, spawn_position: Vector3, keep_pla
 					var host_player = players.get(host_id)
 
 					# If host exists, teleport them first
-					if host_player:
+					if host_player and is_instance_valid(host_player):
 						host_player.global_transform.origin = host_spawn
-						print("Teleported host player ", host_id, " to position: ", host_spawn)
+						print("Teleported host player ", host_id, " to random position: ", host_spawn)
+					else:
+						print("WARNING: Host player not found during world transition!")
 
 					# Then spawn all other players near the host
 					for peer_id in players:
@@ -353,8 +355,8 @@ func _do_teleport_to_world(world_name: String, spawn_position: Vector3, keep_pla
 							continue  # Skip host, already spawned
 
 						var player = players[peer_id]
-						if player:
-							# Spawn near the host's position
+						if player and is_instance_valid(player):
+							# Spawn near the host's position (3-8 units away)
 							var nearby_spawn = find_spawn_near_player(host_spawn)
 							player.global_transform.origin = nearby_spawn
 							print("Teleported player ", peer_id, " near host at position: ", nearby_spawn)
@@ -690,7 +692,7 @@ func trigger_nonlethal_jumpscare():
 func find_spawn_near_player(player_pos: Vector3, attempts: int = 50) -> Vector3:
 	# Try to spawn in a circle around the player
 	var min_distance = 3.0  # At least 3 units away
-	var max_distance = 8.0  # At most 8 units away
+	var max_distance = 8.0  # At most 8.0 units away
 
 	for i in range(attempts):
 		# Random angle around the player
@@ -706,44 +708,71 @@ func find_spawn_near_player(player_pos: Vector3, attempts: int = 50) -> Vector3:
 
 		var pos = player_pos + offset
 
-		# Adjust to ground level
-		pos = adjust_position_to_ground(pos)
+		# CRITICAL FIX: Keep the same Y level as the player (they're already on the ground)
+		# Don't use adjust_position_to_ground() - physics isn't ready during spawn
+		pos.y = player_pos.y
 
 		# Check if safe (not inside walls, not on top of other players)
-		if pos != null and is_position_safe(pos, 1.5):
+		if is_position_safe(pos, 1.5):
+			print("✓ SPAWN NEAR: Found position ", distance, " units from host at: ", pos)
 			return pos
 
-	# Fallback: just offset to the side
-	return player_pos + Vector3(5, 0, 0)
+	# Fallback: just offset to the side at same Y level
+	var fallback = player_pos + Vector3(5, 0, 0)
+	print("⚠ SPAWN NEAR: Using fallback position at: ", fallback)
+	return fallback
 
 func find_safe_spawn_position(world_name: String, attempts: int = 50, radius: float = 1.0) -> Vector3:
-	for i in range(attempts):
-		var pos = get_random_spawn_position(world_name)
-		pos = adjust_position_to_ground(pos)
-		if pos != null and is_position_safe(pos, radius):
-			return pos
-	return Vector3(0, 10, 0)  # Or some predefined safe position
+	"""
+	Find a safe spawn position for a player.
+	Priority:
+	1. Use PlayerSpawnPoint nodes if available
+	2. Fallback to (0, 10, 0) if no spawn points
+	"""
+
+	# PRIORITY 1: Try to use PlayerSpawnPoint nodes
+	var spawn_points = get_player_spawn_points(world_name)
+	if spawn_points.size() > 0:
+		# Pick a random spawn point
+		var random_index = randi() % spawn_points.size()
+		var spawn_point = spawn_points[random_index]
+		var pos = spawn_point.global_position
+		print("✓ SPAWN: Using PlayerSpawnPoint at: ", pos)
+		return pos
+
+	# PRIORITY 2: No spawn points found, use fallback position
+	print("⚠ No PlayerSpawnPoints found in '", world_name, "', using fallback position (0, 10, 0)")
+	return Vector3(0, 10, 0)
 
 func adjust_position_to_ground(pos: Vector3):
+	"""
+	Raycast down from the given position to find the actual ground level.
+	This is needed because navmesh Y coordinates may not match the actual walkable ground.
+	"""
 	var world = get_tree().root.get_world_3d()
 	var space_state = world.direct_space_state
-	var from_point = pos
-	var to_point = pos - Vector3(0, 100, 0)
+
+	# Raycast from above the position down to find ground
+	var from_point = pos + Vector3(0, 50, 0)  # Start 50 units above
+	var to_point = pos - Vector3(0, 150, 0)   # Go 150 units below
 
 	var query = PhysicsRayQueryParameters3D.new()
 	query.from = from_point
 	query.to = to_point
 
-	query.collision_mask = 0xFFFFFFFF
+	# Only collide with static bodies (ground), not areas or other players
+	query.collision_mask = 1  # Layer 1 is typically static geometry
 	query.collide_with_bodies = true
 	query.collide_with_areas = false
 
 	var result = space_state.intersect_ray(query)
 	if result.size() > 0:
 		var ground_y = result.position.y
-		pos.y = ground_y + 1.0
-		return pos
+		var adjusted_pos = Vector3(pos.x, ground_y + 1.0, pos.z)  # 1 unit above ground
+		print("  🎯 Raycast hit ground at Y=", ground_y, ", adjusted to Y=", adjusted_pos.y)
+		return adjusted_pos
 	else:
+		print("  ❌ Raycast found no ground between Y=", from_point.y, " and Y=", to_point.y)
 		return null
 
 func is_position_safe(pos: Vector3, radius: float) -> bool:
@@ -754,31 +783,21 @@ func is_position_safe(pos: Vector3, radius: float) -> bool:
 
 	for peer_id in players:
 		var player = players[peer_id]
-		if player:
+		if player and is_instance_valid(player):
 			# OPTIMIZATION: Use distance_squared_to() - 4-5x faster than distance_to()
 			var distance_sq = pos.distance_squared_to(player.global_position)
 			if distance_sq < min_distance_sq:
-				print("Position too close to player ", peer_id, " (distance: ", sqrt(distance_sq), ", min: ", min_distance, ")")
+				print("  ✗ Position unsafe: Too close to player ", peer_id, " (distance: ", sqrt(distance_sq), ")")
 				return false
 
-	var world = get_tree().root.get_world_3d()
-	var space_state = world.direct_space_state
+	# CRITICAL FIX: Skip physics collision check during initial spawn
+	# Physics bodies aren't ready yet, and navmesh already ensures walkable surfaces
+	# We'll rely on the navmesh being correct and player distance checks
 
-	var sphere_shape = SphereShape3D.new()
-	sphere_shape.radius = radius
-	var transform = Transform3D(Basis.IDENTITY, pos)
+	# NOTE: If you want obstacle checking AFTER spawn, use this in a separate function
+	# that's called after physics is ready (e.g., after await get_tree().physics_frame)
 
-	var query = PhysicsShapeQueryParameters3D.new()
-	query.shape = sphere_shape
-	query.transform = transform
-	query.margin = 0.1
-
-	query.collision_mask = 0xFFFFFFFF
-	query.collide_with_bodies = true
-	query.collide_with_areas = false
-
-	var result = space_state.intersect_shape(query, 1)
-	return result.size() == 0
+	return true
 
 func get_random_spawn_position(world_name: String) -> Vector3:
 	if world_name.begins_with("world"):
@@ -795,6 +814,7 @@ func get_random_spawn_position_in_world(world_name: String) -> Vector3:
 		return navmesh_pos
 
 	# Fallback to random position in bounds if navmesh not available
+	print("⚠ WARNING: Using fallback random bounds for '", world_name, "' (navmesh failed)")
 	var min_x = -100
 	var max_x = 100
 	var min_y = 10.0
@@ -806,7 +826,9 @@ func get_random_spawn_position_in_world(world_name: String) -> Vector3:
 	var random_y = randf_range(min_y, max_y)
 	var random_z = randf_range(min_z, max_z)
 
-	return Vector3(random_x, random_y, random_z)
+	var fallback_pos = Vector3(random_x, random_y, random_z)
+	print("  Fallback position: ", fallback_pos)
+	return fallback_pos
 
 func get_random_spawn_position_in_nightmare(nightmare_name: String) -> Vector3:
 	# Try to get a random position on the navigation mesh first
@@ -815,6 +837,7 @@ func get_random_spawn_position_in_nightmare(nightmare_name: String) -> Vector3:
 		return navmesh_pos
 
 	# Fallback to random position in bounds if navmesh not available
+	print("⚠ WARNING: Using fallback random bounds for '", nightmare_name, "' (navmesh failed)")
 	var min_x = -100
 	var max_x = 100
 	var min_y = 10.0
@@ -826,7 +849,9 @@ func get_random_spawn_position_in_nightmare(nightmare_name: String) -> Vector3:
 	var random_y = randf_range(min_y, max_y)
 	var random_z = randf_range(min_z, max_z)
 
-	return Vector3(random_x, random_y, random_z)
+	var fallback_pos = Vector3(random_x, random_y, random_z)
+	print("  Fallback position: ", fallback_pos)
+	return fallback_pos
 
 func get_random_position_on_navmesh(world_name: String) -> Vector3:
 	"""
@@ -841,46 +866,88 @@ func get_random_position_on_navmesh(world_name: String) -> Vector3:
 		world_node = nightmares[world_name]
 
 	if not world_node:
-		print("Warning: World '", world_name, "' not found for navmesh sampling")
+		print(">>> NAVMESH ERROR: World '", world_name, "' not found")
 		return Vector3.ZERO
 
 	# Find NavigationRegion3D in the world
 	var nav_region = find_navigation_region(world_node)
 	if not nav_region:
-		print("Warning: No NavigationRegion3D found in world '", world_name, "'")
+		print(">>> NAVMESH ERROR: No NavigationRegion3D in '", world_name, "'")
 		return Vector3.ZERO
 
-	# Get the navigation map RID
+	# Get the navigation mesh data
+	var nav_mesh = nav_region.navigation_mesh
+	if not nav_mesh:
+		print(">>> NAVMESH ERROR: NavigationRegion3D has no navigation_mesh in '", world_name, "'")
+		return Vector3.ZERO
+
+	# Get all vertices from the navigation mesh
+	var vertices = nav_mesh.get_vertices()
+	if vertices.size() == 0:
+		print(">>> NAVMESH ERROR: Navigation mesh has no vertices in '", world_name, "'")
+		return Vector3.ZERO
+
+	# Get the navigation map RID for validation
 	var nav_map = nav_region.get_navigation_map()
 	if not nav_map or not nav_map.is_valid():
-		print("Warning: Navigation map not valid for world '", world_name, "'")
+		print(">>> NAVMESH ERROR: Navigation map not valid in '", world_name, "'")
 		return Vector3.ZERO
 
-	# Try multiple random attempts to find a valid position on the navmesh
-	var max_attempts = 100
-	var bounds_size = 200.0  # Search within a 200x200 area
+	# Calculate the bounding box of the navmesh to understand its actual size
+	var min_bounds = vertices[0]
+	var max_bounds = vertices[0]
+	for vertex in vertices:
+		min_bounds.x = min(min_bounds.x, vertex.x)
+		min_bounds.y = min(min_bounds.y, vertex.y)
+		min_bounds.z = min(min_bounds.z, vertex.z)
+		max_bounds.x = max(max_bounds.x, vertex.x)
+		max_bounds.y = max(max_bounds.y, vertex.y)
+		max_bounds.z = max(max_bounds.z, vertex.z)
+
+	# Transform bounds to world space
+	var world_transform = nav_region.global_transform
+	var local_min = min_bounds
+	var local_max = max_bounds
+	min_bounds = world_transform * min_bounds
+	max_bounds = world_transform * max_bounds
+
+	print("🔍 DEBUG NAVMESH TRANSFORM for '", world_name, "':")
+	print("  Local bounds: ", local_min, " to ", local_max)
+	print("  World bounds: ", min_bounds, " to ", max_bounds)
+	print("  Global transform scale: ", world_transform.basis.get_scale())
+
+	# Try multiple random attempts within the actual navmesh bounds
+	var max_attempts = 200
+	var valid_positions = []
 
 	for i in range(max_attempts):
-		# Generate a random position in 3D space
+		# Generate a random position within the navmesh bounding box
 		var random_pos = Vector3(
-			randf_range(-bounds_size, bounds_size),
-			randf_range(0, 50),  # Y range
-			randf_range(-bounds_size, bounds_size)
+			randf_range(min_bounds.x, max_bounds.x),
+			randf_range(min_bounds.y, max_bounds.y),
+			randf_range(min_bounds.z, max_bounds.z)
 		)
 
 		# Use NavigationServer3D to find the closest point on the navmesh
 		var closest_point = NavigationServer3D.map_get_closest_point(nav_map, random_pos)
 
-		# Check if the point is actually on the navmesh (not too far from our random point)
-		# If the closest point is very far, it means our random point wasn't near the navmesh
+		# Check if the point is actually on the navmesh (close to our random point)
 		var distance_to_navmesh = random_pos.distance_to(closest_point)
 
-		# If we found a point within reasonable distance, use it
-		if distance_to_navmesh < 100.0:  # Within 100 units of a navmesh surface
-			print("Found random navmesh spawn position: ", closest_point, " (attempt ", i + 1, ")")
-			return closest_point
+		# If we found a point close to the navmesh, it's valid
+		if distance_to_navmesh < 150.0:  # Increased tolerance for scaled worlds
+			valid_positions.append(closest_point)
 
-	print("Warning: Could not find valid navmesh position after ", max_attempts, " attempts")
+	# If we found valid positions, pick a random one
+	if valid_positions.size() > 0:
+		# Use randi() to get a random index
+		var random_index = randi() % valid_positions.size()
+		var chosen_pos = valid_positions[random_index]
+		print("✓ NAVMESH: Found ", valid_positions.size(), " valid positions in '", world_name, "', chose: ", chosen_pos)
+		return chosen_pos
+
+	print("✗ NAVMESH ERROR: Could not find any valid navmesh position in '", world_name, "' after ", max_attempts, " attempts")
+	print("  Navmesh bounds: ", min_bounds, " to ", max_bounds)
 	return Vector3.ZERO
 
 func find_navigation_region(node: Node) -> NavigationRegion3D:
@@ -894,6 +961,46 @@ func find_navigation_region(node: Node) -> NavigationRegion3D:
 			return result
 
 	return null
+
+func get_player_spawn_points(world_name: String) -> Array:
+	"""
+	Get all PlayerSpawnPoint nodes in the specified world.
+	Returns an array of PlayerSpawnPoint nodes.
+	"""
+	var spawn_points = []
+
+	# Get the world node
+	var world_node = null
+	if world_name in worlds:
+		world_node = worlds[world_name]
+	elif world_name in nightmares:
+		world_node = nightmares[world_name]
+
+	if not world_node:
+		print(">>> ERROR: World '", world_name, "' not found for spawn points")
+		return spawn_points
+
+	# Recursively find all PlayerSpawnPoint nodes
+	spawn_points = find_player_spawn_points_recursive(world_node)
+
+	print("🎯 Found ", spawn_points.size(), " PlayerSpawnPoint(s) in '", world_name, "'")
+	return spawn_points
+
+func find_player_spawn_points_recursive(node: Node) -> Array:
+	"""Recursively search for PlayerSpawnPoint nodes"""
+	var spawn_points = []
+
+	# Check if this node is a PlayerSpawnPoint
+	if node.get_class() == "Node3D" and node.get_script():
+		var script = node.get_script()
+		if script and script.get_global_name() == "PlayerSpawnPoint":
+			spawn_points.append(node)
+
+	# Check children
+	for child in node.get_children():
+		spawn_points.append_array(find_player_spawn_points_recursive(child))
+
+	return spawn_points
 
 func _on_area_3d_area_entered(_area: Area3D) -> void:
 	pass
@@ -1037,14 +1144,30 @@ func spawn_player(peer_id: int) -> void:
 
 	var spawn_pos: Vector3
 
-	# If there are already players, spawn NEAR them (but not on top)
-	if players.size() > 0:
-		# Get the first player's position
-		var first_player = players.values()[0]
-		spawn_pos = find_spawn_near_player(first_player.global_position)
-	else:
-		# First player - spawn at random safe position
+	# Determine if this is the host/first player
+	var is_host = false
+	if is_multiplayer:
+		# Check if this is the server/host
+		is_host = (peer_id == 1) or (multiplayer.is_server() and peer_id == multiplayer.get_unique_id())
+
+	# Host spawns randomly, others spawn near host
+	if is_host or players.size() == 0:
+		# Host or first player - spawn at random safe position across the entire map
 		spawn_pos = find_safe_spawn_position(current_world_name, 100, 2.0)
+		print("Spawning host/first player ", peer_id, " at position: ", spawn_pos)
+	else:
+		# Other players - find the host and spawn near them
+		var host_id = 1 if multiplayer.is_server() else multiplayer.get_unique_id()
+		var host_player = players.get(host_id)
+
+		if host_player and is_instance_valid(host_player):
+			# Spawn near the host's position (3-8 units away)
+			spawn_pos = find_spawn_near_player(host_player.global_position)
+			print("Spawning player ", peer_id, " near host at position: ", spawn_pos)
+		else:
+			# Fallback: if host not found, spawn at random position
+			spawn_pos = find_safe_spawn_position(current_world_name, 100, 2.0)
+			print("Host not found, spawning player ", peer_id, " at random position: ", spawn_pos)
 
 	player.global_position = spawn_pos
 

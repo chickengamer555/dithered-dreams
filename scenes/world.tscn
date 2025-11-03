@@ -1,13 +1,13 @@
 [gd_scene load_steps=96 format=4 uid="uid://5s5tymjjs4cf"]
 
 [ext_resource type="Script" uid="uid://pkt703rm8s13" path="res://scripts/world.gd" id="1_bylj8"]
+[ext_resource type="PackedScene" path="res://scenes/player_spawn_point.tscn" id="2_37qwj"]
 [ext_resource type="PackedScene" path="res://scenes/monster_base.tscn" id="2_ts3gi"]
 [ext_resource type="PackedScene" uid="uid://bqhvqk01g8woi" path="res://models/Couch2.glb" id="3_0nbtd"]
 [ext_resource type="PackedScene" uid="uid://c8k3nan2p5q7r" path="res://scenes/dream_helper.tscn" id="3_dream"]
 [ext_resource type="Shader" uid="uid://coicieil24264" path="res://Shaders/Jitter.gdshader" id="3_j1e6l"]
 [ext_resource type="PackedScene" uid="uid://b73bc3j1ohpp1" path="res://scenes/player.tscn" id="3_k3laj"]
 [ext_resource type="PackedScene" uid="uid://ctxhxhkry6fb5" path="res://scenes/end_object.tscn" id="3_mc2jv"]
-[ext_resource type="PackedScene" uid="uid://d3lg8i5nyfspr" path="res://models/ps1.test.glb" id="3_ts3gi"]
 [ext_resource type="Texture2D" uid="uid://0jw525imc8g2" path="res://assests/SBS - Tiny Texture Pack 3 - Small/128x128/Dirt/Dirt_16-128x128.png" id="5_4whfl"]
 [ext_resource type="Shader" uid="uid://dv5dj144vttm8" path="res://Shaders/crt.gdshader" id="5_wmmxl"]
 [ext_resource type="Texture2D" uid="uid://dxup8414rdroi" path="res://models/world2/psx_tree_0.png" id="6_f688c"]
@@ -754,10 +754,8 @@ render_target_update_mode = 4
 [node name="world2" type="Node3D" parent="SubViewportContainer/SubViewport"]
 transform = Transform3D(15, 0, 0, 0, 15, 0, 0, 0, 15, 0, 0, 0)
 
-[node name="MonsterBase" parent="SubViewportContainer/SubViewport/world2" instance=ExtResource("2_ts3gi")]
-transform = Transform3D(0.099999964, 0, 0, 0, 0.099999964, 0, 0, 0, 0.099999964, -3.181636, 1.3681598, 1.4910849)
-monster_type = 2
-model_scene = ExtResource("3_ts3gi")
+[node name="PlayerSpawnPoint" parent="SubViewportContainer/SubViewport/world2" instance=ExtResource("2_37qwj")]
+transform = Transform3D(0.99999994, 0, 0, 0, 0.99999994, 0, 0, 0, 0.99999994, 0, 0, -6.5656)
 
 [node name="NavigationRegion3D" type="NavigationRegion3D" parent="SubViewportContainer/SubViewport/world2"]
 transform = Transform3D(0.9999999, 0, 0, 0, 0.9999999, 0, 0, 0, 0.9999999, 0, 0, 0)
@@ -1033,6 +1031,9 @@ transform = Transform3D(0.9999998, 0, 0, 0, 0.9999998, 0, 0, 0, 0.9999998, 5.578
 
 [node name="MonsterSpawnPoint2" parent="SubViewportContainer/SubViewport/world2" instance=ExtResource("14_37qwj")]
 transform = Transform3D(0.9999997, 0, 0, 0, 0.9999997, 0, 0, 0, 0.9999997, -2.4660816, 0, 0.7050555)
+
+[node name="PlayerSpawnPoint2" parent="SubViewportContainer/SubViewport/world2" instance=ExtResource("2_37qwj")]
+transform = Transform3D(0.9999997, 0, 0, 0, 0.9999997, 0, 0, 0, 0.9999997, 6.857421, 0, -3.8588564)
 
 [node name="nightmare2" type="Node3D" parent="SubViewportContainer/SubViewport"]
 transform = Transform3D(15, 0, 0, 0, 15, 0, 0, 0, 15, 0, 0, 0)
