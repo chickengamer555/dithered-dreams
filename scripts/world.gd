@@ -510,7 +510,12 @@ func _player_killed(player: Node3D):
 	dead_players[peer_id] = player
 
 	# Trigger jumpscare for the killed player
-	trigger_jumpscare_for_player.rpc_id(peer_id)
+	if peer_id == multiplayer.get_unique_id():
+		# If it's the local player (host), call locally
+		trigger_jumpscare_for_player()
+	else:
+		# If it's a remote player, call via RPC
+		trigger_jumpscare_for_player.rpc_id(peer_id)
 
 	# Check if any other players are still alive
 	var alive_players = []
@@ -524,7 +529,13 @@ func _player_killed(player: Node3D):
 
 		# Tell the dead player to spectate a random alive player
 		var spectate_target_id = alive_players[randi() % alive_players.size()]
-		start_spectating.rpc_id(peer_id, spectate_target_id)
+
+		if peer_id == multiplayer.get_unique_id():
+			# If it's the local player (host), call locally
+			start_spectating(spectate_target_id)
+		else:
+			# If it's a remote player, call via RPC
+			start_spectating.rpc_id(peer_id, spectate_target_id)
 	else:
 		# No alive players - everyone is dead, go to main menu
 		print("[World] All players dead! Going to main menu...")
