@@ -625,6 +625,21 @@ func go_to_jumpscare_then_menu():
 	if get_tree():
 		get_tree().change_scene_to_file("res://scenes/Jumpscare.tscn")
 
+func trigger_nonlethal_jumpscare():
+	"""Trigger jumpscare overlay that stays in game (for non-lethal chaser)"""
+	print("[World] Triggering non-lethal jumpscare overlay...")
+
+	# Load and instantiate the jumpscare scene as an overlay
+	var jumpscare_scene = load("res://scenes/Jumpscare.tscn")
+	if jumpscare_scene:
+		var jumpscare_instance = jumpscare_scene.instantiate()
+		jumpscare_instance.is_overlay = true  # Mark as overlay so it removes itself instead of changing scenes
+
+		# Add to the world as a child so it overlays on top of everything
+		add_child(jumpscare_instance)
+
+		print("[World] Jumpscare overlay added to world")
+
 func find_spawn_near_player(player_pos: Vector3, attempts: int = 50) -> Vector3:
 	# Try to spawn in a circle around the player
 	var min_distance = 3.0  # At least 3 units away

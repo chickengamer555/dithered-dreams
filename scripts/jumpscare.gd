@@ -4,6 +4,8 @@ var text_to_type_1 = "It was all a dream"
 var text_to_type_2 = "or was it?"
 var typing_speed = 0.1  # seconds per character
 var current_text = ""
+var return_to_game = false  # If true, just remove overlay instead of changing scenes
+var is_overlay = false  # If true, this is an overlay on the game world
 
 func _ready():
 	# Start typing the first line immediately when the scene is loaded
@@ -27,9 +29,15 @@ func typing_coroutine(text: String) -> void:
 		play_transition_effect(Callable(self, "_type_second_line"))
 	elif text == text_to_type_2:
 		# Finished typing the second text ("or was it?")
-		# Wait 2 seconds, then go to main menu
+		# Wait 2 seconds, then go to main menu or back to game
 		await get_tree().create_timer(2.0).timeout
-		go_to_main_menu()
+		if is_overlay:
+			# Just remove the overlay and return to game
+			remove_overlay()
+		elif return_to_game:
+			go_back_to_game()
+		else:
+			go_to_main_menu()
 
 func _type_second_line():
 	# This function is called after the transition finishes
@@ -38,6 +46,16 @@ func _type_second_line():
 func go_to_main_menu():
 	if get_tree():
 		get_tree().change_scene_to_file("res://scenes/main_menu.tscn")
+
+func go_back_to_game():
+	"""Return to the game world"""
+	if get_tree():
+		get_tree().change_scene_to_file("res://scenes/world.tscn")
+
+func remove_overlay():
+	"""Remove the jumpscare overlay and return to normal gameplay"""
+	print("[Jumpscare] Removing overlay, returning to game...")
+	queue_free()
 
 func play_transition_effect(completion_callback: Callable):
 	var transition_rect = $CanvasLayer/TransitionRect

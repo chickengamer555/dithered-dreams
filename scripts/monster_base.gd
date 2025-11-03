@@ -19,6 +19,15 @@ class_name MonsterBase
 @export var player_detection_range: float = 100.0  # Max distance to detect players
 @export var player_update_interval: float = 0.5  # How often to search for nearest player (seconds)
 
+@export_group("Respawn (for CHASER_JUMPSCARE_REPEAT)")
+# Monster will look for MonsterSpawnPoint nodes in the world to respawn at
+enum SpawnPointSelection {
+	CLOSE,    # Spawn at closest spawn point to player
+	FAR,      # Spawn at farthest spawn point from player
+	RANDOM    # Spawn at random spawn point
+}
+@export var spawn_point_mode: SpawnPointSelection = SpawnPointSelection.RANDOM
+
 @export_group("Debug")
 @export var show_debug_path: bool = false
 @export var enable_debug_prints: bool = false  # Toggle debug console output
@@ -27,6 +36,7 @@ class_name MonsterBase
 enum MonsterType {
 	CHASER_JUMPSCARE,
 	CHASER_LETHAL,
+	CHASER_JUMPSCARE_REPEAT,
 }
 
 # ========== INTERNAL STATE ==========
@@ -132,6 +142,8 @@ func _physics_process(delta: float):
 			_behavior_chaser_jumpscare(delta)
 		MonsterType.CHASER_LETHAL:
 			_behavior_chaser_lethal(delta)
+		MonsterType.CHASER_JUMPSCARE_REPEAT:
+			_behavior_chaser_jumpscare_repeat(delta)
 
 	# Apply movement with collision detection - this respects walls and obstacles
 	move_and_slide()
@@ -184,6 +196,28 @@ func _behavior_chaser_lethal(delta: float):
 		if distance < 3.0:
 			print("[MonsterBase] KILLING PLAYER - Distance: ", distance)
 			_kill_player()
+			return
+
+		# Chase player if within detection range
+		if distance <= player_detection_range:
+			_chase_player(delta)
+		else:
+			# Player too far, stop moving
+			velocity.x = 0
+			velocity.z = 0
+	else:
+		# No valid target, stop moving
+		velocity.x = 0
+		velocity.z = 0
+
+func _behavior_chaser_jumpscare_repeat(delta: float):
+	"""Chase player and trigger jumpscare on contact, then respawn"""
+	if target_player and is_instance_valid(target_player):
+		var distance = global_position.distance_to(target_player.global_position)
+
+		# Trigger jumpscare if very close
+		if distance < 2.0:
+			_trigger_jumpscare_and_respawn()
 			return
 
 		# Chase player if within detection range
@@ -306,15 +340,116 @@ func _find_nearest_player() -> Node3D:
 	return nearest
 
 func _trigger_jumpscare():
-	"""Trigger jumpscare and remove"""
+	"""Trigger jumpscare scene and remove (non-lethal)"""
 	print("[MonsterBase] JUMPSCARE triggered!")
 
-	# Trigger world script jumpscare
-	if world_script and world_script.has_method("_trigger_jumpscare"):
-		world_script._trigger_jumpscare()
+	# Trigger non-lethal jumpscare (shows jumpscare scene then returns to game)
+	if world_script and world_script.has_method("trigger_nonlethal_jumpscare"):
+		world_script.trigger_nonlethal_jumpscare()
 
 	# Remove this monster after triggering jumpscare
 	queue_free()
+
+func _trigger_jumpscare_and_respawn():
+	"""Trigger jumpscare scene and respawn at spawn point (repeating jumpscare)"""
+	print("[MonsterBase] JUMPSCARE triggered! Checking for spawn point...")
+
+	# Trigger non-lethal jumpscare (shows jumpscare scene then returns to game)
+	if world_script and world_script.has_method("trigger_nonlethal_jumpscare"):
+		world_script.trigger_nonlethal_jumpscare()
+
+	# Check if a MonsterSpawnPoint exists in the world
+	var spawn_point = _find_monster_spawn_point()
+
+	if spawn_point:
+		# Spawn point found - respawn there
+		var new_position = spawn_point.global_position
+		global_position = new_position
+
+		# Reset velocity
+		velocity = Vector3.ZERO
+		current_velocity = Vector3.ZERO
+
+		print("[MonsterBase] Respawned at spawn point: ", new_position)
+	else:
+		# No spawn point found - remove the monster
+		print("[MonsterBase] No MonsterSpawnPoint found in world - removing monster")
+		queue_free()
+
+func _find_monster_spawn_point() -> Node3D:
+	"""Find a MonsterSpawnPoint node in the world based on spawn_point_mode"""
+	# Search the entire scene tree for ALL MonsterSpawnPoints
+	var root = get_tree().root
+	var all_spawn_points = []
+	_collect_all_spawn_points(root, all_spawn_points)
+
+	if all_spawn_points.is_empty():
+		return null
+
+	# If only one spawn point, always use it regardless of mode
+	if all_spawn_points.size() == 1:
+		return all_spawn_points[0]
+
+	# Multiple spawn points - select based on mode
+	return _select_spawn_point(all_spawn_points)
+
+func _collect_all_spawn_points(node: Node, spawn_points: Array) -> void:
+	"""Recursively collect all MonsterSpawnPoint nodes in the scene tree"""
+	# Check if this node is a MonsterSpawnPoint
+	if node.is_class("Node3D") and node.get_script():
+		var script = node.get_script()
+		if script and script.resource_path.contains("monster_spawn_point.gd"):
+			spawn_points.append(node as Node3D)
+
+	# Check children
+	for child in node.get_children():
+		_collect_all_spawn_points(child, spawn_points)
+
+func _select_spawn_point(spawn_points: Array) -> Node3D:
+	"""Select a spawn point based on the spawn_point_mode"""
+	if not target_player or not is_instance_valid(target_player):
+		# No valid player, just return random spawn point
+		return spawn_points[randi() % spawn_points.size()]
+
+	var player_pos = target_player.global_position
+
+	match spawn_point_mode:
+		SpawnPointSelection.CLOSE:
+			# Find closest spawn point to player
+			var closest_point = spawn_points[0]
+			var closest_distance = player_pos.distance_squared_to(closest_point.global_position)
+
+			for i in range(1, spawn_points.size()):
+				var distance = player_pos.distance_squared_to(spawn_points[i].global_position)
+				if distance < closest_distance:
+					closest_distance = distance
+					closest_point = spawn_points[i]
+
+			print("[MonsterBase] Selected CLOSEST spawn point at distance: ", sqrt(closest_distance))
+			return closest_point
+
+		SpawnPointSelection.FAR:
+			# Find farthest spawn point from player
+			var farthest_point = spawn_points[0]
+			var farthest_distance = player_pos.distance_squared_to(farthest_point.global_position)
+
+			for i in range(1, spawn_points.size()):
+				var distance = player_pos.distance_squared_to(spawn_points[i].global_position)
+				if distance > farthest_distance:
+					farthest_distance = distance
+					farthest_point = spawn_points[i]
+
+			print("[MonsterBase] Selected FARTHEST spawn point at distance: ", sqrt(farthest_distance))
+			return farthest_point
+
+		SpawnPointSelection.RANDOM:
+			# Pick a random spawn point
+			var random_point = spawn_points[randi() % spawn_points.size()]
+			print("[MonsterBase] Selected RANDOM spawn point")
+			return random_point
+
+	# Fallback (shouldn't reach here)
+	return spawn_points[0]
 
 func _kill_player():
 	"""Kill the player"""
