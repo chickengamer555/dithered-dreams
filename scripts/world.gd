@@ -333,16 +333,37 @@ func _do_teleport_to_world(world_name: String, spawn_position: Vector3, keep_pla
 
 			# Teleport players (or keep their positions)
 			if not keep_player_positions:
-				# FIX: Give each player a UNIQUE spawn position!
 				if is_multiplayer:
-					# Teleport all multiplayer players to DIFFERENT positions
+					# Spawn all players together near the host
+					# First, find a random safe spawn position for the host
+					var host_spawn = find_safe_spawn_position(world_name, 100, 2.0)
+
+					# Get host player (server/first player)
+					var host_id = 1 if multiplayer.is_server() else multiplayer.get_unique_id()
+					var host_player = players.get(host_id)
+
+					# If host exists, teleport them first
+					if host_player:
+						host_player.global_transform.origin = host_spawn
+						print("Teleported host player ", host_id, " to position: ", host_spawn)
+
+					# Then spawn all other players near the host
+					for peer_id in players:
+						if peer_id == host_id:
+							continue  # Skip host, already spawned
+
+						var player = players[peer_id]
+						if player:
+							# Spawn near the host's position
+							var nearby_spawn = find_spawn_near_player(host_spawn)
+							player.global_transform.origin = nearby_spawn
+							print("Teleported player ", peer_id, " near host at position: ", nearby_spawn)
+				else:
+					# Single player - just teleport to spawn position
 					for peer_id in players:
 						var player = players[peer_id]
 						if player:
-							# Find a unique safe spawn position for each player
-							var unique_spawn = find_safe_spawn_position(world_name, 50, 2.0)
-							player.global_transform.origin = unique_spawn
-							print("Teleported player ", peer_id, " to unique position: ", unique_spawn)
+							player.global_transform.origin = spawn_position
 			else:
 				# Keep player positions (for nightmare transitions)
 				print("Keeping player positions during world transition")
@@ -767,7 +788,13 @@ func get_random_spawn_position(world_name: String) -> Vector3:
 	else:
 		return Vector3.ZERO
 
-func get_random_spawn_position_in_world(_world_name: String) -> Vector3:
+func get_random_spawn_position_in_world(world_name: String) -> Vector3:
+	# Try to get a random position on the navigation mesh first
+	var navmesh_pos = get_random_position_on_navmesh(world_name)
+	if navmesh_pos != Vector3.ZERO:
+		return navmesh_pos
+
+	# Fallback to random position in bounds if navmesh not available
 	var min_x = -100
 	var max_x = 100
 	var min_y = 10.0
@@ -781,7 +808,13 @@ func get_random_spawn_position_in_world(_world_name: String) -> Vector3:
 
 	return Vector3(random_x, random_y, random_z)
 
-func get_random_spawn_position_in_nightmare(_nightmare_name: String) -> Vector3:
+func get_random_spawn_position_in_nightmare(nightmare_name: String) -> Vector3:
+	# Try to get a random position on the navigation mesh first
+	var navmesh_pos = get_random_position_on_navmesh(nightmare_name)
+	if navmesh_pos != Vector3.ZERO:
+		return navmesh_pos
+
+	# Fallback to random position in bounds if navmesh not available
 	var min_x = -100
 	var max_x = 100
 	var min_y = 10.0
@@ -794,6 +827,73 @@ func get_random_spawn_position_in_nightmare(_nightmare_name: String) -> Vector3:
 	var random_z = randf_range(min_z, max_z)
 
 	return Vector3(random_x, random_y, random_z)
+
+func get_random_position_on_navmesh(world_name: String) -> Vector3:
+	"""
+	Get a truly random position on the navigation mesh for the given world.
+	This ensures players spawn on walkable surfaces anywhere in the level.
+	"""
+	# Get the world node
+	var world_node = null
+	if world_name in worlds:
+		world_node = worlds[world_name]
+	elif world_name in nightmares:
+		world_node = nightmares[world_name]
+
+	if not world_node:
+		print("Warning: World '", world_name, "' not found for navmesh sampling")
+		return Vector3.ZERO
+
+	# Find NavigationRegion3D in the world
+	var nav_region = find_navigation_region(world_node)
+	if not nav_region:
+		print("Warning: No NavigationRegion3D found in world '", world_name, "'")
+		return Vector3.ZERO
+
+	# Get the navigation map RID
+	var nav_map = nav_region.get_navigation_map()
+	if not nav_map or not nav_map.is_valid():
+		print("Warning: Navigation map not valid for world '", world_name, "'")
+		return Vector3.ZERO
+
+	# Try multiple random attempts to find a valid position on the navmesh
+	var max_attempts = 100
+	var bounds_size = 200.0  # Search within a 200x200 area
+
+	for i in range(max_attempts):
+		# Generate a random position in 3D space
+		var random_pos = Vector3(
+			randf_range(-bounds_size, bounds_size),
+			randf_range(0, 50),  # Y range
+			randf_range(-bounds_size, bounds_size)
+		)
+
+		# Use NavigationServer3D to find the closest point on the navmesh
+		var closest_point = NavigationServer3D.map_get_closest_point(nav_map, random_pos)
+
+		# Check if the point is actually on the navmesh (not too far from our random point)
+		# If the closest point is very far, it means our random point wasn't near the navmesh
+		var distance_to_navmesh = random_pos.distance_to(closest_point)
+
+		# If we found a point within reasonable distance, use it
+		if distance_to_navmesh < 100.0:  # Within 100 units of a navmesh surface
+			print("Found random navmesh spawn position: ", closest_point, " (attempt ", i + 1, ")")
+			return closest_point
+
+	print("Warning: Could not find valid navmesh position after ", max_attempts, " attempts")
+	return Vector3.ZERO
+
+func find_navigation_region(node: Node) -> NavigationRegion3D:
+	"""Recursively search for a NavigationRegion3D in the given node tree"""
+	if node is NavigationRegion3D:
+		return node as NavigationRegion3D
+
+	for child in node.get_children():
+		var result = find_navigation_region(child)
+		if result:
+			return result
+
+	return null
 
 func _on_area_3d_area_entered(_area: Area3D) -> void:
 	pass
