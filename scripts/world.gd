@@ -375,22 +375,31 @@ func leave_game():
 		var my_peer_id = multiplayer.get_unique_id()
 		print("[World] Disconnecting peer ", my_peer_id)
 
-		# Notify other players that we're leaving (server will handle cleanup via peer_disconnected signal)
-		# Remove our player from the local players dictionary
+		# CRITICAL: Notify all other clients to remove this player BEFORE disconnecting
+		# This ensures the player is removed even if peer_disconnected doesn't fire properly
+		notify_player_leaving.rpc(my_peer_id)
+
+		# IMPORTANT: Remove our player locally first
 		if players.has(my_peer_id):
 			var player = players[my_peer_id]
 			if player and is_instance_valid(player):
 				player.queue_free()
 			players.erase(my_peer_id)
 
-		# Disconnect from multiplayer peer (this will trigger peer_disconnected on other clients)
+		# Remove from dead players if we were dead
+		if dead_players.has(my_peer_id):
+			dead_players.erase(my_peer_id)
+
+		# Give a moment for the RPC to send
+		await get_tree().create_timer(0.1).timeout
+
+		# Disconnect from multiplayer peer
+		# This should also trigger peer_disconnected signal on other clients
 		if multiplayer.multiplayer_peer:
+			print("[World] Closing multiplayer peer connection...")
 			multiplayer.multiplayer_peer.close()
 			multiplayer.multiplayer_peer = null
 			print("[World] Multiplayer peer closed")
-
-		# Note: Steam lobby cleanup happens automatically when the peer is closed
-		# The SteamMultiplayerPeer handles leaving the lobby when close() is called
 
 	# Return to main menu
 	go_to_main_menu()
@@ -807,6 +816,25 @@ func _hide_transition_rect():
 # Multiplayer player spawning
 func _on_player_connected(id: int) -> void:
 	print("SERVER: Peer ", id, " connected to network (waiting for client_ready signal...)")
+
+@rpc("any_peer", "call_local", "reliable")
+func notify_player_leaving(peer_id: int) -> void:
+	"""RPC called when a player is intentionally leaving the game"""
+	print("[World] Received notification that player ", peer_id, " is leaving")
+
+	# Remove the player immediately
+	if players.has(peer_id):
+		var player = players[peer_id]
+		if player and is_instance_valid(player):
+			print("[World] Removing player node for leaving peer ", peer_id)
+			player.queue_free()
+		players.erase(peer_id)
+
+	# Remove from dead players if they were dead
+	if dead_players.has(peer_id):
+		dead_players.erase(peer_id)
+
+	print("[World] Player ", peer_id, " removed due to intentional leave. Remaining: ", players.keys())
 
 func _on_player_disconnected(id: int) -> void:
 	"""Called when a player disconnects (Alt+F4, network issue, or intentional leave)"""
