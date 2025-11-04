@@ -22,3 +22,6 @@ current = true
 fov = 70.0
 near = 0.1
 far = 500.0
+
+[node name="Spectate camera" type="Camera3D" parent="."]
+transform = Transform3D(1.0101526, 0.55754054, -0.84235185, 0, 1.1912655, 0.7884814, 1.0101526, -0.55754054, 0.84235185, -0.685, 1.279, 1.429)

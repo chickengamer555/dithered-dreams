@@ -348,7 +348,7 @@ func _trigger_jumpscare():
 		world_script.trigger_nonlethal_jumpscare()
 
 	# Remove this monster after triggering jumpscare
-	queue_free()
+	_remove_monster()
 
 func _trigger_jumpscare_and_respawn():
 	"""Trigger jumpscare scene and respawn at spawn point (repeating jumpscare)"""
@@ -374,7 +374,7 @@ func _trigger_jumpscare_and_respawn():
 	else:
 		# No spawn point found - remove the monster
 		print("[MonsterBase] No MonsterSpawnPoint found in world - removing monster")
-		queue_free()
+		_remove_monster()
 
 func _find_monster_spawn_point() -> Node3D:
 	"""Find a MonsterSpawnPoint node in the world based on spawn_point_mode"""
@@ -469,6 +469,15 @@ func _kill_player():
 		print("[MonsterBase] ERROR: No world script or _player_killed method!")
 
 	# Remove this monster after killing player
+	_remove_monster()
+
+func _remove_monster():
+	"""Remove this monster and register its death for respawning"""
+	# Register death with world script so it can be respawned later
+	if world_script and world_script.has_method("register_monster_death"):
+		world_script.register_monster_death(self)
+
+	# Remove from scene
 	queue_free()
 
 # ========== DEBUG VISUALIZATION ==========
