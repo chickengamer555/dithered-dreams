@@ -781,8 +781,8 @@ func trigger_nonlethal_jumpscare():
 
 func find_spawn_near_player(player_pos: Vector3, attempts: int = 50) -> Vector3:
 	# Try to spawn in a circle around the player
-	var min_distance = 3.0  # At least 3 units away
-	var max_distance = 8.0  # At most 8.0 units away
+	var min_distance = 1.0  # At least 1 unit away
+	var max_distance = 2.5  # At most 2.5 units away
 
 	for i in range(attempts):
 		# Random angle around the player
@@ -1781,7 +1781,7 @@ func _capture_monsters_in_world(world_node: Node, world_name: String):
 				"node_name": child.name,
 				"position": child.global_position,
 				"rotation": child.global_rotation,
-				"scale": child.global_scale,
+				"scale": child.scale,
 				"monster_type": child.monster_type if "monster_type" in child else 0,
 				"speed": child.speed if "speed" in child else 4.0,
 				"model_scene": child.model_scene if "model_scene" in child else null,
@@ -1817,7 +1817,7 @@ func _respawn_killed_monsters(world_name: String):
 			monster.name = monster_data["node_name"]
 			monster.global_position = monster_data["position"]
 			monster.global_rotation = monster_data["rotation"]
-			monster.global_scale = monster_data["scale"]
+			monster.scale = monster_data["scale"]
 
 			# Set monster properties
 			if "monster_type" in monster_data:
