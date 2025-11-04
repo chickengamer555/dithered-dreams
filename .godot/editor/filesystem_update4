@@ -1,11 +1,1 @@
 res://default_bus_layout.tres
-res://scripts/clipmap_terrain.gd
-res://procedual_genration.tscn
-res://envoirments/world1.tres
-res://envoirments/nightmare1.tres
-res://envoirments/world2.tres
-res://envoirments/nightmare2.tres
-res://scripts/procedural_terrain.gd
-res://scenes/world.tscn
-res://working_terrain.tscn
-res://scripts/world.gd
