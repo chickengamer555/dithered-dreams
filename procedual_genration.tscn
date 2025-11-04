@@ -2,35 +2,13 @@
 
 [ext_resource type="Script" uid="uid://d3afi2u8en2qp" path="res://scripts/clipmap_terrain.gd" id="1_clipmap"]
 [ext_resource type="Script" uid="uid://bwidhr184gc27" path="res://scripts/free_fly_camera.gd" id="2_camera"]
-
-[sub_resource type="Environment" id="Environment_1"]
-background_mode = 1
-background_color = Color(0.12, 0.13, 0.12, 1)
-ambient_light_source = 2
-ambient_light_color = Color(0.7, 0.75, 0.7, 1)
-ambient_light_energy = 0.3
-glow_enabled = true
-glow_intensity = 0.3
-glow_strength = 0.8
-glow_bloom = 0.1
-fog_enabled = true
-fog_light_color = Color(0.15, 0.16, 0.15, 1)
-fog_light_energy = 0.2
-fog_density = 0.002
-fog_aerial_perspective = 0.8
-fog_sky_affect = 0.9
-adjustment_enabled = true
-adjustment_brightness = 0.85
-adjustment_contrast = 1.15
-adjustment_saturation = 0.4
+[ext_resource type="Environment" uid="uid://depamicaiy7qg" path="res://envoirments/world2.tres" id="4_e5ueb"]
 
 [node name="Procedual genration" type="Node3D"]
 
 [node name="ClipmapTerrain" type="Node3D" parent="."]
 script = ExtResource("1_clipmap")
-models_per_chunk_min = null
-models_per_chunk_max = null
-model_spawn_area_size = null
+model_amount = 2
 model_min_distance = 20.0
 model_scale_min = 10.0
 model_scale_max = 50.0
@@ -50,4 +28,4 @@ shadow_enabled = true
 shadow_blur = 2.5
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
-environment = SubResource("Environment_1")
+environment = ExtResource("4_e5ueb")

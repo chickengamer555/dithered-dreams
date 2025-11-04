@@ -108,14 +108,8 @@ func _ready():
 	print("  Chunk size:", base_mesh_size, "m | Update distance:", chunk_update_distance, "m")
 
 	# Spawn initial models if configured
-	print("🔍 Model spawning check: model_amount=", model_amount, " model_scenes.size()=", model_scenes.size())
 	if model_amount > 0 and model_scenes.size() > 0:
-		print("🌲 Spawning initial model chunks...")
 		update_model_chunks()
-	elif model_amount > 0 and model_scenes.size() == 0:
-		print("⚠ WARNING: model_amount is set but no model_scenes provided!")
-	else:
-		print("ℹ️ Model spawning disabled (model_amount=0 or no scenes)")
 
 func _resize_model_scenes():
 	"""Resize the model_scenes array when model_amount changes"""
@@ -387,7 +381,6 @@ func update_model_chunks():
 			valid_scenes.append(scene)
 
 	if valid_scenes.size() == 0:
-		print("⚠ No valid model scenes for spawning")
 		return
 
 	var cam_pos = camera.global_position
@@ -434,8 +427,6 @@ func spawn_models_in_chunk(chunk_coords: Vector2i, valid_scenes: Array[PackedSce
 	# Random number of models for this chunk
 	var num_models = randi_range(models_per_chunk_min, models_per_chunk_max)
 
-	print("🌲 Spawning", num_models, "models in chunk", chunk_coords)
-
 	var spawned_count = 0
 	var max_attempts = num_models * 10
 	var attempts = 0
@@ -469,8 +460,6 @@ func spawn_models_in_chunk(chunk_coords: Vector2i, valid_scenes: Array[PackedSce
 	spawned_models[chunk_coords] = chunk_models
 	chunk_model_positions[chunk_coords] = chunk_positions
 
-	print("  ✓ Spawned", spawned_count, "models in chunk", chunk_coords)
-
 func is_valid_position_in_chunk(pos: Vector3, existing_positions: Array) -> bool:
 	"""Check if position is valid within a chunk"""
 	for existing_pos in existing_positions:
@@ -487,7 +476,6 @@ func unload_chunk_models(chunk_coords: Vector2i):
 
 		spawned_models.erase(chunk_coords)
 		chunk_model_positions.erase(chunk_coords)
-		print("🗑️ Unloaded models from chunk", chunk_coords)
 
 func spawn_model_at_position(model_scene: PackedScene, position: Vector3) -> Node3D:
 	"""Instantiate and spawn a model at the given position"""
@@ -522,5 +510,3 @@ func clear_all_models():
 	"""Remove all spawned models from all chunks"""
 	for chunk_key in spawned_models.keys():
 		unload_chunk_models(chunk_key)
-
-	print("🗑️ Cleared all spawned models")
