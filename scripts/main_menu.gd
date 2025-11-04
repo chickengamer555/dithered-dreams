@@ -1,4 +1,7 @@
 extends Control
+## Main Menu Logic
+##
+## Initialises steam Network Addon and provides responsive menu options
 
 # UI References
 @onready var host_button = $VBoxContainer/HostGameButton
@@ -392,13 +395,16 @@ func _on_settings_pressed() -> void:
 		# Mark it as overlay so it knows to come back here
 		settings.is_overlay = true
 
+func _on_quit_button_pressed() -> void:
+	get_tree().quit()
+
 func load_audio_settings():
 	"""Load and apply saved audio settings"""
 	var config = ConfigFile.new()
 	var err = config.load("user://settings.cfg")
 
 	# Audio bus indices
-	const BUS_MASTER = 0
+	const BUS_MASTER = 0 # This constant is initialised but never used, is this intentional?
 	const BUS_MUSIC = 1
 	const BUS_SFX = 2
 	const BUS_VOICES = 3

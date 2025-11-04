@@ -1,0 +1,51 @@
+[gd_scene load_steps=7 format=3 uid="uid://df7j4licjrs8h"]
+
+[ext_resource type="PackedScene" path="res://scenes/player_spawn_point.tscn" id="1_a6hmt"]
+[ext_resource type="PackedScene" uid="uid://c8k3nan2p5q7r" path="res://scenes/dream_helper.tscn" id="2_rq4dg"]
+[ext_resource type="PackedScene" uid="uid://ctxhxhkry6fb5" path="res://scenes/end_object.tscn" id="3_ftdem"]
+[ext_resource type="AudioStream" uid="uid://hnv63ylnemgy" path="res://sounds/peacefull-drone-132285.mp3.wav" id="4_fmy80"]
+[ext_resource type="PackedScene" path="res://scenes/monster_spawn_point.tscn" id="5_mn2es"]
+[ext_resource type="PackedScene" uid="uid://dvua2c0d70sl2" path="res://scenes/glass_world.tscn" id="6_ebxtm"]
+
+[node name="world4" type="Node3D"]
+transform = Transform3D(14.286, 0, 0, 0, 14.286, 0, 0, 0, 14.286, 0, 0, 0)
+
+[node name="PlayerSpawnPoint" parent="." instance=ExtResource("1_a6hmt")]
+transform = Transform3D(0.99999994, 0, 0, 0, 0.99999994, 0, 0, 0, 0.99999994, 0, 0, -6.5656)
+
+[node name="DreamHelper1" parent="." instance=ExtResource("2_rq4dg")]
+transform = Transform3D(0.15, 0, 0, 0, 0.15, 0, 0, 0, 0.15, 4, 1, 4)
+
+[node name="DreamHelper2" parent="." instance=ExtResource("2_rq4dg")]
+transform = Transform3D(0.15, 0, 0, 0, 0.15, 0, 0, 0, 0.15, -6, 1, 2)
+
+[node name="DreamHelper3" parent="." instance=ExtResource("2_rq4dg")]
+transform = Transform3D(0.15, 0, 0, 0, 0.15, 0, 0, 0, 0.15, 2, 1, -5)
+
+[node name="EndObject" parent="." instance=ExtResource("3_ftdem")]
+transform = Transform3D(0.49999994, 0, 0, 0, 0.49999994, 0, 0, 0, 0.49999994, 7.606958, 0, -1.3891728)
+interaction_distance = 3.0
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.7071068, 0.7071068, 0, -0.7071068, 0.7071068, 1.6660767, 26.272413, 0)
+light_color = Color(0.772549, 1, 1, 1)
+light_energy = 2.5
+shadow_enabled = true
+shadow_normal_bias = 0.5
+
+[node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("4_fmy80")
+volume_db = 1.25
+autoplay = true
+bus = &"Music"
+
+[node name="MonsterSpawnPoint" parent="." instance=ExtResource("5_mn2es")]
+transform = Transform3D(0.9999998, 0, 0, 0, 0.9999998, 0, 0, 0, 0.9999998, 5.578936, 0, 2.2517984)
+
+[node name="MonsterSpawnPoint2" parent="." instance=ExtResource("5_mn2es")]
+transform = Transform3D(0.9999997, 0, 0, 0, 0.9999997, 0, 0, 0, 0.9999997, -2.4660816, 0, 0.7050555)
+
+[node name="PlayerSpawnPoint2" parent="." instance=ExtResource("1_a6hmt")]
+transform = Transform3D(0.9999997, 0, 0, 0, 0.9999997, 0, 0, 0, 0.9999997, 6.857421, 0, -3.8588564)
+
+[node name="Glass World2" parent="." instance=ExtResource("6_ebxtm")]

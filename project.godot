@@ -28,6 +28,12 @@ window/size/mode=3
 window/stretch/mode="viewport"
 window/main_scene="res://scenes/world.tscn"
 
+[file_customization]
+
+folder_colors={
+"res://_ignore/": "gray"
+}
+
 [global]
 
 singleton=false

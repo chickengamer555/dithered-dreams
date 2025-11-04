@@ -1,4 +1,4 @@
-[gd_scene load_steps=96 format=4 uid="uid://5s5tymjjs4cf"]
+[gd_scene load_steps=97 format=4 uid="uid://5s5tymjjs4cf"]
 
 [ext_resource type="Script" uid="uid://pkt703rm8s13" path="res://scripts/world.gd" id="1_bylj8"]
 [ext_resource type="PackedScene" path="res://scenes/player_spawn_point.tscn" id="2_37qwj"]
@@ -29,6 +29,7 @@
 [ext_resource type="PackedScene" path="res://scenes/monster_spawn_point.tscn" id="14_37qwj"]
 [ext_resource type="Texture2D" uid="uid://y8hoxswlexnp" path="res://models/world3/psx_low-poly_victorian_clock_0.png" id="22_xgbmr"]
 [ext_resource type="Texture2D" uid="uid://dsbkqfejxrbae" path="res://assests/SBS - Tiny Texture Pack 3 - Small/128x128/Texture_128x128_36.png" id="23_c0vbq"]
+[ext_resource type="PackedScene" uid="uid://df7j4licjrs8h" path="res://scenes/worlds/world_4.tscn" id="29_navra"]
 
 [sub_resource type="Shader" id="Shader_wjb0r"]
 code = "shader_type canvas_item;
@@ -1973,6 +1974,9 @@ transform = Transform3D(-1.49635, 0, 0.104635, 0, 1.5, 0, -0.104635, 0, -1.49635
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/world3/Models/Cog 20_03 - Default_0/Area3D4"]
 transform = Transform3D(-0.716254, 4.48582e-07, 0.69784, 5.49316e-07, 1, -7.90041e-08, -0.69784, 3.26748e-07, -0.716254, -78.4361, 151.71, -70.8392)
+
+[node name="world4" parent="SubViewportContainer/SubViewport" instance=ExtResource("29_navra")]
+visible = false
 
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
 
