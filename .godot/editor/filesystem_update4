@@ -8,3 +8,4 @@ res://envoirments/nightmare2.tres
 res://scripts/procedural_terrain.gd
 res://scenes/world.tscn
 res://working_terrain.tscn
+res://scripts/world.gd

@@ -723,6 +723,27 @@ func start_spectating(target_peer_id: int):
 		print("[World] Now spectating player ", target_peer_id, " in 3rd person")
 
 @rpc("authority", "call_local", "reliable")
+func cleanup_spectator_and_respawn():
+	"""Clean up spectator camera and re-enable controls when respawning from sleep"""
+	print("[World] Cleaning up spectator camera and re-enabling controls")
+
+	# Clean up spectator camera if it exists
+	if has_meta("spectator_camera"):
+		var spectator_camera = get_meta("spectator_camera")
+		if spectator_camera and is_instance_valid(spectator_camera):
+			spectator_camera.queue_free()
+		remove_meta("spectator_camera")
+		remove_meta("spectator_target_id")
+		print("[World] Spectator camera removed")
+
+	# Re-enable controls for all players
+	for peer_id in players:
+		var player = players[peer_id]
+		if player and player.has_method("enable_controls"):
+			player.enable_controls()
+			print("[World] Re-enabled controls for player ", peer_id)
+
+@rpc("authority", "call_local", "reliable")
 func all_players_dead_go_to_menu():
 	"""All players are dead - trigger jumpscare then go to main menu"""
 	print("[World] All players dead! Going to jumpscare then menu...")
@@ -1399,19 +1420,15 @@ func teleport_from_end_object() -> void:
 	dead_players.clear()
 	print("Dead players cleared - all players respawned")
 
-	# Clean up spectator camera if it exists
-	if has_meta("spectator_camera"):
-		var spectator_camera = get_meta("spectator_camera")
-		if spectator_camera and is_instance_valid(spectator_camera):
-			spectator_camera.queue_free()
-		remove_meta("spectator_camera")
-		remove_meta("spectator_target_id")
-
-	# Re-enable controls for all players
-	for peer_id in players:
-		var player = players[peer_id]
-		if player and player.has_method("enable_controls"):
-			player.enable_controls()
+	# Clean up spectator cameras and re-enable controls for ALL players (server + clients)
+	if is_multiplayer:
+		# Call on all clients
+		cleanup_spectator_and_respawn.rpc()
+		# Also call locally on server
+		cleanup_spectator_and_respawn()
+	else:
+		# Single player - just call locally
+		cleanup_spectator_and_respawn()
 
 	# Calculate the new nightmare value
 	var new_nightmare_value: float
