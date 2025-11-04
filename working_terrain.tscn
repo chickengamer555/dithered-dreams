@@ -1,0 +1,51 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/working_terrain.gd" id="1_terrain"]
+[ext_resource type="Script" path="res://scripts/free_fly_camera.gd" id="2_camera"]
+
+[sub_resource type="Environment" id="Environment_1"]
+background_mode = 1
+background_color = Color(0.12, 0.13, 0.12, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.7, 0.75, 0.7, 1)
+ambient_light_energy = 0.3
+fog_enabled = true
+fog_light_color = Color(0.15, 0.16, 0.15, 1)
+fog_light_energy = 0.2
+fog_density = 0.003
+fog_aerial_perspective = 0.8
+fog_sky_affect = 0.9
+glow_enabled = true
+glow_intensity = 0.3
+glow_strength = 0.8
+adjustment_enabled = true
+adjustment_brightness = 0.85
+adjustment_contrast = 1.15
+adjustment_saturation = 0.4
+
+[node name="WorkingTerrain" type="Node3D"]
+
+[node name="Terrain" type="MeshInstance3D" parent="."]
+script = ExtResource("1_terrain")
+terrain_width = 200.0
+terrain_depth = 200.0
+subdivisions = 100
+terrain_height = 20.0
+noise_scale = 0.03
+
+[node name="FreeFlyCamera" type="Camera3D" parent="."]
+transform = Transform3D(0.866, -0.25, 0.433, 0, 0.866, 0.5, -0.5, -0.433, 0.75, 50, 60, 80)
+current = true
+fov = 75.0
+script = ExtResource("2_camera")
+move_speed = 30.0
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.866, -0.353, 0.353, 0, 0.707, 0.707, -0.5, -0.612, 0.612, 0, 40, 0)
+light_color = Color(0.65, 0.68, 0.65, 1)
+light_energy = 0.3
+shadow_enabled = true
+shadow_blur = 2.5
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_1")

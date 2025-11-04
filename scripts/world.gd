@@ -285,11 +285,11 @@ func teleport_to_random_normal_world():
 		var spawn_position = find_safe_spawn_position(random_world)
 		teleport_to_world(random_world, spawn_position)
 
-func teleport_to_world(world_name: String, spawn_position: Vector3, keep_player_positions: bool = false, reset_nightmare: float = -1.0):
+func teleport_to_world(world_name: String, spawn_position: Vector3, keep_player_positions: bool = false, reset_nightmare: float = -1.0, previously_dead_players: Dictionary = {}):
 	is_transitioning = true
-	play_transition_effect(Callable(self, "_do_teleport_to_world").bind(world_name, spawn_position, keep_player_positions, reset_nightmare))
+	play_transition_effect(Callable(self, "_do_teleport_to_world").bind(world_name, spawn_position, keep_player_positions, reset_nightmare, previously_dead_players))
 
-func _do_teleport_to_world(world_name: String, spawn_position: Vector3, keep_player_positions: bool = false, reset_nightmare: float = -1.0):
+func _do_teleport_to_world(world_name: String, spawn_position: Vector3, keep_player_positions: bool = false, reset_nightmare: float = -1.0, previously_dead_players: Dictionary = {}):
 	for _world_name in worlds.keys():
 		var world_iter = worlds[_world_name]
 		if world_iter:
@@ -334,32 +334,91 @@ func _do_teleport_to_world(world_name: String, spawn_position: Vector3, keep_pla
 			# Teleport players (or keep their positions)
 			if not keep_player_positions:
 				if is_multiplayer:
-					# Spawn all players together near the host
-					# First, find a random safe spawn position for the host
-					var host_spawn = find_safe_spawn_position(world_name, 100, 2.0)
-
-					# Get host player (server/first player)
-					var host_id = 1 if multiplayer.is_server() else multiplayer.get_unique_id()
-					var host_player = players.get(host_id)
-
-					# If host exists, teleport them first
-					if host_player and is_instance_valid(host_player):
-						host_player.global_transform.origin = host_spawn
-						print("Teleported host player ", host_id, " to random position: ", host_spawn)
-					else:
-						print("WARNING: Host player not found during world transition!")
-
-					# Then spawn all other players near the host
+					# Determine which players were alive (not in previously_dead_players)
+					var alive_players = []
 					for peer_id in players:
-						if peer_id == host_id:
-							continue  # Skip host, already spawned
+						if not previously_dead_players.has(peer_id):
+							alive_players.append(peer_id)
 
-						var player = players[peer_id]
-						if player and is_instance_valid(player):
-							# Spawn near the host's position (3-8 units away)
-							var nearby_spawn = find_spawn_near_player(host_spawn)
-							player.global_transform.origin = nearby_spawn
-							print("Teleported player ", peer_id, " near host at position: ", nearby_spawn)
+					print("Alive players during sleep: ", alive_players)
+					print("Dead players during sleep: ", previously_dead_players.keys())
+
+					# If there are alive players, spawn dead players near them
+					# Otherwise, spawn everyone normally (all were dead)
+					if alive_players.size() > 0:
+						# Find a random alive player to use as reference
+						var reference_player_id = alive_players[0]
+						var reference_player = players.get(reference_player_id)
+						var reference_position: Vector3
+
+						# Determine spawn position for alive players
+						# If reference player is the host, spawn at random position
+						var host_id = 1 if multiplayer.is_server() else multiplayer.get_unique_id()
+						if reference_player_id == host_id:
+							# Host spawns at random position
+							reference_position = find_safe_spawn_position(world_name, 100, 2.0)
+							if reference_player and is_instance_valid(reference_player):
+								reference_player.global_transform.origin = reference_position
+								print("Teleported alive host player ", reference_player_id, " to random position: ", reference_position)
+						else:
+							# Non-host alive player - spawn near host
+							var host_player = players.get(host_id)
+							if host_player and is_instance_valid(host_player):
+								var host_spawn = find_safe_spawn_position(world_name, 100, 2.0)
+								host_player.global_transform.origin = host_spawn
+								print("Teleported host player ", host_id, " to random position: ", host_spawn)
+
+								# Spawn alive non-host players near host
+								for alive_id in alive_players:
+									if alive_id == host_id:
+										continue
+									var alive_player = players.get(alive_id)
+									if alive_player and is_instance_valid(alive_player):
+										var nearby_spawn = find_spawn_near_player(host_spawn)
+										alive_player.global_transform.origin = nearby_spawn
+										print("Teleported alive player ", alive_id, " near host at position: ", nearby_spawn)
+
+								reference_position = host_spawn
+							else:
+								# Fallback: spawn at random position
+								reference_position = find_safe_spawn_position(world_name, 100, 2.0)
+								if reference_player and is_instance_valid(reference_player):
+									reference_player.global_transform.origin = reference_position
+									print("Teleported alive player ", reference_player_id, " to random position: ", reference_position)
+
+						# Now spawn all previously-dead players near the alive players
+						for peer_id in previously_dead_players.keys():
+							var player = players.get(peer_id)
+							if player and is_instance_valid(player):
+								# Spawn near the reference position (3-8 units away)
+								var nearby_spawn = find_spawn_near_player(reference_position)
+								player.global_transform.origin = nearby_spawn
+								print("Respawned previously-dead player ", peer_id, " near alive players at position: ", nearby_spawn)
+					else:
+						# All players were dead - spawn normally (host random, others near host)
+						print("All players were dead - spawning normally")
+						var host_spawn = find_safe_spawn_position(world_name, 100, 2.0)
+						var host_id = 1 if multiplayer.is_server() else multiplayer.get_unique_id()
+						var host_player = players.get(host_id)
+
+						# If host exists, teleport them first
+						if host_player and is_instance_valid(host_player):
+							host_player.global_transform.origin = host_spawn
+							print("Teleported host player ", host_id, " to random position: ", host_spawn)
+						else:
+							print("WARNING: Host player not found during world transition!")
+
+						# Then spawn all other players near the host
+						for peer_id in players:
+							if peer_id == host_id:
+								continue  # Skip host, already spawned
+
+							var player = players[peer_id]
+							if player and is_instance_valid(player):
+								# Spawn near the host's position (3-8 units away)
+								var nearby_spawn = find_spawn_near_player(host_spawn)
+								player.global_transform.origin = nearby_spawn
+								print("Teleported player ", peer_id, " near host at position: ", nearby_spawn)
 				else:
 					# Single player - just teleport to spawn position
 					for peer_id in players:
@@ -1332,6 +1391,10 @@ func teleport_from_end_object() -> void:
 	print("Is in nightmare world: ", is_in_nightmare_world())
 	print("Nightmare value before: ", nightmare_value)
 
+	# Save which players were dead before clearing (so we can respawn them near alive players)
+	var previously_dead_players = dead_players.duplicate()
+	print("Previously dead players: ", previously_dead_players.keys())
+
 	# Reset dead players - everyone respawns when sleeping
 	dead_players.clear()
 	print("Dead players cleared - all players respawned")
@@ -1375,8 +1438,9 @@ func teleport_from_end_object() -> void:
 
 		# Teleport with random spawn positions (NOT keeping positions)
 		# Pass the new nightmare value to be set AFTER the world transition
+		# Pass previously_dead_players so they can spawn near alive players
 		var spawn_position = find_safe_spawn_position(random_world)
-		teleport_to_world(random_world, spawn_position, false, new_nightmare_value)
+		teleport_to_world(random_world, spawn_position, false, new_nightmare_value, previously_dead_players)
 
 # ============================================================================
 # VOICE CHAT FUNCTIONS
