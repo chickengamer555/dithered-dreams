@@ -3,6 +3,7 @@ extends Node
 @onready var worlds = { # Sets up the dictionaries of what worlds there are
 	"world1": $SubViewportContainer/SubViewport/world1,
 	"world2": $SubViewportContainer/SubViewport/world2,
+	"world4": $SubViewportContainer/SubViewport/world4,
 }
 
 @onready var nightmares = { # Sets up the dictionaries of what nightmares there are
@@ -42,6 +43,7 @@ var environments = { # Loads the environment resources for each world and nightm
 	"nightmare1": preload("res://envoirments/nightmare1.tres"),
 	"world2": preload("res://envoirments/world2.tres"),
 	"nightmare2": preload("res://envoirments/nightmare2.tres"),
+	"world4": preload("res://envoirments/world4.tres"),
 	# Add other environments as needed
 }
 @onready var world_environment = $WorldEnvironment  # Reference to the WorldEnvironment node
