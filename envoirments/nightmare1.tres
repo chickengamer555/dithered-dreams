@@ -1,6 +1,6 @@
 [gd_resource type="Environment" load_steps=4 format=3 uid="uid://c56vnqetc6q1k"]
 
-[ext_resource type="Shader" uid="uid://bp38fvblg2n4n" path="res://Shaders/sky.gdshader" id="1_qtas6"]
+[ext_resource type="Shader" uid="uid://bp38fvblg2n4n" path="res://shaders/sky.gdshader" id="1_qtas6"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_347yv"]
 shader = ExtResource("1_qtas6")

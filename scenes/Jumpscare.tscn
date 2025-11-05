@@ -1,7 +1,7 @@
 [gd_scene load_steps=4 format=3 uid="uid://cl1d4t14oo62o"]
 
 [ext_resource type="Script" uid="uid://kubciatrg13i" path="res://scripts/jumpscare.gd" id="1_wtjm3"]
-[ext_resource type="Shader" uid="uid://dv5dj144vttm8" path="res://Shaders/crt.gdshader" id="2_tedrc"]
+[ext_resource type="Shader" uid="uid://dv5dj144vttm8" path="res://shaders/crt.gdshader" id="2_tedrc"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_laxiu"]
 shader = ExtResource("2_tedrc")

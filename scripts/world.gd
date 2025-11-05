@@ -1,15 +1,26 @@
 extends Node
+## World Manager
+##
+## Managed which worlds are active at any given time, manages nightmare, handles voice chat
+## Probably more, please fill in any responcibilities I missed
 
-@onready var worlds = { # Sets up the dictionaries of what worlds there are
-	"world1": $SubViewportContainer/SubViewport/world1,
-	"world2": $SubViewportContainer/SubViewport/world2,
-	"world4": $SubViewportContainer/SubViewport/world4,
-}
 
-@onready var nightmares = { # Sets up the dictionaries of what nightmares there are
-	"nightmare1": $SubViewportContainer/SubViewport/nightmare1,
-	"nightmare2": $SubViewportContainer/SubViewport/nightmare2,
+## EDITOR CONFIGURATION: Just drag your world nodes here!
+@export_group("World Configuration")
+@export var world_nodes: Array[Node3D] = []  # Drag world1, world2, world4 here
+@export var nightmare_nodes: Array[Node3D] = []  # Drag nightmare1, nightmare2 here
 
+# Runtime dictionaries built automatically from the arrays above
+var worlds = {}  # Dictionary: world_name -> Node3D
+var nightmares = {}  # Dictionary: nightmare_name -> Node3D
+
+# Environments - still hardcoded for now (can be made editable later if needed)
+var environments = {
+	"world1": preload("res://envoirments/world1.tres"),
+	"nightmare1": preload("res://envoirments/nightmare1.tres"),
+	"world2": preload("res://envoirments/world2.tres"),
+	"nightmare2": preload("res://envoirments/nightmare2.tres"),
+	"world4": preload("res://envoirments/world4.tres"),
 }
 
 # Multiplayer
@@ -38,14 +49,6 @@ const NIGHTMARE_SYNC_INTERVAL: float = 0.2  # Sync 5 times per second instead of
 const VOICE_HEAR_DISTANCE: float = 60.0  # Can hear players within 60 units (2x range)
 const VOICE_HEAR_DISTANCE_SQ: float = 3600.0  # Pre-computed squared distance (60*60)
 
-var environments = { # Loads the environment resources for each world and nightmare
-	"world1": preload("res://envoirments/world1.tres"),
-	"nightmare1": preload("res://envoirments/nightmare1.tres"),
-	"world2": preload("res://envoirments/world2.tres"),
-	"nightmare2": preload("res://envoirments/nightmare2.tres"),
-	"world4": preload("res://envoirments/world4.tres"),
-	# Add other environments as needed
-}
 @onready var world_environment = $WorldEnvironment  # Reference to the WorldEnvironment node
 
 @onready var nightmare_bar = $CanvasLayer/NightmareBar
@@ -66,23 +69,14 @@ var settings_menu_instance: Control = null
 # Dev terminal UI
 var dev_terminal_instance: Control = null
 
-@export var play_time: int = 300
-var time_left: int = play_time
-var timer: Timer
 
-# REMOVED: world_timer and time_in_world - no longer using time-based nightmare transitions
-
-@export var nightmare_chance: float = 25.0
-@export var world_chance: float = 75.0
 
 var current_world_name: String = "world1"
 
 var nightmare_value = 0.0
 var nightmare_speed = 0.0
-@export var nightmare_increment: float = 2.0
 
 var dream_value = 0.0
-@export var dream_increment: float = 0.2
 
 # Dictionaries to store original collision layers and masks
 var original_collision_layers = {}
@@ -93,6 +87,10 @@ var is_transitioning: bool = false
 
 func _ready():
 	randomize()  # Starts random number generator
+
+	# Build runtime dictionaries from editor-configured world data
+	_build_world_dictionaries()
+
 	nightmare_bar.value = nightmare_value  # Sets up the nightmare bar based on var
 
 	# Load audio settings for both single player and multiplayer
@@ -107,7 +105,7 @@ func _ready():
 		go_to_main_menu()
 		return
 
-	var viewport = $SubViewportContainer/SubViewport
+	var viewport = $SubViewportContainer/SubViewport # Viewport is declared but never used, is this intentional?
 
 	if is_multiplayer:
 		print("Multiplayer mode detected!")
@@ -143,14 +141,14 @@ func _ready():
 		var world_iter = worlds[_world_name]
 		if world_iter:
 			world_iter.visible = false
-			_disable_interactions_in_world(world_iter, true)
+			world_iter.set_process_mode(PROCESS_MODE_DISABLED)
 
 	# Disable all nightmares initially
 	for _nightmare_name in nightmares.keys():
 		var nightmare_iter = nightmares[_nightmare_name]
 		if nightmare_iter:
 			nightmare_iter.visible = false
-			_disable_interactions_in_world(nightmare_iter, true)
+			nightmare_iter.set_process_mode(PROCESS_MODE_DISABLED)
 
 	# Initialize world state
 	if is_multiplayer:
@@ -166,7 +164,7 @@ func _ready():
 			var starting_world = worlds[current_world_name]
 			if starting_world:
 				starting_world.visible = true
-				_disable_interactions_in_world(starting_world, false)
+				starting_world.set_process_mode(PROCESS_MODE_INHERIT)
 
 				# FIX: Set environment on server too!
 				if world_environment:
@@ -203,14 +201,7 @@ func _ready():
 		print("======================================")
 		print("")
 
-	# Initialize and start the main timer
-	timer = Timer.new()
-	timer.wait_time = 1.0
-	timer.autostart = true
-	timer.one_shot = false
-	timer.timeout.connect(_on_timer_tick)
-	add_child(timer)
-	timer.start()
+
 
 	# REMOVED: world_timer - no longer using time-based nightmare transitions
 
@@ -226,6 +217,31 @@ func _ready():
 
 	# **Important: Mark this scene as the current main scene.**
 	get_tree().set_current_scene(self)
+
+func _build_world_dictionaries():
+	"""
+	Builds the runtime dictionaries from the editor-configured node arrays.
+	Automatically uses the node's name as the dictionary key.
+	Much simpler - just drag nodes into the arrays in the inspector!
+	"""
+	worlds.clear()
+	nightmares.clear()
+
+	# Build worlds dictionary from world_nodes array
+	for world_node in world_nodes:
+		if world_node:
+			var world_name = world_node.name  # Use the node's name as the key
+			worlds[world_name] = world_node
+			print("Registered world: ", world_name)
+
+	# Build nightmares dictionary from nightmare_nodes array
+	for nightmare_node in nightmare_nodes:
+		if nightmare_node:
+			var nightmare_name = nightmare_node.name  # Use the node's name as the key
+			nightmares[nightmare_name] = nightmare_node
+			print("Registered nightmare: ", nightmare_name)
+
+	print("World setup complete: ", worlds.size(), " worlds, ", nightmares.size(), " nightmares")
 
 func _disable_interactions_in_world(world: Node, disable: bool):
 	for child in world.get_children():
@@ -262,25 +278,15 @@ func _disable_interactions_in_world(world: Node, disable: bool):
 		if child.get_child_count() > 0:
 			_disable_interactions_in_world(child, disable)
 
-	# REMOVED: _on_world_timer_tick and teleport_to_nightmare_world
-	# No longer using time-based nightmare transitions
+
 
 func teleport_to_random_world():
 	# Only server controls world transitions in multiplayer
 	if is_multiplayer and not multiplayer.is_server():
 		return
 
-	var rand_val = randi() % 100
-	if rand_val < nightmare_chance:
-		var available_nightmares = nightmares.keys()
-		if available_nightmares.size() > 0:
-			var random_nightmare = available_nightmares[randi() % available_nightmares.size()]
-			var spawn_position = find_safe_spawn_position(random_nightmare)
-			teleport_to_world(random_nightmare, spawn_position)
-		else:
-			teleport_to_random_normal_world()
-	elif rand_val < nightmare_chance + world_chance:
-		teleport_to_random_normal_world()
+	# Always teleport to a random dream world (nightmare only happens at 100% nightmare bar)
+	teleport_to_random_normal_world()
 
 func teleport_to_random_normal_world():
 	# Only server controls world transitions in multiplayer
@@ -303,17 +309,17 @@ func _do_teleport_to_world(world_name: String, spawn_position: Vector3, keep_pla
 		var world_iter = worlds[_world_name]
 		if world_iter:
 			world_iter.visible = false
-			_disable_interactions_in_world(world_iter, true)
+			world_iter.set_process_mode(PROCESS_MODE_DISABLED)
 	for _nightmare_name in nightmares.keys():
 		var nightmare_iter = nightmares[_nightmare_name]
 		if nightmare_iter:
 			nightmare_iter.visible = false
-			_disable_interactions_in_world(nightmare_iter, true)
+			nightmare_iter.set_process_mode(PROCESS_MODE_DISABLED)
 	if world_name in worlds or world_name in nightmares:
 		var target_world = worlds.get(world_name, nightmares.get(world_name, null))
 		if target_world:
 			target_world.visible = true
-			_disable_interactions_in_world(target_world, false)
+			target_world.set_process_mode(PROCESS_MODE_INHERIT)
 			print("Enabled interactions for world:", world_name)
 			current_world_name = world_name
 			# REMOVED: time_in_world reset - no longer using time-based transitions
@@ -476,10 +482,7 @@ func _on_area_3d_body_entered(_body: Node3D):
 	# Now using end_object interaction system instead
 	pass
 
-func _on_timer_tick():
-	time_left -= 1
-	if time_left <= 0:
-		go_to_main_menu()
+
 
 func go_to_main_menu():
 	if get_tree():
@@ -603,9 +606,9 @@ func _process(delta):
 			else:
 				# In dream worlds, nightmare slowly increases
 				if nightmare_speed > 0:
-					nightmare_value += nightmare_speed * delta * nightmare_increment
+					nightmare_value += nightmare_speed * delta
 				elif dream_value > 0:
-					nightmare_value -= dream_value * delta * dream_increment
+					nightmare_value -= dream_value * delta
 				nightmare_value = clamp(nightmare_value, 0, 100)
 
 			# OPTIMIZATION: Rate-limited sync - only send updates 5 times per second
@@ -631,16 +634,16 @@ func _process(delta):
 		# In dream worlds, nightmare slowly increases
 		if not is_in_nightmare_world():
 			if nightmare_speed > 0:
-				nightmare_value += nightmare_speed * delta * nightmare_increment
+				nightmare_value += nightmare_speed * delta
 			elif dream_value > 0:
-				nightmare_value -= dream_value * delta * dream_increment
+				nightmare_value -= dream_value * delta
 			nightmare_value = clamp(nightmare_value, 0, 100)
 
 		nightmare_bar.value = nightmare_value
 		if nightmare_value >= 100 and not is_in_nightmare_world():
 			_trigger_jumpscare()
 
-func update_nightmare_and_dream_speed(is_moving: bool):
+func update_nightmare_and_dream_speed(is_moving: bool): # is_moving is declared but never used, is this intentional?
 	# NEW GAMEPLAY: In nightmare world, nightmare stays at 100%
 	# In dream world, nightmare slowly ticks up regardless of movement
 	if is_in_nightmare_world():
@@ -1308,14 +1311,14 @@ func sync_world_state(world_name: String) -> void:
 		var world_iter = worlds[_world_name]
 		if world_iter:
 			world_iter.visible = false
-			_disable_interactions_in_world(world_iter, true)
+			world_iter.set_process_mode(PROCESS_MODE_DISABLED)
 
 	# Disable all nightmares
 	for _nightmare_name in nightmares.keys():
 		var nightmare_iter = nightmares[_nightmare_name]
 		if nightmare_iter:
 			nightmare_iter.visible = false
-			_disable_interactions_in_world(nightmare_iter, true)
+			nightmare_iter.set_process_mode(PROCESS_MODE_DISABLED)
 
 	# Set current world
 	current_world_name = world_name
@@ -1324,7 +1327,7 @@ func sync_world_state(world_name: String) -> void:
 	var target_world = worlds.get(world_name, nightmares.get(world_name, null))
 	if target_world:
 		target_world.visible = true
-		_disable_interactions_in_world(target_world, false)
+		target_world.set_process_mode(PROCESS_MODE_INHERIT)
 
 		# Set environment
 		if world_environment:
@@ -1587,13 +1590,18 @@ func teleport_from_end_object() -> void:
 
 	# Teleport to a random NORMAL world (not nightmare)
 	var available_worlds = worlds.keys()
-	available_worlds.erase(current_world_name)  # Don't teleport to current world
 
-	# If currently in a nightmare, also exclude the corresponding dream world
+	# Exclude current world if it's a dream world
+	if not is_in_nightmare_world():
+		available_worlds.erase(current_world_name)
+
+	# If currently in a nightmare, exclude the corresponding dream world
+	# Example: if in nightmare2, exclude world2
 	if is_in_nightmare_world():
-		var world_number = current_world_name.substr(9)  # Get number from "nightmare1"
+		var world_number = current_world_name.substr(9)  # Get number from "nightmare1" -> "1"
 		var corresponding_world = "world" + world_number
 		available_worlds.erase(corresponding_world)
+		print("Sleeping in ", current_world_name, " - excluding ", corresponding_world)
 
 	if available_worlds.size() > 0:
 		var random_world = available_worlds[randi() % available_worlds.size()]

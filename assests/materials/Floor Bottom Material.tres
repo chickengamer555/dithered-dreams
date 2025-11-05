@@ -1,0 +1,10 @@
+[gd_resource type="StandardMaterial3D" load_steps=2 format=3 uid="uid://b120iq0owggdo"]
+
+[ext_resource type="Texture2D" uid="uid://c42kd7a7eagr5" path="res://assests/textures/pixelart_dirt_1.jpg" id="1_23qnu"]
+
+[resource]
+resource_name = "Floor Bottom Material"
+cull_mode = 2
+shading_mode = 0
+albedo_texture = ExtResource("1_23qnu")
+texture_filter = 2

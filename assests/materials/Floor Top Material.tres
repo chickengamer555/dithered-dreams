@@ -1,0 +1,8 @@
+[gd_resource type="StandardMaterial3D" load_steps=2 format=3 uid="uid://og3xe6evukkb"]
+
+[ext_resource type="Texture2D" uid="uid://bau56boe08643" path="res://assests/textures/pixelart_dirt_0.jpg" id="1_mmped"]
+
+[resource]
+resource_name = "Floor Top Material"
+albedo_texture = ExtResource("1_mmped")
+texture_filter = 2

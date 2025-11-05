@@ -63,4 +63,3 @@ func _collect_item() -> void:
 
 	# Remove the item from the world
 	queue_free()
-

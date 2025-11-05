@@ -1,12 +1,11 @@
-res://default_bus_layout.tres
-res://scripts/world.gd
 res://scenes/world.tscn
+res://scripts/world_data.gd
+res://scripts/world.gd
 res://envoirments/world1.tres
 res://envoirments/nightmare1.tres
 res://envoirments/world2.tres
 res://envoirments/nightmare2.tres
-res://scripts/main_menu.gd
-res://scenes/glass_world.tscn
 res://envoirments/world4.tres
-res://envoirments/nightmare4.tres
 res://scenes/end_object.tscn
+res://scenes/glass_world.tscn
+res://scripts/dream_helper.gd
