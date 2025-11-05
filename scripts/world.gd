@@ -370,6 +370,8 @@ func _do_teleport_to_world(world_name: String, spawn_position: Vector3, keep_pla
 							if reference_player and is_instance_valid(reference_player):
 								reference_player.global_transform.origin = reference_position
 								print("Teleported alive host player ", reference_player_id, " to random position: ", reference_position)
+								# SAFETY: Wait for position to update before spawning next player
+								await get_tree().process_frame
 						else:
 							# Non-host alive player - spawn near host
 							var host_player = players.get(host_id)
@@ -377,8 +379,10 @@ func _do_teleport_to_world(world_name: String, spawn_position: Vector3, keep_pla
 								var host_spawn = find_safe_spawn_position(world_name, 100, 2.0)
 								host_player.global_transform.origin = host_spawn
 								print("Teleported host player ", host_id, " to random position: ", host_spawn)
+								# SAFETY: Wait for position to update before spawning next player
+								await get_tree().process_frame
 
-								# Spawn alive non-host players near host
+								# Spawn alive non-host players near host SEQUENTIALLY
 								for alive_id in alive_players:
 									if alive_id == host_id:
 										continue
@@ -387,6 +391,8 @@ func _do_teleport_to_world(world_name: String, spawn_position: Vector3, keep_pla
 										var nearby_spawn = find_spawn_near_player(host_spawn)
 										alive_player.global_transform.origin = nearby_spawn
 										print("Teleported alive player ", alive_id, " near host at position: ", nearby_spawn)
+										# SAFETY: Wait for position to update before spawning next player
+										await get_tree().process_frame
 
 								reference_position = host_spawn
 							else:
@@ -395,15 +401,19 @@ func _do_teleport_to_world(world_name: String, spawn_position: Vector3, keep_pla
 								if reference_player and is_instance_valid(reference_player):
 									reference_player.global_transform.origin = reference_position
 									print("Teleported alive player ", reference_player_id, " to random position: ", reference_position)
+									# SAFETY: Wait for position to update before spawning next player
+									await get_tree().process_frame
 
-						# Now spawn all previously-dead players near the alive players
+						# Now spawn all previously-dead players near the alive players SEQUENTIALLY
 						for peer_id in previously_dead_players.keys():
 							var player = players.get(peer_id)
 							if player and is_instance_valid(player):
-								# Spawn near the reference position (3-8 units away)
+								# Spawn near the reference position (2-4 units away)
 								var nearby_spawn = find_spawn_near_player(reference_position)
 								player.global_transform.origin = nearby_spawn
 								print("Respawned previously-dead player ", peer_id, " near alive players at position: ", nearby_spawn)
+								# SAFETY: Wait for position to update before spawning next player
+								await get_tree().process_frame
 					else:
 						# All players were dead - spawn normally (host random, others near host)
 						print("All players were dead - spawning normally")
@@ -415,20 +425,24 @@ func _do_teleport_to_world(world_name: String, spawn_position: Vector3, keep_pla
 						if host_player and is_instance_valid(host_player):
 							host_player.global_transform.origin = host_spawn
 							print("Teleported host player ", host_id, " to random position: ", host_spawn)
+							# SAFETY: Wait for position to update before spawning next player
+							await get_tree().process_frame
 						else:
 							print("WARNING: Host player not found during world transition!")
 
-						# Then spawn all other players near the host
+						# Then spawn all other players near the host SEQUENTIALLY
 						for peer_id in players:
 							if peer_id == host_id:
 								continue  # Skip host, already spawned
 
 							var player = players[peer_id]
 							if player and is_instance_valid(player):
-								# Spawn near the host's position (3-8 units away)
+								# Spawn near the host's position (2-4 units away)
 								var nearby_spawn = find_spawn_near_player(host_spawn)
 								player.global_transform.origin = nearby_spawn
 								print("Teleported player ", peer_id, " near host at position: ", nearby_spawn)
+								# SAFETY: Wait for position to update before spawning next player
+								await get_tree().process_frame
 				else:
 					# Single player - just teleport to spawn position
 					for peer_id in players:
@@ -781,8 +795,8 @@ func trigger_nonlethal_jumpscare():
 
 func find_spawn_near_player(player_pos: Vector3, attempts: int = 50) -> Vector3:
 	# Try to spawn in a circle around the player
-	var min_distance = 1.0  # At least 1 unit away
-	var max_distance = 2.5  # At most 2.5 units away
+	var min_distance = 2.0  # INCREASED: At least 2 units away (was 1.0)
+	var max_distance = 4.0  # INCREASED: At most 4 units away (was 2.5)
 
 	for i in range(attempts):
 		# Random angle around the player
@@ -803,14 +817,37 @@ func find_spawn_near_player(player_pos: Vector3, attempts: int = 50) -> Vector3:
 		pos.y = player_pos.y
 
 		# Check if safe (not inside walls, not on top of other players)
-		if is_position_safe(pos, 1.5):
+		if is_position_safe(pos, 2.0):  # INCREASED: radius from 1.5 to 2.0
 			print("✓ SPAWN NEAR: Found position ", distance, " units from host at: ", pos)
 			return pos
 
-	# Fallback: just offset to the side at same Y level
-	var fallback = player_pos + Vector3(5, 0, 0)
-	print("⚠ SPAWN NEAR: Using fallback position at: ", fallback)
-	return fallback
+	# SAFETY FIX: Try multiple fallback positions with safety checks
+	print("⚠ SPAWN NEAR: All attempts failed, trying fallback positions...")
+	var fallback_offsets = [
+		Vector3(5, 0, 0),
+		Vector3(-5, 0, 0),
+		Vector3(0, 0, 5),
+		Vector3(0, 0, -5),
+		Vector3(5, 0, 5),
+		Vector3(-5, 0, -5),
+		Vector3(5, 0, -5),
+		Vector3(-5, 0, 5),
+		Vector3(10, 0, 0),  # Further away if needed
+		Vector3(0, 0, 10)
+	]
+
+	for offset in fallback_offsets:
+		var fallback = player_pos + offset
+		fallback.y = player_pos.y
+		if is_position_safe(fallback, 2.0):
+			print("✓ SPAWN NEAR: Using safe fallback position at: ", fallback)
+			return fallback
+
+	# LAST RESORT: Return position far away (this should never happen)
+	var last_resort = player_pos + Vector3(20, 0, 20)
+	last_resort.y = player_pos.y
+	print("⚠⚠⚠ SPAWN NEAR: Using LAST RESORT position at: ", last_resort)
+	return last_resort
 
 func find_safe_spawn_position(world_name: String, attempts: int = 50, radius: float = 1.0) -> Vector3:
 	"""
@@ -865,13 +902,17 @@ func adjust_position_to_ground(pos: Vector3):
 		print("  ❌ Raycast found no ground between Y=", from_point.y, " and Y=", to_point.y)
 		return null
 
-func is_position_safe(pos: Vector3, radius: float) -> bool:
+func is_position_safe(pos: Vector3, radius: float, exclude_peer_id: int = -1) -> bool:
 	# Check if any existing players are too close
-	# Minimum distance is 1.0 unit to prevent spawning on top of each other
-	var min_distance = max(radius * 2.0, 1.0)
+	# INCREASED: Minimum distance is 2.0 units to prevent spawning on top of each other (was 1.0)
+	var min_distance = max(radius * 2.0, 2.0)
 	var min_distance_sq = min_distance * min_distance  # OPTIMIZATION: Pre-square for faster comparison
 
 	for peer_id in players:
+		# Skip the player we're checking for (when validating existing positions)
+		if peer_id == exclude_peer_id:
+			continue
+
 		var player = players[peer_id]
 		if player and is_instance_valid(player):
 			# OPTIMIZATION: Use distance_squared_to() - 4-5x faster than distance_to()
@@ -888,6 +929,55 @@ func is_position_safe(pos: Vector3, radius: float) -> bool:
 	# that's called after physics is ready (e.g., after await get_tree().physics_frame)
 
 	return true
+
+func validate_player_positions(peer_id: int) -> void:
+	"""
+	POST-SPAWN VALIDATION: Check if a player is overlapping with others and fix if needed.
+	This is a safety net to catch any edge cases where players might end up too close.
+	"""
+	if not players.has(peer_id):
+		return
+
+	var player = players[peer_id]
+	if not player or not is_instance_valid(player):
+		return
+
+	var current_pos = player.global_position
+
+	# Check if current position is safe (excluding self)
+	if is_position_safe(current_pos, 2.0, peer_id):
+		print("✓ VALIDATION: Player ", peer_id, " position is safe at: ", current_pos)
+		return
+
+	# Position is NOT safe - need to move player
+	print("⚠⚠⚠ VALIDATION: Player ", peer_id, " is overlapping! Attempting to fix...")
+
+	# Try to find a safe position nearby
+	var search_radius = 2.0
+	var max_search_radius = 20.0
+	var angle_step = PI / 4  # 45 degrees
+
+	while search_radius <= max_search_radius:
+		for angle in range(0, 8):  # Try 8 directions
+			var test_angle = angle * angle_step
+			var offset = Vector3(
+				cos(test_angle) * search_radius,
+				0,
+				sin(test_angle) * search_radius
+			)
+			var test_pos = current_pos + offset
+			test_pos.y = current_pos.y
+
+			if is_position_safe(test_pos, 2.0, peer_id):
+				player.global_position = test_pos
+				print("✓ VALIDATION: Moved player ", peer_id, " to safe position: ", test_pos)
+				return
+
+		search_radius += 2.0  # Expand search radius
+
+	# If we get here, something is very wrong, but at least spread them out
+	print("⚠⚠⚠ VALIDATION: Could not find safe position, using emergency offset")
+	player.global_position = current_pos + Vector3(randf_range(-10, 10), 0, randf_range(-10, 10))
 
 func get_random_spawn_position(world_name: String) -> Vector3:
 	if world_name.begins_with("world"):
@@ -1240,6 +1330,13 @@ func spawn_player(peer_id: int) -> void:
 		if player.has_method("setup_voice_receiver"):
 			player.setup_voice_receiver(voice_sample_rate)
 
+	# CRITICAL FIX: Add player to dictionary BEFORE calculating spawn position
+	# This prevents race conditions where multiple players spawn simultaneously
+	# and don't see each other during is_position_safe() checks
+	# We'll set a temporary position first, then calculate the real one
+	player.global_position = Vector3(0, -1000, 0)  # Temporary position far below map
+	players[peer_id] = player
+
 	var spawn_pos: Vector3
 
 	# Determine if this is the host/first player
@@ -1249,7 +1346,7 @@ func spawn_player(peer_id: int) -> void:
 		is_host = (peer_id == 1) or (multiplayer.is_server() and peer_id == multiplayer.get_unique_id())
 
 	# Host spawns randomly, others spawn near host
-	if is_host or players.size() == 0:
+	if is_host or players.size() == 1:  # Changed from players.size() == 0 since we already added this player
 		# Host or first player - spawn at random safe position across the entire map
 		spawn_pos = find_safe_spawn_position(current_world_name, 100, 2.0)
 		print("Spawning host/first player ", peer_id, " at position: ", spawn_pos)
@@ -1259,7 +1356,7 @@ func spawn_player(peer_id: int) -> void:
 		var host_player = players.get(host_id)
 
 		if host_player and is_instance_valid(host_player):
-			# Spawn near the host's position (3-8 units away)
+			# Spawn near the host's position (2-4 units away)
 			spawn_pos = find_spawn_near_player(host_player.global_position)
 			print("Spawning player ", peer_id, " near host at position: ", spawn_pos)
 		else:
@@ -1267,10 +1364,12 @@ func spawn_player(peer_id: int) -> void:
 			spawn_pos = find_safe_spawn_position(current_world_name, 100, 2.0)
 			print("Host not found, spawning player ", peer_id, " at random position: ", spawn_pos)
 
+	# Set the final spawn position
 	player.global_position = spawn_pos
 
-	# THEN add to players dictionary (so next spawn can check against this player)
-	players[peer_id] = player
+	# VALIDATION: Verify no players are overlapping after spawn
+	await get_tree().process_frame  # Wait one frame for physics to update
+	validate_player_positions(peer_id)
 
 # ========== INTERACTION SYSTEM ==========
 
