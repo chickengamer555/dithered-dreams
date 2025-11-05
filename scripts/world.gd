@@ -1137,22 +1137,13 @@ func _on_player_disconnected(id: int) -> void:
 	"""Called when a player disconnects (Alt+F4, network issue, or intentional leave)"""
 	print("[World] Player ", id, " disconnected - removing from game")
 
-	# If we're the server, notify all clients to remove this player
-	if is_multiplayer and multiplayer.is_server():
-		print("[World] Server broadcasting player removal to all clients")
-		remove_disconnected_player.rpc(id)
-
-	# Also remove locally
-	_remove_player_locally(id)
-
-@rpc("authority", "call_local", "reliable")
-func remove_disconnected_player(id: int) -> void:
-	"""RPC to ensure all clients remove disconnected player"""
+	# This signal fires on ALL peers (server and clients)
+	# So we can directly remove the player locally on each machine
 	_remove_player_locally(id)
 
 func _remove_player_locally(id: int) -> void:
 	"""Locally remove a player from the game"""
-	print("[World] Removing player ", id, " locally")
+	print("[World] Removing player ", id, " locally on peer ", multiplayer.get_unique_id())
 
 	# Remove player from players dictionary
 	if players.has(id):
