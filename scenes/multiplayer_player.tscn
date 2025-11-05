@@ -38,6 +38,13 @@ fov = 70.0
 near = 0.1
 far = 500.0
 
+[node name="SpectateCamera" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 5)
+current = false
+fov = 70.0
+near = 0.1
+far = 500.0
+
 [node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="."]
 replication_interval = 0.1
 replication_config = SubResource("SceneReplicationConfig_sync")

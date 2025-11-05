@@ -17,6 +17,10 @@ var players = {}  # Dictionary to store player nodes by peer ID
 var dead_players = {}  # Dictionary to track dead players by peer ID
 var is_multiplayer = false
 
+# Monster tracking - store initial monster data to respawn them when returning to worlds
+var initial_monsters = {}  # Dictionary: world_name -> Array of monster data {node_path, position, rotation, properties}
+var killed_monsters = {}  # Dictionary: world_name -> Array of killed monster node paths
+
 # Voice chat - Godot microphone-based
 var is_recording: bool = false
 var voice_sample_rate: int = 24000  # OPTIMIZATION: 24kHz is ideal for voice (48kHz is overkill)
@@ -215,6 +219,9 @@ func _ready():
 	# Create interaction UI elements
 	_create_interaction_ui()
 
+	# Initialize monster tracking for all worlds
+	_initialize_monster_tracking()
+
 	# **Important: Mark this scene as the current main scene.**
 	get_tree().set_current_scene(self)
 
@@ -308,6 +315,9 @@ func _do_teleport_to_world(world_name: String, spawn_position: Vector3, keep_pla
 			print("Enabled interactions for world:", world_name)
 			current_world_name = world_name
 			# REMOVED: time_in_world reset - no longer using time-based transitions
+
+			# Respawn any killed monsters in this world
+			_respawn_killed_monsters(world_name)
 
 			# Reset nightmare value if requested (after world change)
 			if reset_nightmare >= 0.0:
@@ -686,7 +696,7 @@ func _player_killed(player: Node3D):
 
 
 func start_spectating(target_peer_id: int):
-	"""Make this player spectate another player in 3rd person"""
+	"""Make this player spectate another player in 3rd person using the target's SpectateCamera"""
 	print("[World] Starting 3rd person spectate mode for peer ", target_peer_id)
 
 	# Disable local player's camera and input
@@ -701,40 +711,40 @@ func start_spectating(target_peer_id: int):
 		if local_camera:
 			local_camera.current = false
 
-	# Create a 3rd person spectator camera
+	# Use the target player's SpectateCamera
 	if players.has(target_peer_id):
 		var target_player = players[target_peer_id]
 
-		# Create a new camera for spectating
-		var spectator_camera = Camera3D.new()
-		spectator_camera.name = "SpectatorCamera"
-		add_child(spectator_camera)
+		# Get the target player's SpectateCamera node
+		var spectator_camera = target_player.get_node_or_null("SpectateCamera")
+		if spectator_camera:
+			# Position camera behind and above the target player
+			spectator_camera.global_position = target_player.global_position + Vector3(0, 3, 5)
+			spectator_camera.look_at(target_player.global_position + Vector3(0, 1, 0))
+			spectator_camera.current = true
+			spectator_camera.make_current()
 
-		# Position camera behind and above the target player
-		spectator_camera.global_position = target_player.global_position + Vector3(0, 3, 5)
-		spectator_camera.look_at(target_player.global_position + Vector3(0, 1, 0))
-		spectator_camera.current = true
-		spectator_camera.make_current()
+			# Store reference to update camera position each frame
+			set_meta("spectator_camera", spectator_camera)
+			set_meta("spectator_target_id", target_peer_id)
 
-		# Store reference to update camera position each frame
-		set_meta("spectator_camera", spectator_camera)
-		set_meta("spectator_target_id", target_peer_id)
-
-		print("[World] Now spectating player ", target_peer_id, " in 3rd person")
+			print("[World] Now spectating player ", target_peer_id, " in 3rd person using their SpectateCamera")
+		else:
+			print("[World] ERROR: Target player has no SpectateCamera node!")
 
 @rpc("authority", "call_local", "reliable")
 func cleanup_spectator_and_respawn():
 	"""Clean up spectator camera and re-enable controls when respawning from sleep"""
 	print("[World] Cleaning up spectator camera and re-enabling controls")
 
-	# Clean up spectator camera if it exists
+	# Disable spectator camera if it exists (don't free it - it's part of the player)
 	if has_meta("spectator_camera"):
 		var spectator_camera = get_meta("spectator_camera")
 		if spectator_camera and is_instance_valid(spectator_camera):
-			spectator_camera.queue_free()
+			spectator_camera.current = false
 		remove_meta("spectator_camera")
 		remove_meta("spectator_target_id")
-		print("[World] Spectator camera removed")
+		print("[World] Spectator camera disabled")
 
 	# Re-enable controls for all players
 	for peer_id in players:
@@ -771,8 +781,8 @@ func trigger_nonlethal_jumpscare():
 
 func find_spawn_near_player(player_pos: Vector3, attempts: int = 50) -> Vector3:
 	# Try to spawn in a circle around the player
-	var min_distance = 3.0  # At least 3 units away
-	var max_distance = 8.0  # At most 8.0 units away
+	var min_distance = 1.0  # At least 1 unit away
+	var max_distance = 2.5  # At most 2.5 units away
 
 	for i in range(attempts):
 		# Random angle around the player
@@ -1736,3 +1746,129 @@ func close_dev_terminal():
 			dev_terminal_instance.hide_terminal()
 		dev_terminal_instance.queue_free()
 		dev_terminal_instance = null
+
+# ============================================================================
+# MONSTER TRACKING FUNCTIONS
+# ============================================================================
+
+func _initialize_monster_tracking():
+	"""Capture initial monster data from all worlds so we can respawn them later"""
+	print("[Monster Tracking] Initializing monster tracking...")
+
+	# Track monsters in normal worlds
+	for world_name in worlds.keys():
+		var world_node = worlds[world_name]
+		if world_node:
+			initial_monsters[world_name] = []
+			_capture_monsters_in_world(world_node, world_name)
+
+	# Track monsters in nightmare worlds
+	for nightmare_name in nightmares.keys():
+		var nightmare_node = nightmares[nightmare_name]
+		if nightmare_node:
+			initial_monsters[nightmare_name] = []
+			_capture_monsters_in_world(nightmare_node, nightmare_name)
+
+	print("[Monster Tracking] Initialization complete. Tracked ", initial_monsters.size(), " worlds")
+
+func _capture_monsters_in_world(world_node: Node, world_name: String):
+	"""Recursively find and capture all MonsterBase instances in a world"""
+	for child in world_node.get_children():
+		# Check if this is a MonsterBase
+		if child.get_script() and child.get_script().resource_path.contains("monster_base.gd"):
+			var monster_data = {
+				"scene_path": child.scene_file_path,  # Path to the .tscn file
+				"node_name": child.name,
+				"position": child.global_position,
+				"rotation": child.global_rotation,
+				"scale": child.scale,
+				"monster_type": child.monster_type if "monster_type" in child else 0,
+				"speed": child.speed if "speed" in child else 4.0,
+				"model_scene": child.model_scene if "model_scene" in child else null,
+			}
+			initial_monsters[world_name].append(monster_data)
+			print("[Monster Tracking] Captured monster '", child.name, "' in ", world_name)
+
+func _respawn_killed_monsters(world_name: String):
+	"""Respawn any monsters that were killed in this world"""
+	if not world_name in killed_monsters:
+		return  # No monsters killed in this world
+
+	if not world_name in initial_monsters:
+		return  # No initial monster data for this world
+
+	var world_node = worlds.get(world_name, nightmares.get(world_name, null))
+	if not world_node:
+		return
+
+	var killed_list = killed_monsters[world_name]
+	var monsters_to_respawn = []
+
+	# Find which monsters need to be respawned
+	for monster_data in initial_monsters[world_name]:
+		if monster_data["node_name"] in killed_list:
+			monsters_to_respawn.append(monster_data)
+
+	# Respawn each killed monster
+	for monster_data in monsters_to_respawn:
+		var monster_scene = load("res://scenes/monster_base.tscn")
+		if monster_scene:
+			var monster = monster_scene.instantiate()
+			monster.name = monster_data["node_name"]
+			monster.global_position = monster_data["position"]
+			monster.global_rotation = monster_data["rotation"]
+			monster.scale = monster_data["scale"]
+
+			# Set monster properties
+			if "monster_type" in monster_data:
+				monster.monster_type = monster_data["monster_type"]
+			if "speed" in monster_data:
+				monster.speed = monster_data["speed"]
+			if "model_scene" in monster_data and monster_data["model_scene"]:
+				monster.model_scene = monster_data["model_scene"]
+
+			# Add to world
+			world_node.add_child(monster)
+			print("[Monster Tracking] Respawned monster '", monster.name, "' in ", world_name)
+
+	# Clear the killed list for this world
+	killed_monsters[world_name].clear()
+
+func register_monster_death(monster_node: Node):
+	"""Called when a monster dies - track it so we can respawn it later"""
+	if not monster_node:
+		return
+
+	# Find which world this monster belongs to
+	var monster_world = _find_monster_world(monster_node)
+	if not monster_world:
+		print("[Monster Tracking] WARNING: Could not find world for monster ", monster_node.name)
+		return
+
+	# Add to killed list
+	if not monster_world in killed_monsters:
+		killed_monsters[monster_world] = []
+
+	if not monster_node.name in killed_monsters[monster_world]:
+		killed_monsters[monster_world].append(monster_node.name)
+		print("[Monster Tracking] Registered death of monster '", monster_node.name, "' in ", monster_world)
+
+func _find_monster_world(monster_node: Node) -> String:
+	"""Find which world a monster belongs to by traversing up the scene tree"""
+	var current = monster_node.get_parent()
+
+	while current:
+		# Check if this is a world node
+		for world_name in worlds.keys():
+			if worlds[world_name] == current:
+				return world_name
+
+		# Check if this is a nightmare node
+		for nightmare_name in nightmares.keys():
+			if nightmares[nightmare_name] == current:
+				return nightmare_name
+
+		# Move up the tree
+		current = current.get_parent()
+
+	return ""  # Not found
