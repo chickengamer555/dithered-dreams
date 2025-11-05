@@ -368,7 +368,9 @@ func _do_teleport_to_world(world_name: String, spawn_position: Vector3, keep_pla
 							# Host spawns at random position
 							reference_position = find_safe_spawn_position(world_name, 100, 2.0)
 							if reference_player and is_instance_valid(reference_player):
-								reference_player.global_transform.origin = reference_position
+								reference_player.global_position = reference_position
+								if reference_player is CharacterBody3D:
+									reference_player.velocity = Vector3.ZERO
 								print("Teleported alive host player ", reference_player_id, " to random position: ", reference_position)
 								# SAFETY: Wait for position to update before spawning next player
 								await get_tree().process_frame
@@ -377,7 +379,9 @@ func _do_teleport_to_world(world_name: String, spawn_position: Vector3, keep_pla
 							var host_player = players.get(host_id)
 							if host_player and is_instance_valid(host_player):
 								var host_spawn = find_safe_spawn_position(world_name, 100, 2.0)
-								host_player.global_transform.origin = host_spawn
+								host_player.global_position = host_spawn
+								if host_player is CharacterBody3D:
+									host_player.velocity = Vector3.ZERO
 								print("Teleported host player ", host_id, " to random position: ", host_spawn)
 								# SAFETY: Wait for position to update before spawning next player
 								await get_tree().process_frame
@@ -389,7 +393,9 @@ func _do_teleport_to_world(world_name: String, spawn_position: Vector3, keep_pla
 									var alive_player = players.get(alive_id)
 									if alive_player and is_instance_valid(alive_player):
 										var nearby_spawn = find_spawn_near_player(host_spawn)
-										alive_player.global_transform.origin = nearby_spawn
+										alive_player.global_position = nearby_spawn
+										if alive_player is CharacterBody3D:
+											alive_player.velocity = Vector3.ZERO
 										print("Teleported alive player ", alive_id, " near host at position: ", nearby_spawn)
 										# SAFETY: Wait for position to update before spawning next player
 										await get_tree().process_frame
@@ -399,7 +405,9 @@ func _do_teleport_to_world(world_name: String, spawn_position: Vector3, keep_pla
 								# Fallback: spawn at random position
 								reference_position = find_safe_spawn_position(world_name, 100, 2.0)
 								if reference_player and is_instance_valid(reference_player):
-									reference_player.global_transform.origin = reference_position
+									reference_player.global_position = reference_position
+									if reference_player is CharacterBody3D:
+										reference_player.velocity = Vector3.ZERO
 									print("Teleported alive player ", reference_player_id, " to random position: ", reference_position)
 									# SAFETY: Wait for position to update before spawning next player
 									await get_tree().process_frame
@@ -410,7 +418,9 @@ func _do_teleport_to_world(world_name: String, spawn_position: Vector3, keep_pla
 							if player and is_instance_valid(player):
 								# Spawn near the reference position (2-4 units away)
 								var nearby_spawn = find_spawn_near_player(reference_position)
-								player.global_transform.origin = nearby_spawn
+								player.global_position = nearby_spawn
+								if player is CharacterBody3D:
+									player.velocity = Vector3.ZERO
 								print("Respawned previously-dead player ", peer_id, " near alive players at position: ", nearby_spawn)
 								# SAFETY: Wait for position to update before spawning next player
 								await get_tree().process_frame
@@ -423,7 +433,9 @@ func _do_teleport_to_world(world_name: String, spawn_position: Vector3, keep_pla
 
 						# If host exists, teleport them first
 						if host_player and is_instance_valid(host_player):
-							host_player.global_transform.origin = host_spawn
+							host_player.global_position = host_spawn
+							if host_player is CharacterBody3D:
+								host_player.velocity = Vector3.ZERO
 							print("Teleported host player ", host_id, " to random position: ", host_spawn)
 							# SAFETY: Wait for position to update before spawning next player
 							await get_tree().process_frame
@@ -439,7 +451,9 @@ func _do_teleport_to_world(world_name: String, spawn_position: Vector3, keep_pla
 							if player and is_instance_valid(player):
 								# Spawn near the host's position (2-4 units away)
 								var nearby_spawn = find_spawn_near_player(host_spawn)
-								player.global_transform.origin = nearby_spawn
+								player.global_position = nearby_spawn
+								if player is CharacterBody3D:
+									player.velocity = Vector3.ZERO
 								print("Teleported player ", peer_id, " near host at position: ", nearby_spawn)
 								# SAFETY: Wait for position to update before spawning next player
 								await get_tree().process_frame
@@ -448,7 +462,9 @@ func _do_teleport_to_world(world_name: String, spawn_position: Vector3, keep_pla
 					for peer_id in players:
 						var player = players[peer_id]
 						if player:
-							player.global_transform.origin = spawn_position
+							player.global_position = spawn_position
+							if player is CharacterBody3D:
+								player.velocity = Vector3.ZERO
 			else:
 				# Keep player positions (for nightmare transitions)
 				print("Keeping player positions during world transition")
@@ -970,6 +986,8 @@ func validate_player_positions(peer_id: int) -> void:
 
 			if is_position_safe(test_pos, 2.0, peer_id):
 				player.global_position = test_pos
+				if player is CharacterBody3D:
+					player.velocity = Vector3.ZERO
 				print("✓ VALIDATION: Moved player ", peer_id, " to safe position: ", test_pos)
 				return
 
@@ -977,7 +995,11 @@ func validate_player_positions(peer_id: int) -> void:
 
 	# If we get here, something is very wrong, but at least spread them out
 	print("⚠⚠⚠ VALIDATION: Could not find safe position, using emergency offset")
-	player.global_position = current_pos + Vector3(randf_range(-10, 10), 0, randf_range(-10, 10))
+	var emergency_pos = current_pos + Vector3(randf_range(-10, 10), 0, randf_range(-10, 10))
+	emergency_pos.y = current_pos.y
+	player.global_position = emergency_pos
+	if player is CharacterBody3D:
+		player.velocity = Vector3.ZERO
 
 func get_random_spawn_position(world_name: String) -> Vector3:
 	if world_name.begins_with("world"):
@@ -1333,8 +1355,8 @@ func spawn_player(peer_id: int) -> void:
 	# CRITICAL FIX: Add player to dictionary BEFORE calculating spawn position
 	# This prevents race conditions where multiple players spawn simultaneously
 	# and don't see each other during is_position_safe() checks
-	# We'll set a temporary position first, then calculate the real one
-	player.global_position = Vector3(0, -1000, 0)  # Temporary position far below map
+	# We'll set a temporary position first (far away but at valid Y), then calculate the real one
+	player.global_position = Vector3(10000, 10, 10000)  # Temporary position far away but at valid height
 	players[peer_id] = player
 
 	var spawn_pos: Vector3
@@ -1366,6 +1388,10 @@ func spawn_player(peer_id: int) -> void:
 
 	# Set the final spawn position
 	player.global_position = spawn_pos
+
+	# IMPORTANT: Reset velocity to prevent any residual movement
+	if player is CharacterBody3D:
+		player.velocity = Vector3.ZERO
 
 	# VALIDATION: Verify no players are overlapping after spawn
 	await get_tree().process_frame  # Wait one frame for physics to update
