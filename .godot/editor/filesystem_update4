@@ -1,9 +1,2 @@
 res://default_bus_layout.tres
-res://scenes/player.tscn
-res://envoirments/world1.tres
-res://envoirments/nightmare1.tres
-res://envoirments/world2.tres
-res://envoirments/nightmare2.tres
-res://scenes/multiplayer_player.tscn
-res://scripts/monster_base.gd
 res://scripts/world.gd

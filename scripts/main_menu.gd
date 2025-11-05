@@ -4,6 +4,7 @@ extends Control
 @onready var host_button = $VBoxContainer/HostGameButton
 @onready var join_button = $VBoxContainer/JoinGameButton
 @onready var start_multiplayer_button = $VBoxContainer/StartMultiplayerButton
+@onready var leave_lobby_button = $VBoxContainer/LeaveLobbyButton
 @onready var copy_button = $VBoxContainer/CopyLobbyIDButton
 @onready var lobby_id_label = $VBoxContainer/LobbyIDLabel
 @onready var players_label = $VBoxContainer/PlayersLabel
@@ -67,6 +68,7 @@ func _ready() -> void:
 	lobby_id_label.hide()
 	# lobby_input stays visible so people can enter a lobby ID to join
 	start_multiplayer_button.hide()
+	leave_lobby_button.hide()
 	copy_button.hide()
 	players_label.hide()
 
@@ -127,6 +129,7 @@ func _on_lobby_created(connect_status: int, created_lobby_id: int) -> void:
 		join_button.hide()
 		lobby_input.hide()
 		start_multiplayer_button.show()
+		leave_lobby_button.show()
 		players_label.show()
 
 		# Update player list
@@ -157,6 +160,7 @@ func _on_lobby_joined(lobby_id_joined: int, _permissions: int, _locked: bool, re
 		host_button.hide()
 		join_button.hide()
 		lobby_input.hide()
+		leave_lobby_button.show()
 		players_label.show()
 
 		# Update player list
@@ -170,6 +174,47 @@ func _on_copy_lobby_id_pressed() -> void:
 	DisplayServer.clipboard_set(short_lobby_code)
 	status_label.text = "Lobby code copied to clipboard!"
 	print("Copied lobby code to clipboard: ", short_lobby_code)
+
+# Leave the current lobby
+func _on_leave_lobby_pressed() -> void:
+	print("Leaving lobby...")
+	status_label.text = "Leaving lobby..."
+
+	# Leave the Steam lobby
+	if lobby_id != 0:
+		Steam.leaveLobby(lobby_id)
+		print("Left Steam lobby: ", lobby_id)
+
+	# Close multiplayer peer if it exists (in case we were in the process of connecting)
+	if peer:
+		peer.close()
+		peer = null
+
+	if multiplayer.multiplayer_peer:
+		multiplayer.multiplayer_peer.close()
+		multiplayer.multiplayer_peer = null
+
+	# Reset lobby state
+	lobby_id = 0
+	is_host = false
+	lobby_members.clear()
+	short_lobby_code = ""
+
+	# Reset UI to main menu state
+	status_label.text = "Left lobby"
+	lobby_id_label.hide()
+	copy_button.hide()
+	start_multiplayer_button.hide()
+	leave_lobby_button.hide()
+	players_label.hide()
+
+	# Show main menu buttons
+	host_button.show()
+	join_button.show()
+	lobby_input.show()
+	lobby_input.text = ""  # Clear the input field
+
+	print("Returned to main menu")
 
 # Called when lobby members change (someone joins/leaves)
 func _on_lobby_chat_update(_lobby_id: int, _changed_id: int, _making_change_id: int, _chat_state: int) -> void:

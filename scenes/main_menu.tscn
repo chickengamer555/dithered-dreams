@@ -53,6 +53,10 @@ horizontal_alignment = 1
 layout_mode = 2
 text = "Start Game"
 
+[node name="LeaveLobbyButton" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+text = "Leave Lobby"
+
 [node name="LobbyInput" type="LineEdit" parent="VBoxContainer"]
 layout_mode = 2
 placeholder_text = "Enter Lobby Code"
@@ -69,5 +73,6 @@ text = "Settings"
 [connection signal="pressed" from="VBoxContainer/HostGameButton" to="." method="_on_host_game_pressed"]
 [connection signal="pressed" from="VBoxContainer/CopyLobbyIDButton" to="." method="_on_copy_lobby_id_pressed"]
 [connection signal="pressed" from="VBoxContainer/StartMultiplayerButton" to="." method="_on_start_multiplayer_pressed"]
+[connection signal="pressed" from="VBoxContainer/LeaveLobbyButton" to="." method="_on_leave_lobby_pressed"]
 [connection signal="pressed" from="VBoxContainer/JoinGameButton" to="." method="_on_join_game_pressed"]
 [connection signal="pressed" from="VBoxContainer/SettingsButton" to="." method="_on_settings_pressed"]

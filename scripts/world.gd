@@ -867,8 +867,8 @@ func adjust_position_to_ground(pos: Vector3):
 
 func is_position_safe(pos: Vector3, radius: float) -> bool:
 	# Check if any existing players are too close
-	# Minimum distance is 2.5 units to prevent spawning on top of each other
-	var min_distance = max(radius * 2.0, 2.5)
+	# Minimum distance is 1.0 unit to prevent spawning on top of each other
+	var min_distance = max(radius * 2.0, 1.0)
 	var min_distance_sq = min_distance * min_distance  # OPTIMIZATION: Pre-square for faster comparison
 
 	for peer_id in players:
