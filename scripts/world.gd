@@ -867,8 +867,8 @@ func adjust_position_to_ground(pos: Vector3):
 
 func is_position_safe(pos: Vector3, radius: float) -> bool:
 	# Check if any existing players are too close
-	# Minimum distance is 2.5 units to prevent spawning on top of each other
-	var min_distance = max(radius * 2.0, 2.5)
+	# Minimum distance is 1.0 unit to prevent spawning on top of each other
+	var min_distance = max(radius * 2.0, 1.0)
 	var min_distance_sq = min_distance * min_distance  # OPTIMIZATION: Pre-square for faster comparison
 
 	for peer_id in players:
@@ -1136,6 +1136,23 @@ func notify_player_leaving(peer_id: int) -> void:
 func _on_player_disconnected(id: int) -> void:
 	"""Called when a player disconnects (Alt+F4, network issue, or intentional leave)"""
 	print("[World] Player ", id, " disconnected - removing from game")
+
+	# If we're the server, notify all clients to remove this player
+	if is_multiplayer and multiplayer.is_server():
+		print("[World] Server broadcasting player removal to all clients")
+		remove_disconnected_player.rpc(id)
+
+	# Also remove locally
+	_remove_player_locally(id)
+
+@rpc("authority", "call_local", "reliable")
+func remove_disconnected_player(id: int) -> void:
+	"""RPC to ensure all clients remove disconnected player"""
+	_remove_player_locally(id)
+
+func _remove_player_locally(id: int) -> void:
+	"""Locally remove a player from the game"""
+	print("[World] Removing player ", id, " locally")
 
 	# Remove player from players dictionary
 	if players.has(id):
