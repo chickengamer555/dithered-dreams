@@ -14,6 +14,8 @@ extends CharacterBody3D
 var last_position = Vector3.ZERO  # Last recorded position
 var is_moving = false  # Is the player moving?
 var controls_disabled = false  # Are controls disabled (for spectating)
+var is_flying = false  # Is the player in flying mode?
+var fly_speed = 15.0  # Flying movement speed
 
 # Sprint/Stamina system
 var stamina : float = 100.0  # Current stamina
@@ -141,60 +143,95 @@ func _physics_process(delta: float) -> void:
 		return
 
 	# LOCAL PLAYER: Process input and physics
-	# Add gravity
-	if not is_on_floor():
-		velocity.y -= gravity * delta
 
-	# Handle jump
-	if Input.is_action_just_pressed("ui_accept") and is_on_floor():
-		velocity.y = jump_velocity
+	# Flying mode handling
+	if is_flying:
+		# In flying mode, no gravity
+		var fly_direction = Vector3.ZERO
 
-	# Handle sprinting and stamina
-	var is_trying_to_sprint = Input.is_action_pressed("sprint") and is_on_floor()
-	var is_moving_forward = Input.is_action_pressed("ui_up")
+		# Forward movement (always forward in flying mode)
+		if Input.is_action_pressed("ui_up"):
+			fly_direction -= transform.basis.z.normalized()
 
-	if is_trying_to_sprint and is_moving_forward:
-		# Can only start sprinting if stamina is full, but can continue if already sprinting
-		if is_sprinting or stamina >= max_stamina:
-			if stamina > 0:
-				is_sprinting = true
-				stamina -= stamina_drain_rate * delta
-				stamina = max(stamina, 0.0)
-			else:
-				# Stop sprinting when stamina hits 0
-				is_sprinting = false
-		# else: not sprinting and stamina not full, so can't start
+		# Up/down movement
+		if Input.is_action_pressed("ui_accept"):  # Space key for up
+			fly_direction.y += 1.0
+		elif Input.is_action_pressed("ui_down"):  # S key for down
+			fly_direction.y -= 1.0
+
+		# Sprint key lowers you down in flying mode
+		if Input.is_action_pressed("sprint"):
+			fly_direction.y -= 1.0
+
+		# Normalize to prevent faster diagonal movement
+		if fly_direction.length() > 0:
+			fly_direction = fly_direction.normalized()
+
+		# Apply flying speed (faster when sprinting)
+		var current_fly_speed = fly_speed
+		if Input.is_action_pressed("sprint"):
+			current_fly_speed *= 2.0  # 2x speed when sprinting
+
+		velocity = fly_direction * current_fly_speed
+
+		# Move the player
+		move_and_slide()
 	else:
-		# Player released sprint key or stopped moving forward
-		is_sprinting = false
+		# Normal ground-based movement
+		# Add gravity
+		if not is_on_floor():
+			velocity.y -= gravity * delta
 
-	# Regenerate stamina when not sprinting
-	if not is_sprinting and stamina < max_stamina:
-		stamina += stamina_regen_rate * delta
-		stamina = min(stamina, max_stamina)
+		# Handle jump
+		if Input.is_action_just_pressed("ui_accept") and is_on_floor():
+			velocity.y = jump_velocity
 
-	# Notify world script to update sprint meter
-	var world_node = get_node_or_null("/root/world")
-	if world_node and world_node.has_method("update_sprint_meter"):
-		world_node.update_sprint_meter(stamina)
+		# Handle sprinting and stamina (only when not flying)
+		var is_trying_to_sprint = Input.is_action_pressed("sprint") and is_on_floor()
+		var is_moving_forward = Input.is_action_pressed("ui_up")
 
-	# Input for movement - Tank Controls
-	var direction = Vector3.ZERO
-	if Input.is_action_pressed("ui_up"):
-		direction -= transform.basis.z.normalized()
-	elif Input.is_action_pressed("ui_down"):
-		direction += transform.basis.z.normalized()
+		if is_trying_to_sprint and is_moving_forward:
+			# Can only start sprinting if stamina is full, but can continue if already sprinting
+			if is_sprinting or stamina >= max_stamina:
+				if stamina > 0:
+					is_sprinting = true
+					stamina -= stamina_drain_rate * delta
+					stamina = max(stamina, 0.0)
+				else:
+					# Stop sprinting when stamina hits 0
+					is_sprinting = false
+			# else: not sprinting and stamina not full, so can't start
+		else:
+			# Player released sprint key or stopped moving forward
+			is_sprinting = false
 
-	# Apply movement speed to the direction (use sprint_speed or walk_speed)
-	var current_speed = sprint_speed if is_sprinting else walk_speed
-	direction = direction * current_speed
+		# Regenerate stamina when not sprinting
+		if not is_sprinting and stamina < max_stamina:
+			stamina += stamina_regen_rate * delta
+			stamina = min(stamina, max_stamina)
 
-	# Update velocity
-	velocity.x = direction.x
-	velocity.z = direction.z
+		# Notify world script to update sprint meter
+		var world_node = get_node_or_null("/root/world")
+		if world_node and world_node.has_method("update_sprint_meter"):
+			world_node.update_sprint_meter(stamina)
 
-	# Move the player
-	move_and_slide()
+		# Input for movement - Tank Controls
+		var direction = Vector3.ZERO
+		if Input.is_action_pressed("ui_up"):
+			direction -= transform.basis.z.normalized()
+		elif Input.is_action_pressed("ui_down"):
+			direction += transform.basis.z.normalized()
+
+		# Apply movement speed to the direction (use sprint_speed or walk_speed)
+		var current_speed = sprint_speed if is_sprinting else walk_speed
+		direction = direction * current_speed
+
+		# Update velocity
+		velocity.x = direction.x
+		velocity.z = direction.z
+
+		# Move the player
+		move_and_slide()
 
 	# Handle player rotation (left and right)
 	if Input.is_action_pressed("look_left"):
@@ -406,3 +443,15 @@ func enable_controls():
 		print("[Player] Controls and camera enabled - respawned")
 	else:
 		print("[Player] Controls enabled - respawned")
+
+func enable_flying():
+	"""Enable flying mode"""
+	is_flying = true
+	velocity = Vector3.ZERO  # Reset velocity when entering flying mode
+	print("[Player] Flying mode enabled")
+
+func disable_flying():
+	"""Disable flying mode"""
+	is_flying = false
+	velocity.y = 0  # Reset vertical velocity to prevent falling too fast
+	print("[Player] Flying mode disabled")

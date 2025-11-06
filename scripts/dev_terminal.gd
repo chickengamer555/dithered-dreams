@@ -35,10 +35,12 @@ func _ready():
 	add_output("")
 
 func _input(event):
+	# Only process if terminal is visible
 	if not visible:
 		return
-	
+
 	# Handle up/down arrow keys for command history
+	# These need special handling since LineEdit doesn't use them
 	if event is InputEventKey and event.pressed:
 		if event.keycode == KEY_UP:
 			_navigate_history(-1)
@@ -52,12 +54,26 @@ func show_terminal():
 	input_field.grab_focus()
 	# Capture mouse for UI interaction
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	# Disable player input processing
+	_set_player_input_enabled(false)
 
 func hide_terminal():
 	visible = false
 	input_field.release_focus()
 	# Return mouse to captured mode for gameplay
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+	# Re-enable player input processing
+	_set_player_input_enabled(true)
+
+func _set_player_input_enabled(enabled: bool):
+	"""Enable or disable player input processing"""
+	# Get the local player from the world script
+	if world_script and "players" in world_script:
+		var my_peer_id = multiplayer.get_unique_id()
+		if world_script.players.has(my_peer_id):
+			var player = world_script.players[my_peer_id]
+			if player and is_instance_valid(player):
+				player.set_physics_process(enabled)
 
 func toggle_terminal():
 	if visible:
@@ -107,6 +123,12 @@ func _process_command(command: String):
 			_cmd_set_world(parts)
 		"set_nightmare":
 			_cmd_set_nightmare(parts)
+		"respawn":
+			_cmd_respawn()
+		"fly":
+			_cmd_fly()
+		"fall":
+			_cmd_fall()
 		"/help", "help":
 			_cmd_help()
 		"clear":
@@ -192,12 +214,113 @@ func _cmd_set_nightmare(parts: Array):
 	else:
 		add_output("[color=red]Error: Could not access nightmare data[/color]")
 
+func _cmd_respawn():
+	"""Respawn player at a player spawn point"""
+	if not world_script:
+		add_output("[color=red]Error: Could not access world script[/color]")
+		return
+
+	# Get current world name
+	var current_world = world_script.current_world_name if "current_world_name" in world_script else ""
+	if current_world.is_empty():
+		add_output("[color=red]Error: Could not determine current world[/color]")
+		return
+
+	# Get player spawn points in current world
+	var spawn_points = world_script.get_player_spawn_points(current_world)
+
+	var spawn_pos: Vector3
+
+	if spawn_points.size() == 0:
+		# No spawn points - use fallback position
+		add_output("[color=yellow]No spawn points found, using fallback position[/color]")
+		spawn_pos = Vector3(0, 10, 0)
+	elif spawn_points.size() == 1:
+		# Only one spawn point - teleport to it
+		add_output("[color=green]Teleporting to the only spawn point[/color]")
+		spawn_pos = spawn_points[0].global_position
+	else:
+		# Multiple spawn points - pick a random one
+		var random_index = randi() % spawn_points.size()
+		add_output("[color=green]Teleporting to spawn point " + str(random_index + 1) + " of " + str(spawn_points.size()) + "[/color]")
+		spawn_pos = spawn_points[random_index].global_position
+
+	# Get local player and teleport them
+	if "players" in world_script:
+		var my_peer_id = multiplayer.get_unique_id()
+		if world_script.players.has(my_peer_id):
+			var player = world_script.players[my_peer_id]
+			if player and is_instance_valid(player):
+				player.global_position = spawn_pos
+				# Reset velocity to prevent any residual movement
+				if player is CharacterBody3D:
+					player.velocity = Vector3.ZERO
+				add_output("[color=green]Respawned at: " + str(spawn_pos) + "[/color]")
+			else:
+				add_output("[color=red]Error: Player node is invalid[/color]")
+		else:
+			add_output("[color=red]Error: Could not find local player[/color]")
+	else:
+		add_output("[color=red]Error: Could not access players data[/color]")
+
+func _cmd_fly():
+	"""Enable flying mode for the player"""
+	if not world_script:
+		add_output("[color=red]Error: Could not access world script[/color]")
+		return
+
+	# Get local player and enable flying
+	if "players" in world_script:
+		var my_peer_id = multiplayer.get_unique_id()
+		if world_script.players.has(my_peer_id):
+			var player = world_script.players[my_peer_id]
+			if player and is_instance_valid(player):
+				if player.has_method("enable_flying"):
+					player.enable_flying()
+					add_output("[color=green]Flying mode enabled![/color]")
+					add_output("[color=yellow]W=forward, Space=up, S=down, Shift=down+fast[/color]")
+				else:
+					add_output("[color=red]Error: Player does not support flying[/color]")
+			else:
+				add_output("[color=red]Error: Player node is invalid[/color]")
+		else:
+			add_output("[color=red]Error: Could not find local player[/color]")
+	else:
+		add_output("[color=red]Error: Could not access players data[/color]")
+
+func _cmd_fall():
+	"""Disable flying mode for the player"""
+	if not world_script:
+		add_output("[color=red]Error: Could not access world script[/color]")
+		return
+
+	# Get local player and disable flying
+	if "players" in world_script:
+		var my_peer_id = multiplayer.get_unique_id()
+		if world_script.players.has(my_peer_id):
+			var player = world_script.players[my_peer_id]
+			if player and is_instance_valid(player):
+				if player.has_method("disable_flying"):
+					player.disable_flying()
+					add_output("[color=green]Flying mode disabled - back to normal movement[/color]")
+				else:
+					add_output("[color=red]Error: Player does not support flying[/color]")
+			else:
+				add_output("[color=red]Error: Player node is invalid[/color]")
+		else:
+			add_output("[color=red]Error: Could not find local player[/color]")
+	else:
+		add_output("[color=red]Error: Could not access players data[/color]")
+
 func _cmd_help():
 	add_output("[color=cyan]Available Commands:[/color]")
 	add_output("  set_world <number> - Teleport to world")
 	add_output("    Example: set_world 2")
 	add_output("  set_nightmare <number> - Set nightmare to 100% and teleport")
 	add_output("    Example: set_nightmare 1")
+	add_output("  respawn - Respawn at a player spawn point")
+	add_output("  fly - Enable flying (W=forward, Space=up, S/Shift=down+fast)")
+	add_output("  fall - Disable flying mode")
 	add_output("  clear - Clear terminal output")
 	add_output("  /help - Show this help message")
 
