@@ -2,7 +2,7 @@ extends CharacterBody3D
 
 @export var speed : float = 15.0  # PS1-like movement speed
 @export var sprint_speed_multiplier : float = 1.8  # Sprint speed multiplier
-@export var rotation_speed : float = 1.3  # PS1-like turning speed
+@export var rotation_speed : float = 1.5  # PS1-like turning speed
 @export var gravity : float = 9  # Gravity value
 @export var jump_velocity : float = 10.0  # Jump velocity
 @export var max_look_angle : float = 90.0  # Max angle to look fully up or down
@@ -93,8 +93,7 @@ func _physics_process(delta: float) -> void:
 	# Inform the world about the player's movement state
 	if world_node:
 		world_node.update_nightmare_and_dream_speed(is_moving)
-	else:
-		print("World node not found!")
+	# else: Don't spam - world_node is optional in test scenes
 
 # Map your input actions in the Input Map in Project Settings.
 # Use "ui_up", "ui_down" for movement, "ui_accept" for jumping, and "look_up", "look_down", "look_left", "look_right" for camera control.

@@ -1,7 +1,6 @@
-[gd_scene load_steps=8 format=3 uid="uid://df7j4licjrs8h"]
+[gd_scene load_steps=7 format=3 uid="uid://df7j4licjrs8h"]
 
 [ext_resource type="PackedScene" path="res://scenes/player_spawn_point.tscn" id="1_a6hmt"]
-[ext_resource type="Script" uid="uid://c7ojutngjl7ax" path="res://scripts/stage_manager.gd" id="1_kqaht"]
 [ext_resource type="PackedScene" uid="uid://c8k3nan2p5q7r" path="res://scenes/dream_helper.tscn" id="2_rq4dg"]
 [ext_resource type="PackedScene" uid="uid://ctxhxhkry6fb5" path="res://scenes/end_object.tscn" id="3_ftdem"]
 [ext_resource type="AudioStream" uid="uid://hnv63ylnemgy" path="res://sounds/peacefull-drone-132285.mp3.wav" id="4_fmy80"]
@@ -10,7 +9,6 @@
 
 [node name="world4" type="Node3D"]
 transform = Transform3D(14.286, 0, 0, 0, 14.286, 0, 0, 0, 14.286, 0, 0, 0)
-script = ExtResource("1_kqaht")
 
 [node name="PlayerSpawnPoint" parent="." instance=ExtResource("1_a6hmt")]
 transform = Transform3D(0.99999994, 0, 0, 0, 0.99999994, 0, 0, 0, 0.99999994, -64.78222, 0, -6.5656004)

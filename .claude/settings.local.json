@@ -5,7 +5,11 @@
       "Bash(git mv:*)",
       "Bash(find:*)",
       "Bash(cat:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(dir scenesworldsworld_4.tscn)",
+      "Bash(dir scenestest_pathfinding.tscn)",
+      "Bash(dir:*)",
+      "Bash(findstr:*)"
     ],
     "deny": [],
     "ask": []

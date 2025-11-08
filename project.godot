@@ -20,6 +20,10 @@ config/icon="res://icon.svg"
 driver/enable_input=true
 driver/mix_rate=48000
 
+[autoload]
+
+NavRuntime="*res://scripts/nav_runtime.gd"
+
 [display]
 
 window/size/viewport_width=320

@@ -13,13 +13,7 @@ extends Node3D
 @export var noise_seed: int = 0
 @export var chunk_update_distance: float = 64.0  # How far to move before updating chunks
 
-# Navigation mesh settings
-@export var enable_navigation: bool = true
-@export var nav_mesh_cell_size: float = 0.5
-@export var nav_mesh_cell_height: float = 0.2
-@export var nav_mesh_agent_height: float = 2.0
-@export var nav_mesh_agent_radius: float = 0.5
-@export var nav_update_distance: float = 100.0  # How far camera moves before nav update
+
 
 # Model spawning settings
 @export_group("Model Spawning")
@@ -40,12 +34,10 @@ extends Node3D
 # Internal references
 var lod_meshes: Array[MeshInstance3D] = []
 var terrain_material: ShaderMaterial
-var navigation_region: NavigationRegion3D
 var collision_shape: CollisionShape3D
 var static_body: StaticBody3D
 var camera: Camera3D
 var noise: FastNoiseLite
-var last_nav_update_pos: Vector3 = Vector3.ZERO
 var last_chunk_update_pos: Vector3 = Vector3.ZERO  # Track when to update chunk positions
 
 # Model spawning references
@@ -76,18 +68,12 @@ func _ready():
 	# Create collision for center area
 	create_collision()
 
-	# Wait for textures to generate, then create navigation
-	if enable_navigation:
-		await get_tree().create_timer(1.0).timeout  # Wait for noise textures to generate
-		create_navigation_mesh()
-
 	# Find camera and center terrain on it
 	await get_tree().process_frame
 	camera = get_viewport().get_camera_3d()
 
 	if camera:
 		var cam_pos = camera.global_position
-		last_nav_update_pos = cam_pos
 		last_chunk_update_pos = cam_pos
 
 		# Snap camera position to chunk grid
@@ -98,11 +84,9 @@ func _ready():
 			if mesh_instance:
 				mesh_instance.global_position = snapped_pos
 
-		# Center collision and nav on snapped position
+		# Center collision on snapped position
 		if static_body:
 			static_body.global_position = snapped_pos
-		if navigation_region:
-			navigation_region.global_position = snapped_pos
 
 	print("✓ Infinite clipmap terrain initialized with", lod_levels, "LOD levels!")
 	print("  Chunk size:", base_mesh_size, "m | Update distance:", chunk_update_distance, "m")
@@ -274,38 +258,7 @@ func generate_collision_mesh() -> ConcavePolygonShape3D:
 	shape.set_faces(faces)
 	return shape
 
-func create_navigation_mesh():
-	"""Create navigation mesh from the terrain collision"""
-	print("🗺️ Generating navigation mesh...")
-	
-	navigation_region = NavigationRegion3D.new()
-	add_child(navigation_region)
-	
-	# Create navigation mesh
-	var nav_mesh = NavigationMesh.new()
-	
-	# Configure navigation mesh parameters
-	nav_mesh.cell_size = nav_mesh_cell_size
-	nav_mesh.cell_height = nav_mesh_cell_height
-	nav_mesh.agent_height = nav_mesh_agent_height
-	nav_mesh.agent_radius = nav_mesh_agent_radius
-	nav_mesh.agent_max_climb = 1.0
-	nav_mesh.agent_max_slope = 45.0
-	
-	# Set geometry parsing
-	nav_mesh.geometry_parsed_geometry_type = NavigationMesh.PARSED_GEOMETRY_STATIC_COLLIDERS
-	nav_mesh.geometry_source_geometry_mode = NavigationMesh.SOURCE_GEOMETRY_GROUPS_WITH_CHILDREN
-	
-	navigation_region.navigation_mesh = nav_mesh
-	
-	# Bake the navigation mesh
-	await get_tree().process_frame
-	NavigationServer3D.bake_from_source_geometry_data(nav_mesh, NavigationMeshSourceGeometryData3D.new())
-	
-	# Alternative: Use the region's bake method
-	navigation_region.bake_navigation_mesh()
-	
-	print("✓ Navigation mesh baked!")
+
 
 func get_height_at(world_x: float, world_z: float) -> float:
 	"""Get terrain height at world position (matching shader calculation)"""
@@ -342,21 +295,15 @@ func _process(_delta):
 				if mesh_instance:
 					mesh_instance.global_position = snapped_pos
 
-			# Update collision and navigation
+			# Update collision
 			if static_body:
 				static_body.global_position = snapped_pos
-			if navigation_region:
-				navigation_region.global_position = snapped_pos
 
 			last_chunk_update_pos = cam_pos
 
 			# Update model chunks when camera moves
 			if model_amount > 0 and model_scenes.size() > 0:
 				update_model_chunks()
-
-			# Also update nav mesh if enabled
-			if enable_navigation:
-				last_nav_update_pos = cam_pos
 
 func snap_to_chunk_grid(pos: Vector3) -> Vector3:
 	"""Snap position to chunk grid to prevent constant regeneration"""

@@ -8,11 +8,11 @@ height = 2.0
 
 [node name="MonsterBase" type="CharacterBody3D"]
 collision_layer = 2
-collision_mask = 3
+collision_mask = 1
 motion_mode = 0
-floor_stop_on_slope = true
+floor_stop_on_slope = false
 floor_constant_speed = false
-floor_block_on_wall = true
+floor_block_on_wall = false
 floor_max_angle = 0.785398
 wall_min_slide_angle = 0.261799
 up_direction = Vector3(0, 1, 0)
@@ -23,3 +23,12 @@ speed = 4.0
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
 shape = SubResource("CapsuleShape3D_monster")
+
+[node name="NavigationAgent3D" type="NavigationAgent3D" parent="."]
+path_desired_distance = 0.5
+target_desired_distance = 0.5
+path_max_distance = 3.0
+avoidance_enabled = false
+debug_enabled = true
+debug_use_custom = true
+debug_path_custom_color = Color(1, 0, 1, 1)

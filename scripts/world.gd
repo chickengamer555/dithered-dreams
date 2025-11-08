@@ -14,6 +14,8 @@ extends Node
 var worlds = {}  # Dictionary: world_name -> Node3D
 var nightmares = {}  # Dictionary: nightmare_name -> Node3D
 
+
+
 # Environments - still hardcoded for now (can be made editable later if needed)
 var environments = {
 	"world1": preload("res://envoirments/world1.tres"),
@@ -49,7 +51,7 @@ const NIGHTMARE_SYNC_INTERVAL: float = 0.2  # Sync 5 times per second instead of
 const VOICE_HEAR_DISTANCE: float = 60.0  # Can hear players within 60 units (2x range)
 const VOICE_HEAR_DISTANCE_SQ: float = 3600.0  # Pre-computed squared distance (60*60)
 
-@onready var world_environment = $WorldEnvironment  # Reference to the WorldEnvironment node
+@onready var world_environment = $SubViewportContainer/SubViewport/WorldEnvironment  # Reference to the WorldEnvironment node
 
 @onready var nightmare_bar = $CanvasLayer/NightmareBar
 @onready var sprint_bar = $CanvasLayer/SprintBar
@@ -86,6 +88,18 @@ var original_collision_masks = {}
 var is_transitioning: bool = false
 
 func _ready():
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	
+	if NavRuntime:
+		print("=== NAVRUNTIME DIAGNOSTICS ===")
+		print("Ready: ", NavRuntime.is_ready())
+		print("Using external regions: ", NavRuntime._using_external_regions if "_using_external_regions" in NavRuntime else "N/A")
+		print("Last bounds empty: ", NavRuntime._last_bounds_empty if "_last_bounds_empty" in NavRuntime else "N/A")
+		print("Rebake attempts: ", NavRuntime._rebake_attempts if "_rebake_attempts" in NavRuntime else "N/A")
+		
+		# Force rebake
+		NavRuntime.request_rebake()
 	randomize()  # Starts random number generator
 
 	# Build runtime dictionaries from editor-configured world data
@@ -166,6 +180,9 @@ func _ready():
 				starting_world.visible = true
 				starting_world.set_process_mode(PROCESS_MODE_INHERIT)
 
+				# Bake navigation for starting world
+				_bake_navigation_for_world(current_world_name)
+
 				# FIX: Set environment on server too!
 				if world_environment:
 					if current_world_name in environments:
@@ -190,16 +207,7 @@ func _ready():
 		print("Voice chat initialized - Sample rate: ", voice_sample_rate, "Hz")
 		# Start voice recording automatically (always-on proximity chat)
 		start_voice_recording()
-		print("Proximity chat enabled (always-on)")
-		print("")
-		print("=== PROXIMITY CHAT TROUBLESHOOTING ===")
-		print("If voice chat isn't working, check:")
-		print("1. Windows Settings > Privacy > Microphone - Allow Godot")
-		print("2. Steam > Settings > Voice - Test microphone")
-		print("3. Make sure your microphone is not muted")
-		print("4. Speak into your microphone to test")
-		print("======================================")
-		print("")
+
 
 
 
@@ -224,6 +232,7 @@ func _build_world_dictionaries():
 	Automatically uses the node's name as the dictionary key.
 	Much simpler - just drag nodes into the arrays in the inspector!
 	"""
+	print("🔧 Building world dictionaries...")
 	worlds.clear()
 	nightmares.clear()
 
@@ -242,6 +251,168 @@ func _build_world_dictionaries():
 			print("Registered nightmare: ", nightmare_name)
 
 	print("World setup complete: ", worlds.size(), " worlds, ", nightmares.size(), " nightmares")
+
+	# Setup navigation regions for all worlds
+	_setup_navigation_regions()
+
+func _setup_navigation_regions():
+	"""Add NavigationRegion3D to each world if it doesn't exist"""
+	print("🧭 Setting up navigation regions...")
+
+	# Setup for all worlds
+	for world_name in worlds.keys():
+		var world_node = worlds[world_name]
+		_ensure_navigation_region(world_node, world_name)
+
+	# Setup for all nightmares
+	for nightmare_name in nightmares.keys():
+		var nightmare_node = nightmares[nightmare_name]
+		_ensure_navigation_region(nightmare_node, nightmare_name)
+
+	print("✓ Navigation regions setup complete!")
+
+func _ensure_navigation_region(world_node: Node3D, world_name: String):
+	"""Ensure a world has a NavigationRegion3D node"""
+	if not world_node:
+		return
+
+	# Check if NavigationRegion3D already exists
+	var nav_region = world_node.get_node_or_null("NavigationRegion3D")
+
+	if not nav_region:
+		# Create new NavigationRegion3D
+		nav_region = NavigationRegion3D.new()
+		nav_region.name = "NavigationRegion3D"
+
+		# Create NavigationMesh
+		var nav_mesh = NavigationMesh.new()
+
+		# CRITICAL: Configure collision parsing to detect walls/obstacles
+		nav_mesh.geometry_parsed_geometry_type = NavigationMesh.PARSED_GEOMETRY_BOTH
+		nav_mesh.geometry_source_geometry_mode = NavigationMesh.SOURCE_GEOMETRY_ROOT_NODE_CHILDREN
+		nav_mesh.geometry_collision_mask = 0xFFFFFFFF  # Parse all collision layers
+		nav_mesh.geometry_source_group_name = ""  # Parse all groups
+
+		# Configure navigation mesh settings
+		# NOTE: These values work in world-space coordinates, regardless of parent node scale
+		nav_mesh.agent_height = 2.0
+		nav_mesh.agent_radius = 0.5  # Back to 0.5 for better obstacle avoidance
+		nav_mesh.agent_max_climb = 0.5
+		nav_mesh.agent_max_slope = 45.0
+		nav_mesh.cell_size = 0.25
+		nav_mesh.cell_height = 0.2
+		nav_mesh.sample_partition_type = NavigationMesh.SAMPLE_PARTITION_WATERSHED
+
+		# Edge and region settings for cleaner paths
+		nav_mesh.edge_max_length = 12.0
+		nav_mesh.edge_max_error = 1.3
+		nav_mesh.region_min_size = 8.0
+		nav_mesh.region_merge_size = 20.0
+
+		# CRITICAL: Set filter settings to allow low ledges and edges
+		nav_mesh.filter_low_hanging_obstacles = true
+		nav_mesh.filter_ledge_spans = true
+		nav_mesh.filter_walkable_low_height_spans = true
+
+		nav_region.navigation_mesh = nav_mesh
+
+		# Add to world
+		world_node.add_child(nav_region)
+		print("  Created NavigationRegion3D for: ", world_name)
+	else:
+		print("  NavigationRegion3D already exists for: ", world_name)
+
+func _bake_navigation_for_world(world_name: String):
+	"""Bake navigation mesh for a specific world using NavigationServer3D"""
+	var world_node = worlds.get(world_name, nightmares.get(world_name, null))
+	if not world_node:
+		print("⚠ Cannot bake navigation - world not found: ", world_name)
+		return
+
+	var nav_region = world_node.get_node_or_null("NavigationRegion3D")
+	if not nav_region:
+		print("⚠ Cannot bake navigation - no NavigationRegion3D in: ", world_name)
+		return
+
+	var nav_mesh = nav_region.navigation_mesh
+	if not nav_mesh:
+		print("⚠ Cannot bake navigation - no NavigationMesh in NavigationRegion3D")
+		return
+
+	print("🔨 Baking navigation mesh for: ", world_name)
+	print("  World node: ", world_node.name, " | Visible: ", world_node.visible, " | Children: ", world_node.get_child_count())
+
+	# Debug: Count collision shapes in world
+	var collision_count = _count_collision_shapes(world_node)
+	print("  Found ", collision_count, " collision shapes in world")
+
+	# Use NavigationServer3D for runtime baking (proper way)
+	var src = NavigationMeshSourceGeometryData3D.new()
+	NavigationServer3D.parse_source_geometry_data(nav_mesh, src, world_node)
+
+	# Debug: Check what was parsed
+	var vertices = src.get_vertices() if src.has_method("get_vertices") else PackedVector3Array()
+	print("  Source geometry vertices: ", vertices.size())
+
+	if vertices.size() > 0:
+		# Sample first few vertices to check positioning
+		var sample_count = mini(5, vertices.size())
+		print("  Sample vertices:")
+		for i in range(sample_count):
+			print("    ", i, ": ", vertices[i])
+
+	# Check indices too
+	var indices = src.get_indices() if src.has_method("get_indices") else PackedInt32Array()
+	print("  Source geometry indices: ", indices.size())
+
+	NavigationServer3D.bake_from_source_geometry_data(nav_mesh, src)
+
+	# Check the actual polygons that were generated
+	var polygon_count = nav_mesh.get_polygon_count()
+	print("  Baked mesh polygon count: ", polygon_count)
+
+	# Update the region with the baked mesh
+	nav_region.navigation_mesh = nav_mesh
+
+	# CRITICAL: Enable the region and force synchronization
+	nav_region.enabled = true
+
+	# Set the region's transform to world_node's transform
+	# This ensures the navmesh is positioned correctly in world space
+	nav_region.global_transform = Transform3D.IDENTITY
+
+	# CRITICAL: Explicitly set the navigation map
+	# This ensures the region is registered with the world's navigation map
+	var world_3d = world_node.get_world_3d()
+	if world_3d:
+		var map_rid = world_3d.navigation_map
+		NavigationServer3D.region_set_map(nav_region.get_region_rid(), map_rid)
+		print("  Set region to use world navigation map: ", map_rid)
+
+	# Force physics sync to update NavigationServer
+	await get_tree().physics_frame
+	await get_tree().physics_frame  # Extra frame for safety
+
+	# Now check bounds after sync
+	var region_rid = nav_region.get_region_rid()
+	if region_rid.is_valid():
+		var bounds = NavigationServer3D.region_get_bounds(region_rid)
+		print("✓ Navigation mesh baked for: ", world_name, " | Bounds: ", bounds, " | Polygons: ", polygon_count)
+		if bounds.size == Vector3.ZERO and polygon_count > 0:
+			print("⚠️ WARNING: Navmesh has polygons but ZERO bounds (NavigationServer sync issue)")
+		elif polygon_count == 0:
+			print("⚠️ WARNING: Navmesh baking failed (no valid walkable surfaces)")
+	else:
+		print("✓ Navigation mesh baked for: ", world_name, " | Polygons: ", polygon_count)
+
+func _count_collision_shapes(node: Node) -> int:
+	"""Recursively count collision shapes in a node tree"""
+	var count = 0
+	if node is CollisionShape3D:
+		count += 1
+	for child in node.get_children():
+		count += _count_collision_shapes(child)
+	return count
 
 func _disable_interactions_in_world(world: Node, disable: bool):
 	for child in world.get_children():
@@ -305,16 +476,19 @@ func teleport_to_world(world_name: String, spawn_position: Vector3, keep_player_
 	play_transition_effect(Callable(self, "_do_teleport_to_world").bind(world_name, spawn_position, keep_player_positions, reset_nightmare, previously_dead_players))
 
 func _do_teleport_to_world(world_name: String, spawn_position: Vector3, keep_player_positions: bool = false, reset_nightmare: float = -1.0, previously_dead_players: Dictionary = {}):
+	# Disable all worlds
 	for _world_name in worlds.keys():
 		var world_iter = worlds[_world_name]
 		if world_iter:
 			world_iter.visible = false
 			world_iter.set_process_mode(PROCESS_MODE_DISABLED)
+
 	for _nightmare_name in nightmares.keys():
 		var nightmare_iter = nightmares[_nightmare_name]
 		if nightmare_iter:
 			nightmare_iter.visible = false
 			nightmare_iter.set_process_mode(PROCESS_MODE_DISABLED)
+
 	if world_name in worlds or world_name in nightmares:
 		var target_world = worlds.get(world_name, nightmares.get(world_name, null))
 		if target_world:
@@ -322,7 +496,13 @@ func _do_teleport_to_world(world_name: String, spawn_position: Vector3, keep_pla
 			target_world.set_process_mode(PROCESS_MODE_INHERIT)
 			print("Enabled interactions for world:", world_name)
 			current_world_name = world_name
-			# REMOVED: time_in_world reset - no longer using time-based transitions
+
+			# Wait for physics to update before baking navigation
+			await get_tree().physics_frame
+			await get_tree().physics_frame
+
+			# Bake navigation mesh for this world
+			_bake_navigation_for_world(world_name)
 
 			# Respawn any killed monsters in this world
 			_respawn_killed_monsters(world_name)
@@ -875,7 +1055,7 @@ func find_safe_spawn_position(world_name: String, attempts: int = 50, radius: fl
 	Find a safe spawn position for a player.
 	Priority:
 	1. Use PlayerSpawnPoint nodes if available
-	2. Fallback to (0, 10, 0) if no spawn points
+	2. Fallback to (0, 0, 0) if no spawn points
 	"""
 
 	# PRIORITY 1: Try to use PlayerSpawnPoint nodes
@@ -889,8 +1069,8 @@ func find_safe_spawn_position(world_name: String, attempts: int = 50, radius: fl
 		return pos
 
 	# PRIORITY 2: No spawn points found, use fallback position
-	print("⚠ No PlayerSpawnPoints found in '", world_name, "', using fallback position (0, 10, 0)")
-	return Vector3(0, 10, 0)
+	print("⚠ No PlayerSpawnPoints found in '", world_name, "', using fallback position (0, 0, 0)")
+	return Vector3(0, 0, 0)
 
 func adjust_position_to_ground(pos: Vector3):
 	"""
@@ -1007,167 +1187,23 @@ func validate_player_positions(peer_id: int) -> void:
 		player.velocity = Vector3.ZERO
 
 func get_random_spawn_position(world_name: String) -> Vector3:
-	if world_name.begins_with("world"):
-		return get_random_spawn_position_in_world(world_name)
-	elif world_name.begins_with("nightmare"):
-		return get_random_spawn_position_in_nightmare(world_name)
-	else:
-		return Vector3.ZERO
-
-func get_random_spawn_position_in_world(world_name: String) -> Vector3:
-	# Try to get a random position on the navigation mesh first
-	var navmesh_pos = get_random_position_on_navmesh(world_name)
-	if navmesh_pos != Vector3.ZERO:
-		return navmesh_pos
-
-	# Fallback to random position in bounds if navmesh not available
-	print("⚠ WARNING: Using fallback random bounds for '", world_name, "' (navmesh failed)")
-	var min_x = -100
-	var max_x = 100
-	var min_y = 10.0
-	var max_y = 50.0
-	var min_z = -100
-	var max_z = 100
-
-	var random_x = randf_range(min_x, max_x)
-	var random_y = randf_range(min_y, max_y)
-	var random_z = randf_range(min_z, max_z)
-
-	var fallback_pos = Vector3(random_x, random_y, random_z)
-	print("  Fallback position: ", fallback_pos)
-	return fallback_pos
-
-func get_random_spawn_position_in_nightmare(nightmare_name: String) -> Vector3:
-	# Try to get a random position on the navigation mesh first
-	var navmesh_pos = get_random_position_on_navmesh(nightmare_name)
-	if navmesh_pos != Vector3.ZERO:
-		return navmesh_pos
-
-	# Fallback to random position in bounds if navmesh not available
-	print("⚠ WARNING: Using fallback random bounds for '", nightmare_name, "' (navmesh failed)")
-	var min_x = -100
-	var max_x = 100
-	var min_y = 10.0
-	var max_y = 50.0
-	var min_z = -100
-	var max_z = 100
-
-	var random_x = randf_range(min_x, max_x)
-	var random_y = randf_range(min_y, max_y)
-	var random_z = randf_range(min_z, max_z)
-
-	var fallback_pos = Vector3(random_x, random_y, random_z)
-	print("  Fallback position: ", fallback_pos)
-	return fallback_pos
-
-func get_random_position_on_navmesh(world_name: String) -> Vector3:
 	"""
-	Get a truly random position on the navigation mesh for the given world.
-	This ensures players spawn on walkable surfaces anywhere in the level.
+	Get a random spawn position using PlayerSpawnPoint nodes.
+	Falls back to (0, 0, 0) if no spawn points exist.
 	"""
-	# Get the world node
-	var world_node = null
-	if world_name in worlds:
-		world_node = worlds[world_name]
-	elif world_name in nightmares:
-		world_node = nightmares[world_name]
+	# Try to use PlayerSpawnPoint nodes
+	var spawn_points = get_player_spawn_points(world_name)
+	if spawn_points.size() > 0:
+		# Pick a random spawn point
+		var random_index = randi() % spawn_points.size()
+		var spawn_point = spawn_points[random_index]
+		var pos = spawn_point.global_position
+		print("✓ SPAWN: Using PlayerSpawnPoint at: ", pos)
+		return pos
 
-	if not world_node:
-		print(">>> NAVMESH ERROR: World '", world_name, "' not found")
-		return Vector3.ZERO
-
-	# Find NavigationRegion3D in the world
-	var nav_region = find_navigation_region(world_node)
-	if not nav_region:
-		print(">>> NAVMESH ERROR: No NavigationRegion3D in '", world_name, "'")
-		return Vector3.ZERO
-
-	# Get the navigation mesh data
-	var nav_mesh = nav_region.navigation_mesh
-	if not nav_mesh:
-		print(">>> NAVMESH ERROR: NavigationRegion3D has no navigation_mesh in '", world_name, "'")
-		return Vector3.ZERO
-
-	# Get all vertices from the navigation mesh
-	var vertices = nav_mesh.get_vertices()
-	if vertices.size() == 0:
-		print(">>> NAVMESH ERROR: Navigation mesh has no vertices in '", world_name, "'")
-		return Vector3.ZERO
-
-	# Get the navigation map RID for validation
-	var nav_map = nav_region.get_navigation_map()
-	if not nav_map or not nav_map.is_valid():
-		print(">>> NAVMESH ERROR: Navigation map not valid in '", world_name, "'")
-		return Vector3.ZERO
-
-	# Calculate the bounding box of the navmesh to understand its actual size
-	var min_bounds = vertices[0]
-	var max_bounds = vertices[0]
-	for vertex in vertices:
-		min_bounds.x = min(min_bounds.x, vertex.x)
-		min_bounds.y = min(min_bounds.y, vertex.y)
-		min_bounds.z = min(min_bounds.z, vertex.z)
-		max_bounds.x = max(max_bounds.x, vertex.x)
-		max_bounds.y = max(max_bounds.y, vertex.y)
-		max_bounds.z = max(max_bounds.z, vertex.z)
-
-	# Transform bounds to world space
-	var world_transform = nav_region.global_transform
-	var local_min = min_bounds
-	var local_max = max_bounds
-	min_bounds = world_transform * min_bounds
-	max_bounds = world_transform * max_bounds
-
-	print("🔍 DEBUG NAVMESH TRANSFORM for '", world_name, "':")
-	print("  Local bounds: ", local_min, " to ", local_max)
-	print("  World bounds: ", min_bounds, " to ", max_bounds)
-	print("  Global transform scale: ", world_transform.basis.get_scale())
-
-	# Try multiple random attempts within the actual navmesh bounds
-	var max_attempts = 200
-	var valid_positions = []
-
-	for i in range(max_attempts):
-		# Generate a random position within the navmesh bounding box
-		var random_pos = Vector3(
-			randf_range(min_bounds.x, max_bounds.x),
-			randf_range(min_bounds.y, max_bounds.y),
-			randf_range(min_bounds.z, max_bounds.z)
-		)
-
-		# Use NavigationServer3D to find the closest point on the navmesh
-		var closest_point = NavigationServer3D.map_get_closest_point(nav_map, random_pos)
-
-		# Check if the point is actually on the navmesh (close to our random point)
-		var distance_to_navmesh = random_pos.distance_to(closest_point)
-
-		# If we found a point close to the navmesh, it's valid
-		if distance_to_navmesh < 150.0:  # Increased tolerance for scaled worlds
-			valid_positions.append(closest_point)
-
-	# If we found valid positions, pick a random one
-	if valid_positions.size() > 0:
-		# Use randi() to get a random index
-		var random_index = randi() % valid_positions.size()
-		var chosen_pos = valid_positions[random_index]
-		print("✓ NAVMESH: Found ", valid_positions.size(), " valid positions in '", world_name, "', chose: ", chosen_pos)
-		return chosen_pos
-
-	print("✗ NAVMESH ERROR: Could not find any valid navmesh position in '", world_name, "' after ", max_attempts, " attempts")
-	print("  Navmesh bounds: ", min_bounds, " to ", max_bounds)
-	return Vector3.ZERO
-
-func find_navigation_region(node: Node) -> NavigationRegion3D:
-	"""Recursively search for a NavigationRegion3D in the given node tree"""
-	if node is NavigationRegion3D:
-		return node as NavigationRegion3D
-
-	for child in node.get_children():
-		var result = find_navigation_region(child)
-		if result:
-			return result
-
-	return null
+	# Fallback to default position if no spawn points
+	print("⚠ WARNING: No PlayerSpawnPoint found in '", world_name, "', using fallback position (0, 0, 0)")
+	return Vector3(0, 0, 0)
 
 func get_player_spawn_points(world_name: String) -> Array:
 	"""
@@ -1328,6 +1364,9 @@ func sync_world_state(world_name: String) -> void:
 	if target_world:
 		target_world.visible = true
 		target_world.set_process_mode(PROCESS_MODE_INHERIT)
+
+		# Bake navigation for this world
+		_bake_navigation_for_world(world_name)
 
 		# Set environment
 		if world_environment:

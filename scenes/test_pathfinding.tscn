@@ -1,0 +1,187 @@
+[gd_scene load_steps=14 format=3 uid="uid://d3n7fy6b1ogaa"]
+
+[ext_resource type="PackedScene" path="res://scenes/monster_base.tscn" id="2_monster"]
+[ext_resource type="PackedScene" uid="uid://d3lg8i5nyfspr" path="res://assests/models/ps1.test.glb" id="3_5pf5j"]
+[ext_resource type="PackedScene" path="res://scenes/player_spawn_point.tscn" id="4_sbo8m"]
+[ext_resource type="PackedScene" path="res://scenes/monster_spawn_point.tscn" id="5_sbo8m"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_floor"]
+albedo_color = Color(0.3, 0.3, 0.3, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_floor"]
+material = SubResource("StandardMaterial3D_floor")
+size = Vector3(50, 0.5, 50)
+
+[sub_resource type="BoxShape3D" id="BoxShape_floor"]
+size = Vector3(50, 0.5, 50)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wall"]
+albedo_color = Color(0.8, 0.3, 0.3, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_wall"]
+material = SubResource("StandardMaterial3D_wall")
+size = Vector3(1, 3, 10)
+
+[sub_resource type="BoxShape3D" id="BoxShape_wall"]
+size = Vector3(1, 3, 10)
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_1"]
+sky_horizon_color = Color(0.646, 0.656, 0.67, 1)
+ground_horizon_color = Color(0.646, 0.656, 0.67, 1)
+
+[sub_resource type="Sky" id="Sky_1"]
+sky_material = SubResource("ProceduralSkyMaterial_1")
+
+[sub_resource type="Environment" id="Environment_1"]
+background_mode = 2
+sky = SubResource("Sky_1")
+ambient_light_source = 3
+ambient_light_color = Color(0.8, 0.8, 0.8, 1)
+
+[node name="TestPathfinding" type="Node3D"]
+
+[node name="Floor" type="StaticBody3D" parent="."]
+collision_mask = 0
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Floor"]
+mesh = SubResource("BoxMesh_floor")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Floor"]
+shape = SubResource("BoxShape_floor")
+
+[node name="Obstacles" type="Node3D" parent="."]
+
+[node name="Wall1" type="StaticBody3D" parent="Obstacles"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 5)
+collision_mask = 0
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Obstacles/Wall1"]
+mesh = SubResource("BoxMesh_wall")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Obstacles/Wall1"]
+shape = SubResource("BoxShape_wall")
+
+[node name="Wall2" type="StaticBody3D" parent="Obstacles"]
+transform = Transform3D(-4.37114e-08, 0, 1, 0, 1, 0, -1, 0, -4.37114e-08, 5, 1.5, 0)
+collision_mask = 0
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Obstacles/Wall2"]
+mesh = SubResource("BoxMesh_wall")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Obstacles/Wall2"]
+shape = SubResource("BoxShape_wall")
+
+[node name="Wall3" type="StaticBody3D" parent="Obstacles"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, 1.5, -5)
+collision_mask = 0
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Obstacles/Wall3"]
+mesh = SubResource("BoxMesh_wall")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Obstacles/Wall3"]
+shape = SubResource("BoxShape_wall")
+
+[node name="Wall4" type="StaticBody3D" parent="Obstacles"]
+transform = Transform3D(-4.37114e-08, 0, 1, 0, 1, 0, -1, 0, -4.37114e-08, -5, 1.5, 8)
+collision_mask = 0
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Obstacles/Wall4"]
+mesh = SubResource("BoxMesh_wall")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Obstacles/Wall4"]
+shape = SubResource("BoxShape_wall")
+
+[node name="Box1" type="StaticBody3D" parent="Obstacles"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 1.5, 10)
+collision_mask = 0
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Obstacles/Box1"]
+mesh = SubResource("BoxMesh_wall")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Obstacles/Box1"]
+shape = SubResource("BoxShape_wall")
+
+[node name="Box2" type="StaticBody3D" parent="Obstacles"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10, 1.5, -10)
+collision_mask = 0
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Obstacles/Box2"]
+mesh = SubResource("BoxMesh_wall")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Obstacles/Box2"]
+shape = SubResource("BoxShape_wall")
+
+[node name="Corridor" type="Node3D" parent="Obstacles"]
+
+[node name="CorridorWall1" type="StaticBody3D" parent="Obstacles/Corridor"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, -10)
+collision_mask = 0
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Obstacles/Corridor/CorridorWall1"]
+mesh = SubResource("BoxMesh_wall")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Obstacles/Corridor/CorridorWall1"]
+shape = SubResource("BoxShape_wall")
+
+[node name="CorridorWall2" type="StaticBody3D" parent="Obstacles/Corridor"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, -15)
+collision_mask = 0
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Obstacles/Corridor/CorridorWall2"]
+mesh = SubResource("BoxMesh_wall")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Obstacles/Corridor/CorridorWall2"]
+shape = SubResource("BoxShape_wall")
+
+[node name="MazeSection" type="Node3D" parent="Obstacles"]
+
+[node name="MazeWall1" type="StaticBody3D" parent="Obstacles/MazeSection"]
+transform = Transform3D(-4.37114e-08, 0, 1, 0, 1, 0, -1, 0, -4.37114e-08, 12, 1.5, -5)
+collision_mask = 0
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Obstacles/MazeSection/MazeWall1"]
+mesh = SubResource("BoxMesh_wall")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Obstacles/MazeSection/MazeWall1"]
+shape = SubResource("BoxShape_wall")
+
+[node name="MazeWall2" type="StaticBody3D" parent="Obstacles/MazeSection"]
+transform = Transform3D(-4.37114e-08, 0, 1, 0, 1, 0, -1, 0, -4.37114e-08, 12, 1.5, 5)
+collision_mask = 0
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Obstacles/MazeSection/MazeWall2"]
+mesh = SubResource("BoxMesh_wall")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Obstacles/MazeSection/MazeWall2"]
+shape = SubResource("BoxShape_wall")
+
+[node name="MazeWall3" type="StaticBody3D" parent="Obstacles/MazeSection"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 1.5, 0)
+collision_mask = 0
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Obstacles/MazeSection/MazeWall3"]
+mesh = SubResource("BoxMesh_wall")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Obstacles/MazeSection/MazeWall3"]
+shape = SubResource("BoxShape_wall")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_1")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.866025, -0.433013, 0.25, 0, 0.5, 0.866025, -0.5, -0.75, 0.433013, 0, 10, 0)
+shadow_enabled = true
+
+[node name="MonsterSpawnPoint" parent="." instance=ExtResource("5_sbo8m")]
+transform = Transform3D(0.9999997, 0, 0, 0, 0.9999997, 0, 0, 0, 0.9999997, 17.594852, 0.97673327, 16.830948)
+
+[node name="MonsterBase" parent="." instance=ExtResource("2_monster")]
+transform = Transform3D(0.39999986, 0, 0, 0, 0.39999986, 0, 0, 0, 0.39999986, 14.612625, 3.2589922, 9.832331)
+speed = 60.0
+body_radius = 1.0
+model_scene = ExtResource("3_5pf5j")
+player_detection_range = 2000.0
+debug_path_height = 1.0
+
+[node name="PlayerSpawnPoint" parent="." instance=ExtResource("4_sbo8m")]
+transform = Transform3D(0.99999976, 0, 0, 0, 0.99999976, 0, 0, 0, 0.99999976, -17.336214, 0.45451048, 13.093052)
