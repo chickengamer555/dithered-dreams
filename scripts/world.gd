@@ -1576,6 +1576,26 @@ func reduce_nightmare_from_item(reduction_amount: float) -> void:
 	if is_multiplayer and multiplayer.is_server():
 		sync_nightmare_value.rpc(nightmare_value)
 
+# Called by nightmare_helper when player collects it
+@rpc("any_peer", "call_local", "reliable")
+func increase_nightmare_from_item(increase_amount: float) -> void:
+	# Only server handles the actual increase in multiplayer
+	if is_multiplayer and not multiplayer.is_server():
+		# Client sends request to server
+		increase_nightmare_from_item.rpc_id(1, increase_amount)
+		return
+
+	# Increase nightmare value
+	nightmare_value += increase_amount
+	nightmare_value = clamp(nightmare_value, 0, 100)
+	nightmare_bar.value = nightmare_value
+
+	print("Nightmare increased by ", increase_amount, "% (now at ", nightmare_value, "%)")
+
+	# Sync to clients in multiplayer
+	if is_multiplayer and multiplayer.is_server():
+		sync_nightmare_value.rpc(nightmare_value)
+
 # Called by end_object when player activates it (bed)
 @rpc("any_peer", "call_local", "reliable")
 func teleport_from_end_object() -> void:

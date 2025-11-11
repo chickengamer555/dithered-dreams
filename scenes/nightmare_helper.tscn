@@ -1,0 +1,33 @@
+[gd_scene load_steps=5 format=3 uid="uid://bjixvkx3s4ifu"]
+
+[ext_resource type="Script" uid="uid://dee38huqbwcmy" path="res://scripts/nightmare_helper.gd" id="1_nightmare_helper"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_collect"]
+radius = 3.0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_gdryk"]
+albedo_color = Color(0.2, 1, 0.8, 1)
+emission_enabled = true
+emission = Color(0.2, 1, 0.8, 1)
+emission_energy_multiplier = 2.0
+
+[sub_resource type="SphereMesh" id="SphereMesh_f6p1d"]
+material = SubResource("StandardMaterial3D_gdryk")
+radius = 1.0
+height = 2.0
+
+[node name="NightmareHelper" type="Area3D"]
+script = ExtResource("1_nightmare_helper")
+rotation_speed = 2.0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("SphereShape3D_collect")
+
+[node name="Label3D" type="Label3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+billboard = 1
+text = "Nightmare Helper"
+outline_size = 8
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+mesh = SubResource("SphereMesh_f6p1d")

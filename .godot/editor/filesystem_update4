@@ -1,10 +1,7 @@
-res://scenes/world.tscn
+res://scenes/nightmare_helper.tscn
 res://envoirments/world1.tres
 res://envoirments/nightmare1.tres
 res://envoirments/world2.tres
 res://envoirments/nightmare2.tres
 res://envoirments/world4.tres
-res://scripts/world.gd
-res://scenes/test_pathfinding.tscn
-res://scripts/monster_base.gd
 res://scenes/worlds/world_4.tscn

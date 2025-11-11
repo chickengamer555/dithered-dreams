@@ -1,14 +1,10 @@
 [gd_scene load_steps=6 format=3 uid="uid://cq8yv5m3xr8yw"]
 
-[ext_resource type="Script" path="res://scripts/multiplayer_player.gd" id="1_multiplayer"]
+[ext_resource type="Script" uid="uid://b5g1tcnjkbyvj" path="res://scripts/multiplayer_player.gd" id="1_multiplayer"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_player"]
-radius = 0.5
-height = 2.0
 
 [sub_resource type="CapsuleMesh" id="CapsuleMesh_bean"]
-radius = 0.5
-height = 2.0
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_bean"]
 albedo_color = Color(0.8, 0.6, 0.4, 1)
@@ -33,14 +29,12 @@ surface_material_override/0 = SubResource("StandardMaterial3D_bean")
 
 [node name="Camera3D" type="Camera3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
-current = false
 fov = 70.0
 near = 0.1
 far = 500.0
 
 [node name="SpectateCamera" type="Camera3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 5)
-current = false
 fov = 70.0
 near = 0.1
 far = 500.0
@@ -53,9 +47,6 @@ replication_config = SubResource("SceneReplicationConfig_sync")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
 attenuation_model = 1
 unit_size = 16.0
-max_distance = 100.0
 max_db = 6.0
-attenuation_filter_cutoff_hz = 5000.0
-attenuation_filter_db = -24.0
+max_distance = 100.0
 bus = &"Voices"
-
