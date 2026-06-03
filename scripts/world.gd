@@ -22,7 +22,6 @@ var environments = {
 	"nightmare1": preload("res://envoirments/nightmare1.tres"),
 	"world2": preload("res://envoirments/world2.tres"),
 	"nightmare2": preload("res://envoirments/nightmare2.tres"),
-	"world4": preload("res://envoirments/world4.tres"),
 }
 
 # Multiplayer

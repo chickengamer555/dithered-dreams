@@ -1,4 +1,4 @@
-[gd_scene load_steps=85 format=4 uid="uid://5s5tymjjs4cf"]
+[gd_scene format=4 uid="uid://5s5tymjjs4cf"]
 
 [ext_resource type="Script" uid="uid://pkt703rm8s13" path="res://scripts/world.gd" id="1_bylj8"]
 [ext_resource type="PackedScene" path="res://scenes/player_spawn_point.tscn" id="2_37qwj"]
@@ -27,7 +27,6 @@
 [ext_resource type="AudioStream" uid="uid://hnv63ylnemgy" path="res://sounds/peacefull-drone-132285.mp3.wav" id="10_vgvs4"]
 [ext_resource type="AudioStream" uid="uid://cungn35kso3bd" path="res://sounds/whispers-loop-41891.mp3.wav" id="12_0adto"]
 [ext_resource type="PackedScene" path="res://scenes/monster_spawn_point.tscn" id="14_37qwj"]
-[ext_resource type="PackedScene" uid="uid://df7j4licjrs8h" path="res://scenes/worlds/world_4.tscn" id="29_navra"]
 
 [sub_resource type="Shader" id="Shader_wjb0r"]
 code = "shader_type canvas_item;
@@ -647,1117 +646,1114 @@ shader_parameter/clip_warp = false
 shader_parameter/vignette_intensity = 0.4
 shader_parameter/vignette_opacity = 0.8
 
-[node name="world" type="Node3D" node_paths=PackedStringArray("world_nodes", "nightmare_nodes")]
+[node name="world" type="Node3D" unique_id=976669610 node_paths=PackedStringArray("world_nodes", "nightmare_nodes")]
 script = ExtResource("1_bylj8")
-world_nodes = [NodePath("SubViewportContainer/SubViewport/world2"), NodePath("SubViewportContainer/SubViewport/world1"), NodePath("SubViewportContainer/SubViewport/world4")]
+world_nodes = [NodePath("SubViewportContainer/SubViewport/world2"), NodePath("SubViewportContainer/SubViewport/world1"), NodePath("")]
 nightmare_nodes = [NodePath("SubViewportContainer/SubViewport/nightmare1"), NodePath("SubViewportContainer/SubViewport/nightmare2")]
 
-[node name="SubViewportContainer" type="SubViewportContainer" parent="."]
+[node name="SubViewportContainer" type="SubViewportContainer" parent="." unique_id=2106268073]
 material = SubResource("ShaderMaterial_w1pga")
 offset_right = 321.0
 offset_bottom = 240.0
 
-[node name="SubViewport" type="SubViewport" parent="SubViewportContainer"]
+[node name="SubViewport" type="SubViewport" parent="SubViewportContainer" unique_id=1672891593]
 handle_input_locally = false
 audio_listener_enable_3d = true
 size = Vector2i(320, 240)
 render_target_update_mode = 4
 
-[node name="world2" type="Node3D" parent="SubViewportContainer/SubViewport"]
+[node name="world2" type="Node3D" parent="SubViewportContainer/SubViewport" unique_id=1793108240]
 transform = Transform3D(15, 0, 0, 0, 15, 0, 0, 0, 15, 0, 0, 0)
 visible = false
 
-[node name="MonsterBase" parent="SubViewportContainer/SubViewport/world2" instance=ExtResource("2_ts3gi")]
+[node name="MonsterBase" parent="SubViewportContainer/SubViewport/world2" unique_id=1831769077 instance=ExtResource("2_ts3gi")]
 transform = Transform3D(0.39999986, 0, 0, 0, 0.39999986, 0, 0, 0, 0.39999986, 1.8213553, 1.6926885, -1.4136639)
 speed = 16.0
 model_scene = ExtResource("3_37qwj")
 enable_debug_prints = false
 
-[node name="PlayerSpawnPoint" parent="SubViewportContainer/SubViewport/world2" instance=ExtResource("2_37qwj")]
+[node name="PlayerSpawnPoint" parent="SubViewportContainer/SubViewport/world2" unique_id=1671689807 instance=ExtResource("2_37qwj")]
 transform = Transform3D(0.99999976, 0, 0, 0, 0.99999976, 0, 0, 0, 0.99999976, 0, 0, -6.5656)
 
-[node name="DreamHelper1" parent="SubViewportContainer/SubViewport/world2" instance=ExtResource("3_dream")]
+[node name="DreamHelper1" parent="SubViewportContainer/SubViewport/world2" unique_id=770535704 instance=ExtResource("3_dream")]
 transform = Transform3D(0.15, 0, 0, 0, 0.15, 0, 0, 0, 0.15, 4, 1, 4)
 
-[node name="DreamHelper2" parent="SubViewportContainer/SubViewport/world2" instance=ExtResource("3_dream")]
+[node name="DreamHelper2" parent="SubViewportContainer/SubViewport/world2" unique_id=239050613 instance=ExtResource("3_dream")]
 transform = Transform3D(0.15, 0, 0, 0, 0.15, 0, 0, 0, 0.15, -6, 1, 2)
 
-[node name="DreamHelper3" parent="SubViewportContainer/SubViewport/world2" instance=ExtResource("3_dream")]
+[node name="DreamHelper3" parent="SubViewportContainer/SubViewport/world2" unique_id=1061034788 instance=ExtResource("3_dream")]
 transform = Transform3D(0.15, 0, 0, 0, 0.15, 0, 0, 0, 0.15, 2, 1, -5)
 
-[node name="EndObject" parent="SubViewportContainer/SubViewport/world2" instance=ExtResource("3_mc2jv")]
+[node name="EndObject" parent="SubViewportContainer/SubViewport/world2" unique_id=424958692 instance=ExtResource("3_mc2jv")]
 transform = Transform3D(0.49999994, 0, 0, 0, 0.49999994, 0, 0, 0, 0.49999994, 7.606958, 0, -1.3891728)
 interaction_distance = 3.0
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world2"]
+[node name="MeshInstance3D" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world2" unique_id=872237281]
 transform = Transform3D(9.999999, 0, 0, 0, 9.999999, 0, 0, 0, 9.999999, -0.0054930365, -0.0025100706, 0.00014025369)
 cast_shadow = 0
 mesh = SubResource("PlaneMesh_c1e82")
 skeleton = NodePath("../../world1")
 
-[node name="StaticBody3D" type="StaticBody3D" parent="SubViewportContainer/SubViewport/world2/MeshInstance3D"]
+[node name="StaticBody3D" type="StaticBody3D" parent="SubViewportContainer/SubViewport/world2/MeshInstance3D" unique_id=46281024]
 transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, 0, 0, 0)
 physics_material_override = SubResource("PhysicsMaterial_ex1pv")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/world2/MeshInstance3D/StaticBody3D"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/world2/MeshInstance3D/StaticBody3D" unique_id=600500572]
 transform = Transform3D(0.01, 0, 0, 0, 0.01, 0, 0, 0, 0.01, 0, 0.00490519, 0)
 shape = SubResource("WorldBoundaryShape3D_n4tg6")
 
-[node name="DirectionalLight3D" type="DirectionalLight3D" parent="SubViewportContainer/SubViewport/world2"]
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="SubViewportContainer/SubViewport/world2" unique_id=278832822]
 transform = Transform3D(1, 0, 0, 0, 0.707107, 0.707107, 0, -0.707107, 0.707107, 1, 0, 0)
 light_color = Color(0.772549, 1, 1, 1)
 light_energy = 2.5
 shadow_enabled = true
 shadow_normal_bias = 0.5
 
-[node name="models" type="Node3D" parent="SubViewportContainer/SubViewport/world2"]
+[node name="models" type="Node3D" parent="SubViewportContainer/SubViewport/world2" unique_id=121733836]
 
-[node name="Object_4" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world2/models"]
+[node name="Object_4" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world2/models" unique_id=1808367158]
 transform = Transform3D(0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 0, -0.142866, 6.84789)
 mesh = SubResource("ArrayMesh_8pb5d")
 skeleton = NodePath("")
 
-[node name="StaticBody3D" type="StaticBody3D" parent="SubViewportContainer/SubViewport/world2/models/Object_4"]
+[node name="StaticBody3D" type="StaticBody3D" parent="SubViewportContainer/SubViewport/world2/models/Object_4" unique_id=1211102398]
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/world2/models/Object_4/StaticBody3D"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/world2/models/Object_4/StaticBody3D" unique_id=1475906718]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1452, 0)
 shape = SubResource("SphereShape3D_svcxo")
 
-[node name="Mushroom2" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world2/models"]
+[node name="Mushroom2" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world2/models" unique_id=2120157094]
 transform = Transform3D(-0.995506, -0.0946931, 0.000224533, 0.000139958, 0.000899784, 0.999999, -0.0946932, 0.995506, -0.000882488, 8.73922, 1.59829, -5.59578)
 mesh = SubResource("ArrayMesh_0jmtu")
 skeleton = NodePath("")
 
-[node name="Area3D4" type="Area3D" parent="SubViewportContainer/SubViewport/world2/models/Mushroom2"]
+[node name="Area3D4" type="Area3D" parent="SubViewportContainer/SubViewport/world2/models/Mushroom2" unique_id=1088674981]
 transform = Transform3D(-1.49635, 0, 0.104635, 0, 1.5, 0, -0.104635, 0, -1.49635, -0.337748, 0.608527, 5.9829)
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/world2/models/Mushroom2/Area3D4"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/world2/models/Mushroom2/Area3D4" unique_id=1091175705]
 transform = Transform3D(0.999999, 8.73115e-09, -5.96046e-08, 1.49012e-08, -4.09782e-08, 0.999999, 2.38651e-09, -0.999999, -4.37722e-08, -0.0104456, -0.533919, 4.71526)
 shape = SubResource("CapsuleShape3D_oid4u")
 
-[node name="Mushroom3" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world2/models"]
+[node name="Mushroom3" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world2/models" unique_id=1409093423]
 transform = Transform3D(-0.274994, 0.961445, -0.000826606, 0.000139958, 0.000899784, 0.999999, 0.961445, 0.274994, -0.000381997, -7.19652, 1.59829, -8.26808)
 mesh = SubResource("ArrayMesh_0jmtu")
 skeleton = NodePath("")
 
-[node name="Area3D4" type="Area3D" parent="SubViewportContainer/SubViewport/world2/models/Mushroom3"]
+[node name="Area3D4" type="Area3D" parent="SubViewportContainer/SubViewport/world2/models/Mushroom3" unique_id=1260701715]
 transform = Transform3D(-1.49635, 0, 0.104635, 0, 1.5, 0, -0.104635, 0, -1.49635, -0.337748, 0.608527, 5.9829)
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/world2/models/Mushroom3/Area3D4"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/world2/models/Mushroom3/Area3D4" unique_id=278126794]
 transform = Transform3D(0.999999, 8.73115e-09, -5.96046e-08, 1.49012e-08, -4.09782e-08, 0.999999, 2.38651e-09, -0.999999, -4.37722e-08, -0.0104456, -0.533919, 4.71526)
 shape = SubResource("CapsuleShape3D_oid4u")
 
-[node name="Mushroom4" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world2/models"]
+[node name="Mushroom4" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world2/models" unique_id=1933663703]
 transform = Transform3D(0.699999, -0.000724761, -3.1676e-11, 0, -3.0598e-08, 0.7, -0.000724761, -0.699999, -3.05979e-08, 1.57597, 1.06684, -8.26808)
 mesh = SubResource("ArrayMesh_0jmtu")
 skeleton = NodePath("")
 
-[node name="Area3D4" type="Area3D" parent="SubViewportContainer/SubViewport/world2/models/Mushroom4"]
+[node name="Area3D4" type="Area3D" parent="SubViewportContainer/SubViewport/world2/models/Mushroom4" unique_id=1894594291]
 transform = Transform3D(-1.49635, 0, 0.104635, 0, 1.5, 0, -0.104635, 0, -1.49635, -0.337748, 0.608527, 5.9829)
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/world2/models/Mushroom4/Area3D4"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/world2/models/Mushroom4/Area3D4" unique_id=828974740]
 transform = Transform3D(0.999999, 8.73115e-09, -5.96046e-08, 1.49012e-08, -4.09782e-08, 0.999999, 2.38651e-09, -0.999999, -4.37722e-08, -0.0104456, -0.533919, 4.71526)
 shape = SubResource("CapsuleShape3D_oid4u")
 
-[node name="Mushroom5" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world2/models"]
+[node name="Mushroom5" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world2/models" unique_id=466620140]
 transform = Transform3D(0.654623, -0.247927, -1.08372e-08, 5.33704e-18, -3.0598e-08, 0.7, -0.247927, -0.654623, -2.86145e-08, -2.09132, 1.02957, -0.417345)
 mesh = SubResource("ArrayMesh_0jmtu")
 skeleton = NodePath("")
 
-[node name="Area3D4" type="Area3D" parent="SubViewportContainer/SubViewport/world2/models/Mushroom5"]
+[node name="Area3D4" type="Area3D" parent="SubViewportContainer/SubViewport/world2/models/Mushroom5" unique_id=812271239]
 transform = Transform3D(-1.49635, 0, 0.104635, 0, 1.5, 0, -0.104635, 0, -1.49635, -0.337748, 0.608527, 5.9829)
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/world2/models/Mushroom5/Area3D4"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/world2/models/Mushroom5/Area3D4" unique_id=1515458445]
 transform = Transform3D(0.999999, 8.73115e-09, -5.96046e-08, 1.49012e-08, -4.09782e-08, 0.999999, 2.38651e-09, -0.999999, -4.37722e-08, -0.0104456, -0.533919, 4.71526)
 shape = SubResource("CapsuleShape3D_oid4u")
 
-[node name="Mushroom6" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world2/models"]
+[node name="Mushroom6" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world2/models" unique_id=1717639359]
 transform = Transform3D(-1.16347, -0.293814, -1.2843e-08, -3.02806e-15, -5.24537e-08, 1.2, -0.293814, 1.16347, 5.08571e-08, 7.39373, 1.79637, 3.65493)
 mesh = SubResource("ArrayMesh_0jmtu")
 skeleton = NodePath("")
 
-[node name="Area3D4" type="Area3D" parent="SubViewportContainer/SubViewport/world2/models/Mushroom6"]
+[node name="Area3D4" type="Area3D" parent="SubViewportContainer/SubViewport/world2/models/Mushroom6" unique_id=635306116]
 transform = Transform3D(-1.49635, 0, 0.104635, 0, 1.5, 0, -0.104635, 0, -1.49635, -0.337748, 0.608527, 5.9829)
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/world2/models/Mushroom6/Area3D4"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/world2/models/Mushroom6/Area3D4" unique_id=1407338238]
 transform = Transform3D(0.999999, 8.73115e-09, -5.96046e-08, 1.49012e-08, -4.09782e-08, 0.999999, 2.38651e-09, -0.999999, -4.37722e-08, -0.0104456, -0.533919, 4.71526)
 shape = SubResource("CapsuleShape3D_oid4u")
 
-[node name="Cube_Stonne_0" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world2/models"]
+[node name="Cube_Stonne_0" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world2/models" unique_id=1722569546]
 transform = Transform3D(0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 5.93333, 0, 0)
 mesh = SubResource("ArrayMesh_1tn0r")
 skeleton = NodePath("")
 
-[node name="Area3D4" type="Area3D" parent="SubViewportContainer/SubViewport/world2/models/Cube_Stonne_0"]
+[node name="Area3D4" type="Area3D" parent="SubViewportContainer/SubViewport/world2/models/Cube_Stonne_0" unique_id=1392272546]
 transform = Transform3D(-1.49635, 0, 0.104635, 0, 1.5, 0, -0.104635, 0, -1.49635, -0.337748, 0.608527, 5.9829)
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/world2/models/Cube_Stonne_0/Area3D4"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/world2/models/Cube_Stonne_0/Area3D4" unique_id=1217635660]
 transform = Transform3D(0.999997, -5.21541e-08, -4.88498e-15, 0, -4.37113e-08, 0.999999, -5.21541e-08, -0.999997, -4.37113e-08, 0.102141, -0.171486, 4.13255)
 shape = SubResource("BoxShape3D_vbqas")
 
-[node name="Cube_Stonne_1" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world2/models"]
+[node name="Cube_Stonne_1" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world2/models" unique_id=509177679]
 transform = Transform3D(0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, -0.5831, 0, -3.56114)
 mesh = SubResource("ArrayMesh_1tn0r")
 skeleton = NodePath("")
 
-[node name="Area3D4" type="Area3D" parent="SubViewportContainer/SubViewport/world2/models/Cube_Stonne_1"]
+[node name="Area3D4" type="Area3D" parent="SubViewportContainer/SubViewport/world2/models/Cube_Stonne_1" unique_id=2139002551]
 transform = Transform3D(-1.49635, 0, 0.104635, 0, 1.5, 0, -0.104635, 0, -1.49635, -0.337748, 0.608527, 5.9829)
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/world2/models/Cube_Stonne_1/Area3D4"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/world2/models/Cube_Stonne_1/Area3D4" unique_id=545273523]
 transform = Transform3D(0.999997, -7.45058e-09, -3.25676e-16, 0, -4.37113e-08, 0.999999, -7.45058e-09, -0.999997, -4.37114e-08, 0.120916, -0.113868, 4.13256)
 shape = SubResource("BoxShape3D_ll31n")
 
-[node name="Cube_Stonne_2" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world2/models"]
+[node name="Cube_Stonne_2" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world2/models" unique_id=1360672493]
 transform = Transform3D(0.00356746, 0, -0.699991, 0, 0.7, 0, 0.699991, 0, 0.00356746, 4.26801, 0, 6.2451)
 mesh = SubResource("ArrayMesh_1tn0r")
 skeleton = NodePath("")
 
-[node name="Area3D4" type="Area3D" parent="SubViewportContainer/SubViewport/world2/models/Cube_Stonne_2"]
+[node name="Area3D4" type="Area3D" parent="SubViewportContainer/SubViewport/world2/models/Cube_Stonne_2" unique_id=337243856]
 transform = Transform3D(-1.49635, 0, 0.104635, 0, 1.5, 0, -0.104635, 0, -1.49635, -0.337748, 0.608527, 5.9829)
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/world2/models/Cube_Stonne_2/Area3D4"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/world2/models/Cube_Stonne_2/Area3D4" unique_id=318969317]
 transform = Transform3D(0.999998, -1.49012e-08, -2.22045e-16, 0, -4.37113e-08, 0.999999, -1.49012e-08, -0.999998, -4.37114e-08, 0.120916, -0.183448, 4.13255)
 shape = SubResource("BoxShape3D_ll31n")
 
-[node name="Cube_Stonne_3" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world2/models"]
+[node name="Cube_Stonne_3" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world2/models" unique_id=1261978734]
 transform = Transform3D(1.57555, 0, 1.23193, 0, 2, 0, -1.23193, 0, 1.57555, -7.57189, 0, 6.2451)
 mesh = SubResource("ArrayMesh_1tn0r")
 skeleton = NodePath("")
 
-[node name="Area3D4" type="Area3D" parent="SubViewportContainer/SubViewport/world2/models/Cube_Stonne_3"]
+[node name="Area3D4" type="Area3D" parent="SubViewportContainer/SubViewport/world2/models/Cube_Stonne_3" unique_id=562950991]
 transform = Transform3D(-1.49635, 0, 0.104635, 0, 1.5, 0, -0.104635, 0, -1.49635, -0.337748, 0.608527, 5.9829)
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/world2/models/Cube_Stonne_3/Area3D4"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/world2/models/Cube_Stonne_3/Area3D4" unique_id=1962373792]
 transform = Transform3D(0.999997, -5.96046e-08, -5.32907e-15, 0, -4.37113e-08, 0.999999, -5.96046e-08, -0.999997, -4.37114e-08, -0.0389304, -0.113868, 4.25036)
 shape = SubResource("BoxShape3D_rqnfi")
 
-[node name="Cube_Stonne_4" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world2/models"]
+[node name="Cube_Stonne_4" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world2/models" unique_id=2023409113]
 transform = Transform3D(-0.656392, 0, 1.00456, 0, 1.2, 0, -1.00456, 0, -0.656392, -3.448, 0.130308, -7.24325)
 mesh = SubResource("ArrayMesh_1tn0r")
 skeleton = NodePath("")
 
-[node name="Area3D4" type="Area3D" parent="SubViewportContainer/SubViewport/world2/models/Cube_Stonne_4"]
+[node name="Area3D4" type="Area3D" parent="SubViewportContainer/SubViewport/world2/models/Cube_Stonne_4" unique_id=70468243]
 transform = Transform3D(-1.49635, 0, 0.104635, 0, 1.5, 0, -0.104635, 0, -1.49635, -0.337748, 0.608527, 5.9829)
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/world2/models/Cube_Stonne_4/Area3D4"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/world2/models/Cube_Stonne_4/Area3D4" unique_id=1583730536]
 transform = Transform3D(0.999997, -7.45058e-09, -3.25676e-16, 0, -4.37113e-08, 0.999999, -7.45058e-09, -0.999997, -4.37114e-08, 0.120916, -0.113868, 4.13256)
 shape = SubResource("BoxShape3D_ll31n")
 
-[node name="Cube_Stonne_5" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world2/models"]
+[node name="Cube_Stonne_5" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world2/models" unique_id=754592569]
 transform = Transform3D(1.39693, 0, 0.546438, 0, 1.5, 0, -0.546438, 0, 1.39693, 6.03627, 0.130307, -7.24325)
 mesh = SubResource("ArrayMesh_1tn0r")
 skeleton = NodePath("")
 
-[node name="Area3D4" type="Area3D" parent="SubViewportContainer/SubViewport/world2/models/Cube_Stonne_5"]
+[node name="Area3D4" type="Area3D" parent="SubViewportContainer/SubViewport/world2/models/Cube_Stonne_5" unique_id=231800657]
 transform = Transform3D(-1.49635, 0, 0.104635, 0, 1.5, 0, -0.104635, 0, -1.49635, -0.337748, 0.608527, 5.9829)
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/world2/models/Cube_Stonne_5/Area3D4"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/world2/models/Cube_Stonne_5/Area3D4" unique_id=1893675299]
 transform = Transform3D(0.999997, -7.45058e-09, -3.25676e-16, 0, -4.37113e-08, 0.999999, -7.45058e-09, -0.999997, -4.37114e-08, 0.120916, -0.113868, 4.13256)
 shape = SubResource("BoxShape3D_ll31n")
 
-[node name="Cube_Stonne_6" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world2/models"]
+[node name="Cube_Stonne_6" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world2/models" unique_id=1066601220]
 transform = Transform3D(-0.138808, 0, 0.265956, 0, 0.3, 0, -0.265956, 0, -0.138808, 3.48098, 0.130307, -3.23585)
 mesh = SubResource("ArrayMesh_1tn0r")
 skeleton = NodePath("")
 
-[node name="Area3D4" type="Area3D" parent="SubViewportContainer/SubViewport/world2/models/Cube_Stonne_6"]
+[node name="Area3D4" type="Area3D" parent="SubViewportContainer/SubViewport/world2/models/Cube_Stonne_6" unique_id=2118432062]
 transform = Transform3D(-1.49635, 0, 0.104635, 0, 1.5, 0, -0.104635, 0, -1.49635, -0.337748, 0.608527, 5.9829)
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/world2/models/Cube_Stonne_6/Area3D4"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/world2/models/Cube_Stonne_6/Area3D4" unique_id=266870262]
 transform = Transform3D(0.999998, -2.08616e-07, -3.55271e-15, 0, -4.37113e-08, 1, -2.08616e-07, -0.999998, -4.37114e-08, 0.0514345, -0.385353, 4.2433)
 shape = SubResource("BoxShape3D_ll31n")
 
-[node name="Cube_Stonne_7" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world2/models"]
+[node name="Cube_Stonne_7" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world2/models" unique_id=522036788]
 transform = Transform3D(-0.564541, -0.00273782, -0.203189, -0.00272849, 0.599993, -0.00050363, 0.203189, 0.000450143, -0.564547, -6.45823, 0.130307, -3.23585)
 mesh = SubResource("ArrayMesh_1tn0r")
 skeleton = NodePath("")
 
-[node name="Area3D4" type="Area3D" parent="SubViewportContainer/SubViewport/world2/models/Cube_Stonne_7"]
+[node name="Area3D4" type="Area3D" parent="SubViewportContainer/SubViewport/world2/models/Cube_Stonne_7" unique_id=1739734201]
 transform = Transform3D(-1.49635, 0, 0.104635, 0, 1.5, 0, -0.104635, 0, -1.49635, -0.337748, 0.608527, 5.9829)
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/world2/models/Cube_Stonne_7/Area3D4"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/world2/models/Cube_Stonne_7/Area3D4" unique_id=630351200]
 transform = Transform3D(0.999993, -8.9407e-08, -1.22236e-09, -3.65253e-09, -4.78467e-08, 0.999995, 3.27826e-07, -0.999997, -4.48199e-08, 0.120915, -0.36985, 4.13255)
 shape = SubResource("BoxShape3D_ll31n")
 
-[node name="backround" type="Node3D" parent="SubViewportContainer/SubViewport/world2"]
+[node name="backround" type="Node3D" parent="SubViewportContainer/SubViewport/world2" unique_id=415277082]
 
-[node name="Object_4" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world2/backround"]
+[node name="Object_4" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world2/backround" unique_id=1166511458]
 transform = Transform3D(4.72961, -1.62198, 0, 1.62198, 4.72961, 0, 0, 0, 5, 21.4656, 10.0261, 0)
 mesh = SubResource("ArrayMesh_ljfp2")
 skeleton = NodePath("")
 
-[node name="Object_5" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world2/backround"]
+[node name="Object_5" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world2/backround" unique_id=610202531]
 transform = Transform3D(-3.8071, 0.589846, -1.07615, 0.612426, 3.95284, 4.43005e-08, 1.06346, -0.164766, -3.85252, -18.9023, 8.14439, 3.29949)
 mesh = SubResource("ArrayMesh_ljfp2")
 skeleton = NodePath("")
 
-[node name="Object_7" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world2/backround"]
+[node name="Object_7" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world2/backround" unique_id=1550728009]
 transform = Transform3D(-5.11264, 0.792117, 4.71524, 1.07175, 6.91747, 2.44913e-07, -4.65965, 0.721934, -5.17363, -18.9023, 13.1041, -15.6185)
 mesh = SubResource("ArrayMesh_ljfp2")
 skeleton = NodePath("")
 
-[node name="Object_9" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world2/backround"]
+[node name="Object_9" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world2/backround" unique_id=589303571]
 transform = Transform3D(1.8386, -0.284861, 6.74821, 1.07175, 6.91747, 2.12941e-07, -6.66865, 1.03319, 1.86054, 3.78369, 13.1041, -22.2806)
 mesh = SubResource("ArrayMesh_ljfp2")
 skeleton = NodePath("")
 
-[node name="Object_6" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world2/backround"]
+[node name="Object_6" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world2/backround" unique_id=1200818836]
 transform = Transform3D(1.67286, -0.259181, 1.06507, 0.306213, 1.97642, 4.51891e-08, -1.05252, 0.16307, 1.69281, 10.7358, 8.43718, -11.7237)
 mesh = SubResource("ArrayMesh_ljfp2")
 skeleton = NodePath("")
 
-[node name="pasted__pCube59_pasted__lambert5_0" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world2/backround"]
+[node name="pasted__pCube59_pasted__lambert5_0" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world2/backround" unique_id=1812064764]
 transform = Transform3D(13, 0, 0, 0, 8, 0, 0, 0, 8, 90.7506, -2.82242, 7.28666)
 mesh = SubResource("ArrayMesh_vxejg")
 skeleton = NodePath("")
 
-[node name="StaticBody3D" type="StaticBody3D" parent="SubViewportContainer/SubViewport/world2/backround"]
+[node name="StaticBody3D" type="StaticBody3D" parent="SubViewportContainer/SubViewport/world2/backround" unique_id=1743341575]
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/world2/backround/StaticBody3D"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/world2/backround/StaticBody3D" unique_id=1441477346]
 transform = Transform3D(0.999999, 0, 0, 0, 0.999999, 0, 0, 0, 0.999999, 0.253414, 1.50919, 10.3626)
 shape = SubResource("BoxShape3D_o42gj")
 
-[node name="StaticBody3D4" type="StaticBody3D" parent="SubViewportContainer/SubViewport/world2/backround"]
+[node name="StaticBody3D4" type="StaticBody3D" parent="SubViewportContainer/SubViewport/world2/backround" unique_id=894472130]
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/world2/backround/StaticBody3D4"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/world2/backround/StaticBody3D4" unique_id=398089244]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.506626, 0.670824, -10.2475)
 shape = SubResource("BoxShape3D_6bkec")
 
-[node name="StaticBody3D2" type="StaticBody3D" parent="SubViewportContainer/SubViewport/world2/backround"]
+[node name="StaticBody3D2" type="StaticBody3D" parent="SubViewportContainer/SubViewport/world2/backround" unique_id=2004602453]
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/world2/backround/StaticBody3D2"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/world2/backround/StaticBody3D2" unique_id=1311211705]
 transform = Transform3D(-4.37114e-08, 0, 0.999999, 0, 0.999999, 0, -0.999999, 0, -4.37114e-08, 10.2102, 1.6037, 0.477922)
 shape = SubResource("BoxShape3D_nelhc")
 
-[node name="StaticBody3D3" type="StaticBody3D" parent="SubViewportContainer/SubViewport/world2/backround"]
+[node name="StaticBody3D3" type="StaticBody3D" parent="SubViewportContainer/SubViewport/world2/backround" unique_id=2054562640]
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/world2/backround/StaticBody3D3"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/world2/backround/StaticBody3D3" unique_id=2038252152]
 transform = Transform3D(-4.37114e-08, 0, -1, 0, 1, 0, 1, 0, -4.37114e-08, -10.1135, 1.41505, -0.565718)
 shape = SubResource("BoxShape3D_sxn1u")
 
-[node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="SubViewportContainer/SubViewport/world2"]
+[node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="SubViewportContainer/SubViewport/world2" unique_id=2086378792]
 stream = ExtResource("10_vgvs4")
 volume_db = 1.25
 autoplay = true
 bus = &"Music"
 
-[node name="MonsterSpawnPoint" parent="SubViewportContainer/SubViewport/world2" instance=ExtResource("14_37qwj")]
+[node name="MonsterSpawnPoint" parent="SubViewportContainer/SubViewport/world2" unique_id=1623264546 instance=ExtResource("14_37qwj")]
 transform = Transform3D(0.9999998, 0, 0, 0, 0.9999998, 0, 0, 0, 0.9999998, 5.578936, 0, 2.2517984)
 
-[node name="MonsterSpawnPoint2" parent="SubViewportContainer/SubViewport/world2" instance=ExtResource("14_37qwj")]
+[node name="MonsterSpawnPoint2" parent="SubViewportContainer/SubViewport/world2" unique_id=196879514 instance=ExtResource("14_37qwj")]
 transform = Transform3D(0.9999997, 0, 0, 0, 0.9999997, 0, 0, 0, 0.9999997, -2.4660816, 0, 0.7050555)
 
-[node name="PlayerSpawnPoint2" parent="SubViewportContainer/SubViewport/world2" instance=ExtResource("2_37qwj")]
+[node name="PlayerSpawnPoint2" parent="SubViewportContainer/SubViewport/world2" unique_id=182350447 instance=ExtResource("2_37qwj")]
 transform = Transform3D(0.9999995, 0, 0, 0, 0.9999995, 0, 0, 0, 0.9999995, 6.8574195, 0, -3.8588557)
 
-[node name="nightmare2" type="Node3D" parent="SubViewportContainer/SubViewport"]
+[node name="nightmare2" type="Node3D" parent="SubViewportContainer/SubViewport" unique_id=873774877]
 transform = Transform3D(15, 0, 0, 0, 15, 0, 0, 0, 15, 0, 0, 0)
 visible = false
 
-[node name="MonsterLethal1" parent="SubViewportContainer/SubViewport/nightmare2" instance=ExtResource("2_ts3gi")]
+[node name="MonsterLethal1" parent="SubViewportContainer/SubViewport/nightmare2" unique_id=157362670 instance=ExtResource("2_ts3gi")]
 transform = Transform3D(0.09999999, 0, 0, 0, 0.09999999, 0, 0, 0, 0.09999999, 5, 1.5, -3)
 monster_type = 1
 speed = 5.5
 model_scene = ExtResource("3_0nbtd")
 
-[node name="MonsterJumpscare1" parent="SubViewportContainer/SubViewport/nightmare2" instance=ExtResource("2_ts3gi")]
+[node name="MonsterJumpscare1" parent="SubViewportContainer/SubViewport/nightmare2" unique_id=1074832770 instance=ExtResource("2_ts3gi")]
 transform = Transform3D(0.09999999, 0, 0, 0, 0.09999999, 0, 0, 0, 0.09999999, -5, 1.5, 4)
 speed = 6.5
 model_scene = ExtResource("3_0nbtd")
 
-[node name="MonsterLethal2" parent="SubViewportContainer/SubViewport/nightmare2" instance=ExtResource("2_ts3gi")]
+[node name="MonsterLethal2" parent="SubViewportContainer/SubViewport/nightmare2" unique_id=1482467187 instance=ExtResource("2_ts3gi")]
 transform = Transform3D(0.09999999, 0, 0, 0, 0.09999999, 0, 0, 0, 0.09999999, -2, 1.5, -6)
 monster_type = 1
 speed = 4.5
 model_scene = ExtResource("3_0nbtd")
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare2"]
+[node name="MeshInstance3D" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare2" unique_id=1819968321]
 transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, 0, 0, 0)
 cast_shadow = 0
 mesh = SubResource("PlaneMesh_tm5ka")
 skeleton = NodePath("../../world1")
 
-[node name="StaticBody3D" type="StaticBody3D" parent="SubViewportContainer/SubViewport/nightmare2/MeshInstance3D"]
+[node name="StaticBody3D" type="StaticBody3D" parent="SubViewportContainer/SubViewport/nightmare2/MeshInstance3D" unique_id=1939775055]
 transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, 0, 0, 0)
 physics_material_override = SubResource("PhysicsMaterial_ex1pv")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/nightmare2/MeshInstance3D/StaticBody3D"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/nightmare2/MeshInstance3D/StaticBody3D" unique_id=590902756]
 transform = Transform3D(0.01, 0, 0, 0, 0.01, 0, 0, 0, 0.01, 0, 0.00490519, 0)
 shape = SubResource("WorldBoundaryShape3D_n4tg6")
 
-[node name="DirectionalLight3D" type="DirectionalLight3D" parent="SubViewportContainer/SubViewport/nightmare2"]
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="SubViewportContainer/SubViewport/nightmare2" unique_id=1897075099]
 transform = Transform3D(1, 0, 0, 0, 0.707107, 0.707107, 0, -0.707107, 0.707107, 1, 0, 0)
 light_color = Color(0.772549, 1, 1, 1)
 light_energy = 2.5
 shadow_enabled = true
 shadow_normal_bias = 0.5
 
-[node name="models" type="Node3D" parent="SubViewportContainer/SubViewport/nightmare2"]
+[node name="models" type="Node3D" parent="SubViewportContainer/SubViewport/nightmare2" unique_id=881618157]
 
-[node name="Object_4" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare2/models"]
+[node name="Object_4" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare2/models" unique_id=1384994988]
 transform = Transform3D(0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 0, -0.142866, 6.84789)
 mesh = SubResource("ArrayMesh_qxckc")
 skeleton = NodePath("")
 
-[node name="StaticBody3D" type="StaticBody3D" parent="SubViewportContainer/SubViewport/nightmare2/models/Object_4"]
+[node name="StaticBody3D" type="StaticBody3D" parent="SubViewportContainer/SubViewport/nightmare2/models/Object_4" unique_id=90562146]
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/nightmare2/models/Object_4/StaticBody3D"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/nightmare2/models/Object_4/StaticBody3D" unique_id=147802719]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1452, 0)
 shape = SubResource("SphereShape3D_svcxo")
 
-[node name="Mushroom2" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare2/models"]
+[node name="Mushroom2" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare2/models" unique_id=1028257894]
 transform = Transform3D(-0.995506, -0.0946931, 0.000224533, 0.000139958, 0.000899784, 0.999999, -0.0946932, 0.995506, -0.000882488, 8.73922, 1.59829, -5.59578)
 mesh = SubResource("ArrayMesh_5s2f3")
 skeleton = NodePath("")
 
-[node name="Area3D4" type="Area3D" parent="SubViewportContainer/SubViewport/nightmare2/models/Mushroom2"]
+[node name="Area3D4" type="Area3D" parent="SubViewportContainer/SubViewport/nightmare2/models/Mushroom2" unique_id=290439232]
 transform = Transform3D(-1.49635, 0, 0.104635, 0, 1.5, 0, -0.104635, 0, -1.49635, -0.337748, 0.608527, 5.9829)
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/nightmare2/models/Mushroom2/Area3D4"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/nightmare2/models/Mushroom2/Area3D4" unique_id=749431378]
 transform = Transform3D(0.999999, 8.73115e-09, -5.96046e-08, 1.49012e-08, -4.09782e-08, 0.999999, 2.38651e-09, -0.999999, -4.37722e-08, -0.0104456, -0.533919, 4.71526)
 shape = SubResource("CapsuleShape3D_oid4u")
 
-[node name="Mushroom3" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare2/models"]
+[node name="Mushroom3" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare2/models" unique_id=1921519077]
 transform = Transform3D(-0.274994, 0.961445, -0.000826606, 0.000139958, 0.000899784, 0.999999, 0.961445, 0.274994, -0.000381997, -7.19652, 1.59829, -8.26808)
 mesh = SubResource("ArrayMesh_5s2f3")
 skeleton = NodePath("")
 
-[node name="Area3D4" type="Area3D" parent="SubViewportContainer/SubViewport/nightmare2/models/Mushroom3"]
+[node name="Area3D4" type="Area3D" parent="SubViewportContainer/SubViewport/nightmare2/models/Mushroom3" unique_id=2042723488]
 transform = Transform3D(-1.49635, 0, 0.104635, 0, 1.5, 0, -0.104635, 0, -1.49635, -0.337748, 0.608527, 5.9829)
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/nightmare2/models/Mushroom3/Area3D4"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/nightmare2/models/Mushroom3/Area3D4" unique_id=1896866985]
 transform = Transform3D(0.999999, 8.73115e-09, -5.96046e-08, 1.49012e-08, -4.09782e-08, 0.999999, 2.38651e-09, -0.999999, -4.37722e-08, -0.0104456, -0.533919, 4.71526)
 shape = SubResource("CapsuleShape3D_oid4u")
 
-[node name="Mushroom4" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare2/models"]
+[node name="Mushroom4" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare2/models" unique_id=361010808]
 transform = Transform3D(0.699999, -0.000724761, -3.1676e-11, 0, -3.0598e-08, 0.7, -0.000724761, -0.699999, -3.05979e-08, 1.57597, 1.06684, -8.26808)
 mesh = SubResource("ArrayMesh_5s2f3")
 skeleton = NodePath("")
 
-[node name="Area3D4" type="Area3D" parent="SubViewportContainer/SubViewport/nightmare2/models/Mushroom4"]
+[node name="Area3D4" type="Area3D" parent="SubViewportContainer/SubViewport/nightmare2/models/Mushroom4" unique_id=824507551]
 transform = Transform3D(-1.49635, 0, 0.104635, 0, 1.5, 0, -0.104635, 0, -1.49635, -0.337748, 0.608527, 5.9829)
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/nightmare2/models/Mushroom4/Area3D4"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/nightmare2/models/Mushroom4/Area3D4" unique_id=323889060]
 transform = Transform3D(0.999999, 8.73115e-09, -5.96046e-08, 1.49012e-08, -4.09782e-08, 0.999999, 2.38651e-09, -0.999999, -4.37722e-08, -0.0104456, -0.533919, 4.71526)
 shape = SubResource("CapsuleShape3D_oid4u")
 
-[node name="Mushroom5" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare2/models"]
+[node name="Mushroom5" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare2/models" unique_id=517045767]
 transform = Transform3D(0.654623, -0.247927, -1.08372e-08, 5.33704e-18, -3.0598e-08, 0.7, -0.247927, -0.654623, -2.86145e-08, -2.09132, 1.02957, -0.417345)
 mesh = SubResource("ArrayMesh_5s2f3")
 skeleton = NodePath("")
 
-[node name="Area3D4" type="Area3D" parent="SubViewportContainer/SubViewport/nightmare2/models/Mushroom5"]
+[node name="Area3D4" type="Area3D" parent="SubViewportContainer/SubViewport/nightmare2/models/Mushroom5" unique_id=675475019]
 transform = Transform3D(-1.49635, 0, 0.104635, 0, 1.5, 0, -0.104635, 0, -1.49635, -0.337748, 0.608527, 5.9829)
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/nightmare2/models/Mushroom5/Area3D4"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/nightmare2/models/Mushroom5/Area3D4" unique_id=697589010]
 transform = Transform3D(0.999999, 8.73115e-09, -5.96046e-08, 1.49012e-08, -4.09782e-08, 0.999999, 2.38651e-09, -0.999999, -4.37722e-08, -0.0104456, -0.533919, 4.71526)
 shape = SubResource("CapsuleShape3D_oid4u")
 
-[node name="Mushroom6" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare2/models"]
+[node name="Mushroom6" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare2/models" unique_id=1284024196]
 transform = Transform3D(-1.16347, -0.293814, -1.2843e-08, -3.02806e-15, -5.24537e-08, 1.2, -0.293814, 1.16347, 5.08571e-08, 7.39373, 1.79637, 3.65493)
 mesh = SubResource("ArrayMesh_5s2f3")
 skeleton = NodePath("")
 
-[node name="Area3D4" type="Area3D" parent="SubViewportContainer/SubViewport/nightmare2/models/Mushroom6"]
+[node name="Area3D4" type="Area3D" parent="SubViewportContainer/SubViewport/nightmare2/models/Mushroom6" unique_id=518248790]
 transform = Transform3D(-1.49635, 0, 0.104635, 0, 1.5, 0, -0.104635, 0, -1.49635, -0.337748, 0.608527, 5.9829)
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/nightmare2/models/Mushroom6/Area3D4"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/nightmare2/models/Mushroom6/Area3D4" unique_id=374660354]
 transform = Transform3D(0.999999, 8.73115e-09, -5.96046e-08, 1.49012e-08, -4.09782e-08, 0.999999, 2.38651e-09, -0.999999, -4.37722e-08, -0.0104456, -0.533919, 4.71526)
 shape = SubResource("CapsuleShape3D_oid4u")
 
-[node name="Cube_Stonne_0" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare2/models"]
+[node name="Cube_Stonne_0" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare2/models" unique_id=688126069]
 transform = Transform3D(0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 5.93333, 0, 0)
 mesh = SubResource("ArrayMesh_hye2m")
 skeleton = NodePath("")
 
-[node name="Area3D4" type="Area3D" parent="SubViewportContainer/SubViewport/nightmare2/models/Cube_Stonne_0"]
+[node name="Area3D4" type="Area3D" parent="SubViewportContainer/SubViewport/nightmare2/models/Cube_Stonne_0" unique_id=328418913]
 transform = Transform3D(-1.49635, 0, 0.104635, 0, 1.5, 0, -0.104635, 0, -1.49635, -0.337748, 0.608527, 5.9829)
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/nightmare2/models/Cube_Stonne_0/Area3D4"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/nightmare2/models/Cube_Stonne_0/Area3D4" unique_id=1387062824]
 transform = Transform3D(0.999997, -5.21541e-08, -4.88498e-15, 0, -4.37113e-08, 0.999999, -5.21541e-08, -0.999997, -4.37113e-08, 0.102141, -0.171486, 4.13255)
 shape = SubResource("BoxShape3D_vbqas")
 
-[node name="Cube_Stonne_1" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare2/models"]
+[node name="Cube_Stonne_1" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare2/models" unique_id=1000618844]
 transform = Transform3D(0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, -0.5831, 0, -3.56114)
 mesh = SubResource("ArrayMesh_hye2m")
 skeleton = NodePath("")
 
-[node name="Area3D4" type="Area3D" parent="SubViewportContainer/SubViewport/nightmare2/models/Cube_Stonne_1"]
+[node name="Area3D4" type="Area3D" parent="SubViewportContainer/SubViewport/nightmare2/models/Cube_Stonne_1" unique_id=1800530699]
 transform = Transform3D(-1.49635, 0, 0.104635, 0, 1.5, 0, -0.104635, 0, -1.49635, -0.337748, 0.608527, 5.9829)
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/nightmare2/models/Cube_Stonne_1/Area3D4"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/nightmare2/models/Cube_Stonne_1/Area3D4" unique_id=34315470]
 transform = Transform3D(0.999997, -7.45058e-09, -3.25676e-16, 0, -4.37113e-08, 0.999999, -7.45058e-09, -0.999997, -4.37114e-08, 0.120916, -0.113868, 4.13256)
 shape = SubResource("BoxShape3D_ll31n")
 
-[node name="Cube_Stonne_2" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare2/models"]
+[node name="Cube_Stonne_2" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare2/models" unique_id=633844919]
 transform = Transform3D(0.00356746, 0, -0.699991, 0, 0.7, 0, 0.699991, 0, 0.00356746, 4.26801, 0, 6.2451)
 mesh = SubResource("ArrayMesh_hye2m")
 skeleton = NodePath("")
 
-[node name="Area3D4" type="Area3D" parent="SubViewportContainer/SubViewport/nightmare2/models/Cube_Stonne_2"]
+[node name="Area3D4" type="Area3D" parent="SubViewportContainer/SubViewport/nightmare2/models/Cube_Stonne_2" unique_id=1732692024]
 transform = Transform3D(-1.49635, 0, 0.104635, 0, 1.5, 0, -0.104635, 0, -1.49635, -0.337748, 0.608527, 5.9829)
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/nightmare2/models/Cube_Stonne_2/Area3D4"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/nightmare2/models/Cube_Stonne_2/Area3D4" unique_id=1158476360]
 transform = Transform3D(0.999998, -1.49012e-08, -2.22045e-16, 0, -4.37113e-08, 0.999999, -1.49012e-08, -0.999998, -4.37114e-08, 0.120916, -0.183448, 4.13255)
 shape = SubResource("BoxShape3D_ll31n")
 
-[node name="Cube_Stonne_3" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare2/models"]
+[node name="Cube_Stonne_3" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare2/models" unique_id=1031916623]
 transform = Transform3D(1.57555, 0, 1.23193, 0, 2, 0, -1.23193, 0, 1.57555, -7.57189, 0, 6.2451)
 mesh = SubResource("ArrayMesh_hye2m")
 skeleton = NodePath("")
 
-[node name="Area3D4" type="Area3D" parent="SubViewportContainer/SubViewport/nightmare2/models/Cube_Stonne_3"]
+[node name="Area3D4" type="Area3D" parent="SubViewportContainer/SubViewport/nightmare2/models/Cube_Stonne_3" unique_id=1112490377]
 transform = Transform3D(-1.49635, 0, 0.104635, 0, 1.5, 0, -0.104635, 0, -1.49635, -0.337748, 0.608527, 5.9829)
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/nightmare2/models/Cube_Stonne_3/Area3D4"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/nightmare2/models/Cube_Stonne_3/Area3D4" unique_id=1339995488]
 transform = Transform3D(0.999997, -5.96046e-08, -5.32907e-15, 0, -4.37113e-08, 0.999999, -5.96046e-08, -0.999997, -4.37114e-08, -0.0389304, -0.113868, 4.25036)
 shape = SubResource("BoxShape3D_rqnfi")
 
-[node name="Cube_Stonne_4" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare2/models"]
+[node name="Cube_Stonne_4" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare2/models" unique_id=1168540720]
 transform = Transform3D(-0.656392, 0, 1.00456, 0, 1.2, 0, -1.00456, 0, -0.656392, -3.448, 0.130308, -7.24325)
 mesh = SubResource("ArrayMesh_hye2m")
 skeleton = NodePath("")
 
-[node name="Area3D4" type="Area3D" parent="SubViewportContainer/SubViewport/nightmare2/models/Cube_Stonne_4"]
+[node name="Area3D4" type="Area3D" parent="SubViewportContainer/SubViewport/nightmare2/models/Cube_Stonne_4" unique_id=1636347]
 transform = Transform3D(-1.49635, 0, 0.104635, 0, 1.5, 0, -0.104635, 0, -1.49635, -0.337748, 0.608527, 5.9829)
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/nightmare2/models/Cube_Stonne_4/Area3D4"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/nightmare2/models/Cube_Stonne_4/Area3D4" unique_id=370231903]
 transform = Transform3D(0.999997, -7.45058e-09, -3.25676e-16, 0, -4.37113e-08, 0.999999, -7.45058e-09, -0.999997, -4.37114e-08, 0.120916, -0.113868, 4.13256)
 shape = SubResource("BoxShape3D_ll31n")
 
-[node name="Cube_Stonne_5" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare2/models"]
+[node name="Cube_Stonne_5" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare2/models" unique_id=407970448]
 transform = Transform3D(1.39693, 0, 0.546438, 0, 1.5, 0, -0.546438, 0, 1.39693, 6.03627, 0.130307, -7.24325)
 mesh = SubResource("ArrayMesh_hye2m")
 skeleton = NodePath("")
 
-[node name="Area3D4" type="Area3D" parent="SubViewportContainer/SubViewport/nightmare2/models/Cube_Stonne_5"]
+[node name="Area3D4" type="Area3D" parent="SubViewportContainer/SubViewport/nightmare2/models/Cube_Stonne_5" unique_id=1308311588]
 transform = Transform3D(-1.49635, 0, 0.104635, 0, 1.5, 0, -0.104635, 0, -1.49635, -0.337748, 0.608527, 5.9829)
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/nightmare2/models/Cube_Stonne_5/Area3D4"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/nightmare2/models/Cube_Stonne_5/Area3D4" unique_id=744574568]
 transform = Transform3D(0.999997, -7.45058e-09, -3.25676e-16, 0, -4.37113e-08, 0.999999, -7.45058e-09, -0.999997, -4.37114e-08, 0.120916, -0.113868, 4.13256)
 shape = SubResource("BoxShape3D_ll31n")
 
-[node name="Cube_Stonne_6" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare2/models"]
+[node name="Cube_Stonne_6" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare2/models" unique_id=1711783835]
 transform = Transform3D(-0.138808, 0, 0.265956, 0, 0.3, 0, -0.265956, 0, -0.138808, 3.48098, 0.130307, -3.23585)
 mesh = SubResource("ArrayMesh_hye2m")
 skeleton = NodePath("")
 
-[node name="Area3D4" type="Area3D" parent="SubViewportContainer/SubViewport/nightmare2/models/Cube_Stonne_6"]
+[node name="Area3D4" type="Area3D" parent="SubViewportContainer/SubViewport/nightmare2/models/Cube_Stonne_6" unique_id=1354148059]
 transform = Transform3D(-1.49635, 0, 0.104635, 0, 1.5, 0, -0.104635, 0, -1.49635, -0.337748, 0.608527, 5.9829)
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/nightmare2/models/Cube_Stonne_6/Area3D4"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/nightmare2/models/Cube_Stonne_6/Area3D4" unique_id=790360577]
 transform = Transform3D(0.999998, -2.08616e-07, -3.55271e-15, 0, -4.37113e-08, 1, -2.08616e-07, -0.999998, -4.37114e-08, 0.0514345, -0.385353, 4.2433)
 shape = SubResource("BoxShape3D_ll31n")
 
-[node name="Cube_Stonne_7" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare2/models"]
+[node name="Cube_Stonne_7" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare2/models" unique_id=1479112439]
 transform = Transform3D(-0.564541, -0.00273782, -0.203189, -0.00272849, 0.599993, -0.00050363, 0.203189, 0.000450143, -0.564547, -6.45823, 0.130307, -3.23585)
 mesh = SubResource("ArrayMesh_hye2m")
 skeleton = NodePath("")
 
-[node name="Area3D4" type="Area3D" parent="SubViewportContainer/SubViewport/nightmare2/models/Cube_Stonne_7"]
+[node name="Area3D4" type="Area3D" parent="SubViewportContainer/SubViewport/nightmare2/models/Cube_Stonne_7" unique_id=1696395167]
 transform = Transform3D(-1.49635, 0, 0.104635, 0, 1.5, 0, -0.104635, 0, -1.49635, -0.337748, 0.608527, 5.9829)
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/nightmare2/models/Cube_Stonne_7/Area3D4"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/nightmare2/models/Cube_Stonne_7/Area3D4" unique_id=593126728]
 transform = Transform3D(0.999993, -8.9407e-08, -1.22236e-09, -3.65253e-09, -4.78467e-08, 0.999995, 3.27826e-07, -0.999997, -4.48199e-08, 0.120915, -0.36985, 4.13255)
 shape = SubResource("BoxShape3D_ll31n")
 
-[node name="backround" type="Node3D" parent="SubViewportContainer/SubViewport/nightmare2"]
+[node name="backround" type="Node3D" parent="SubViewportContainer/SubViewport/nightmare2" unique_id=1624740603]
 
-[node name="Object_4" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare2/backround"]
+[node name="Object_4" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare2/backround" unique_id=680845280]
 transform = Transform3D(4.72961, -1.62198, 0, 1.62198, 4.72961, 0, 0, 0, 5, 21.4656, 10.0261, 0)
 mesh = SubResource("ArrayMesh_obxod")
 skeleton = NodePath("")
 
-[node name="Object_5" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare2/backround"]
+[node name="Object_5" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare2/backround" unique_id=1015810023]
 transform = Transform3D(-3.8071, 0.589846, -1.07615, 0.612426, 3.95284, 4.43005e-08, 1.06346, -0.164766, -3.85252, -18.9023, 8.14439, 7.32237)
 mesh = SubResource("ArrayMesh_obxod")
 skeleton = NodePath("")
 
-[node name="Object_7" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare2/backround"]
+[node name="Object_7" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare2/backround" unique_id=505793337]
 transform = Transform3D(-5.11264, 0.792117, 4.71524, 1.07175, 6.91747, 2.44913e-07, -4.65965, 0.721934, -5.17363, -18.9023, 13.1041, -15.6185)
 mesh = SubResource("ArrayMesh_obxod")
 skeleton = NodePath("")
 
-[node name="Object_6" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare2/backround"]
+[node name="Object_6" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare2/backround" unique_id=1331036308]
 transform = Transform3D(1.67286, -0.259181, 1.06507, 0.306213, 1.97642, 4.51891e-08, -1.05252, 0.16307, 1.69281, 10.7358, 8.43718, -11.7237)
 mesh = SubResource("ArrayMesh_obxod")
 skeleton = NodePath("")
 
-[node name="pasted__pCube59_pasted__lambert5_0" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare2/backround"]
+[node name="pasted__pCube59_pasted__lambert5_0" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare2/backround" unique_id=1019282574]
 transform = Transform3D(13, 0, 0, 0, 8, 0, 0, 0, 8, 90.7506, -2.82242, 7.28666)
 mesh = SubResource("ArrayMesh_nateo")
 skeleton = NodePath("")
 
-[node name="StaticBody3D" type="StaticBody3D" parent="SubViewportContainer/SubViewport/nightmare2/backround"]
+[node name="StaticBody3D" type="StaticBody3D" parent="SubViewportContainer/SubViewport/nightmare2/backround" unique_id=2146722745]
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/nightmare2/backround/StaticBody3D"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/nightmare2/backround/StaticBody3D" unique_id=1559022174]
 transform = Transform3D(0.999999, 0, 0, 0, 0.999999, 0, 0, 0, 0.999999, 0.253414, 1.50919, 10.3626)
 shape = SubResource("BoxShape3D_o42gj")
 
-[node name="StaticBody3D4" type="StaticBody3D" parent="SubViewportContainer/SubViewport/nightmare2/backround"]
+[node name="StaticBody3D4" type="StaticBody3D" parent="SubViewportContainer/SubViewport/nightmare2/backround" unique_id=1363152486]
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/nightmare2/backround/StaticBody3D4"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/nightmare2/backround/StaticBody3D4" unique_id=1750320527]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.506626, 0.670824, -10.2475)
 shape = SubResource("BoxShape3D_6bkec")
 
-[node name="StaticBody3D2" type="StaticBody3D" parent="SubViewportContainer/SubViewport/nightmare2/backround"]
+[node name="StaticBody3D2" type="StaticBody3D" parent="SubViewportContainer/SubViewport/nightmare2/backround" unique_id=612943018]
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/nightmare2/backround/StaticBody3D2"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/nightmare2/backround/StaticBody3D2" unique_id=887904496]
 transform = Transform3D(-4.37114e-08, 0, 0.999999, 0, 0.999999, 0, -0.999999, 0, -4.37114e-08, 10.2102, 1.6037, 0.477922)
 shape = SubResource("BoxShape3D_nelhc")
 
-[node name="StaticBody3D3" type="StaticBody3D" parent="SubViewportContainer/SubViewport/nightmare2/backround"]
+[node name="StaticBody3D3" type="StaticBody3D" parent="SubViewportContainer/SubViewport/nightmare2/backround" unique_id=709662575]
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/nightmare2/backround/StaticBody3D3"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/nightmare2/backround/StaticBody3D3" unique_id=2076727833]
 transform = Transform3D(-4.37114e-08, 0, -1, 0, 1, 0, 1, 0, -4.37114e-08, -10.1135, 1.41505, -0.565718)
 shape = SubResource("BoxShape3D_sxn1u")
 
-[node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="SubViewportContainer/SubViewport/nightmare2"]
+[node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="SubViewportContainer/SubViewport/nightmare2" unique_id=1410822893]
 stream = ExtResource("12_0adto")
 volume_db = 0.75
 pitch_scale = 1.25
 autoplay = true
 bus = &"Music"
 
-[node name="EndObject" parent="SubViewportContainer/SubViewport/nightmare2" instance=ExtResource("3_mc2jv")]
+[node name="EndObject" parent="SubViewportContainer/SubViewport/nightmare2" unique_id=394303473 instance=ExtResource("3_mc2jv")]
 transform = Transform3D(0.49999994, 0, 0, 0, 0.49999994, 0, 0, 0, 0.49999994, 7.606958, 0, -1.3891728)
 interaction_distance = 3.0
 
-[node name="world1" type="Node3D" parent="SubViewportContainer/SubViewport"]
+[node name="world1" type="Node3D" parent="SubViewportContainer/SubViewport" unique_id=1399786633]
 transform = Transform3D(15, 0, 0, 0, 15, 0, 0, 0, 15, 0, 0, 0)
 visible = false
 
-[node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="SubViewportContainer/SubViewport/world1"]
+[node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="SubViewportContainer/SubViewport/world1" unique_id=546720965]
 stream = ExtResource("6_uxp5i")
 volume_db = 0.75
 pitch_scale = 1.25
 autoplay = true
 bus = &"Music"
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world1"]
+[node name="MeshInstance3D" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world1" unique_id=420135316]
 transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, 0, 0, 0)
 cast_shadow = 0
 mesh = SubResource("PlaneMesh_r3jhv")
 skeleton = NodePath("../../../..")
 
-[node name="StaticBody3D" type="StaticBody3D" parent="SubViewportContainer/SubViewport/world1/MeshInstance3D"]
+[node name="StaticBody3D" type="StaticBody3D" parent="SubViewportContainer/SubViewport/world1/MeshInstance3D" unique_id=2023201224]
 transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, 0, 0, 0)
 physics_material_override = SubResource("PhysicsMaterial_ex1pv")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/world1/MeshInstance3D/StaticBody3D"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/world1/MeshInstance3D/StaticBody3D" unique_id=652644829]
 transform = Transform3D(0.01, 0, 0, 0, 0.01, 0, 0, 0, 0.01, 0, 0.00490519, 0)
 shape = SubResource("WorldBoundaryShape3D_n4tg6")
 
-[node name="Skyscrapers" type="Node3D" parent="SubViewportContainer/SubViewport/world1"]
+[node name="Skyscrapers" type="Node3D" parent="SubViewportContainer/SubViewport/world1" unique_id=1116799316]
 
-[node name="Cube2" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world1/Skyscrapers"]
+[node name="Cube2" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world1/Skyscrapers" unique_id=393119905]
 transform = Transform3D(1, 0, 0, 0, 1.5, 0, 0, 0, 1, 2.48661, 9.94568, 10.9123)
 mesh = SubResource("ArrayMesh_isqn2")
 skeleton = NodePath("")
 
-[node name="Cube3" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world1/Skyscrapers"]
+[node name="Cube3" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world1/Skyscrapers" unique_id=914523104]
 transform = Transform3D(1, 0, 0, 0, 1.5, 0, 0, 0, 1, -2.37433, 9.94568, 10.9123)
 mesh = SubResource("ArrayMesh_isqn2")
 skeleton = NodePath("")
 
-[node name="Cube4" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world1/Skyscrapers"]
+[node name="Cube4" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world1/Skyscrapers" unique_id=1203857475]
 transform = Transform3D(1, 0, 0, 0, 1.5, 0, 0, 0, 1, -7.36341, 9.94568, 10.9123)
 mesh = SubResource("ArrayMesh_isqn2")
 skeleton = NodePath("")
 
-[node name="Cube9" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world1/Skyscrapers"]
+[node name="Cube9" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world1/Skyscrapers" unique_id=661178455]
 transform = Transform3D(-4.37114e-08, 0, -1, 0, 1.5, 0, 1, 0, -4.37114e-08, 11.1928, 9.94568, 6.84447)
 mesh = SubResource("ArrayMesh_isqn2")
 skeleton = NodePath("")
 
-[node name="Cube10" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world1/Skyscrapers"]
+[node name="Cube10" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world1/Skyscrapers" unique_id=135268038]
 transform = Transform3D(-4.37114e-08, 0, -1, 0, 1.5, 0, 1, 0, -4.37114e-08, 11.2085, 9.94568, 1.86855)
 mesh = SubResource("ArrayMesh_isqn2")
 skeleton = NodePath("")
 
-[node name="Cube11" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world1/Skyscrapers"]
+[node name="Cube11" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world1/Skyscrapers" unique_id=1335864003]
 transform = Transform3D(-4.37114e-08, 0, -1, 0, 1.5, 0, 1, 0, -4.37114e-08, 11.2088, 9.94568, -2.95336)
 mesh = SubResource("ArrayMesh_isqn2")
 skeleton = NodePath("")
 
-[node name="Cube12" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world1/Skyscrapers"]
+[node name="Cube12" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world1/Skyscrapers" unique_id=946168610]
 transform = Transform3D(-4.37114e-08, 0, -1, 0, 1.5, 0, 1, 0, -4.37114e-08, 11.2287, 9.94568, -7.96821)
 mesh = SubResource("ArrayMesh_isqn2")
 skeleton = NodePath("")
 
-[node name="Cube13" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world1/Skyscrapers"]
+[node name="Cube13" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world1/Skyscrapers" unique_id=1249100928]
 transform = Transform3D(-4.37114e-08, 0, -1, 0, 1.5, 0, 1, 0, -4.37114e-08, -11.4658, 9.94568, 6.84447)
 mesh = SubResource("ArrayMesh_isqn2")
 skeleton = NodePath("")
 
-[node name="Cube14" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world1/Skyscrapers"]
+[node name="Cube14" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world1/Skyscrapers" unique_id=155735477]
 transform = Transform3D(-4.37114e-08, 0, -1, 0, 1.5, 0, 1, 0, -4.37114e-08, -11.4667, 9.94568, 1.86855)
 material_override = SubResource("StandardMaterial3D_hxlkl")
 mesh = SubResource("ArrayMesh_isqn2")
 skeleton = NodePath("")
 
-[node name="Cube15" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world1/Skyscrapers"]
+[node name="Cube15" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world1/Skyscrapers" unique_id=1028201127]
 transform = Transform3D(-4.37114e-08, 0, -1, 0, 1.5, 0, 1, 0, -4.37114e-08, -11.4546, 9.94568, -2.98585)
 mesh = SubResource("ArrayMesh_isqn2")
 skeleton = NodePath("")
 
-[node name="Cube16" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world1/Skyscrapers"]
+[node name="Cube16" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world1/Skyscrapers" unique_id=1446715295]
 transform = Transform3D(-4.37114e-08, 0, -1, 0, 1.5, 0, 1, 0, -4.37114e-08, -11.4446, 9.94568, -7.96821)
 mesh = SubResource("ArrayMesh_isqn2")
 skeleton = NodePath("")
 
-[node name="Cube" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world1/Skyscrapers"]
+[node name="Cube" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world1/Skyscrapers" unique_id=1338359868]
 transform = Transform3D(1, 0, 0, 0, 1.5, 0, 0, 0, 1, 7.46924, 9.94568, 10.9123)
 mesh = SubResource("ArrayMesh_isqn2")
 skeleton = NodePath("")
 
-[node name="Collisions" type="Node3D" parent="SubViewportContainer/SubViewport/world1"]
+[node name="Collisions" type="Node3D" parent="SubViewportContainer/SubViewport/world1" unique_id=1021746557]
 visible = false
 
-[node name="StaticBody3D" type="StaticBody3D" parent="SubViewportContainer/SubViewport/world1/Collisions"]
+[node name="StaticBody3D" type="StaticBody3D" parent="SubViewportContainer/SubViewport/world1/Collisions" unique_id=1250828659]
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/world1/Collisions/StaticBody3D"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/world1/Collisions/StaticBody3D" unique_id=571664211]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.506626, 1.50919, 9.14997)
 shape = SubResource("BoxShape3D_o42gj")
 
-[node name="StaticBody3D4" type="StaticBody3D" parent="SubViewportContainer/SubViewport/world1/Collisions"]
+[node name="StaticBody3D4" type="StaticBody3D" parent="SubViewportContainer/SubViewport/world1/Collisions" unique_id=2103359174]
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/world1/Collisions/StaticBody3D4"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/world1/Collisions/StaticBody3D4" unique_id=958530588]
 transform = Transform3D(0.999999, 0, 0, 0, 0.999999, 0, 0, 0, 0.999999, 0.506626, 0.670824, -9.89989)
 shape = SubResource("BoxShape3D_o42gj")
 
-[node name="StaticBody3D2" type="StaticBody3D" parent="SubViewportContainer/SubViewport/world1/Collisions"]
+[node name="StaticBody3D2" type="StaticBody3D" parent="SubViewportContainer/SubViewport/world1/Collisions" unique_id=1890109653]
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/world1/Collisions/StaticBody3D2"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/world1/Collisions/StaticBody3D2" unique_id=531023449]
 transform = Transform3D(-4.37114e-08, 0, 1, 0, 1, 0, -1, 0, -4.37114e-08, 9.52629, 1.6037, -1.13422)
 shape = SubResource("BoxShape3D_o42gj")
 
-[node name="StaticBody3D3" type="StaticBody3D" parent="SubViewportContainer/SubViewport/world1/Collisions"]
+[node name="StaticBody3D3" type="StaticBody3D" parent="SubViewportContainer/SubViewport/world1/Collisions" unique_id=1826179858]
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/world1/Collisions/StaticBody3D3"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/world1/Collisions/StaticBody3D3" unique_id=1490772000]
 transform = Transform3D(-4.37114e-08, 0, -1, 0, 1, 0, 1, 0, -4.37114e-08, -10.1135, 1.41505, -1.10872)
 shape = SubResource("BoxShape3D_o42gj")
 
-[node name="StaticBody3D6" type="StaticBody3D" parent="SubViewportContainer/SubViewport/world1/Collisions"]
+[node name="StaticBody3D6" type="StaticBody3D" parent="SubViewportContainer/SubViewport/world1/Collisions" unique_id=26177394]
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/world1/Collisions/StaticBody3D6"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/world1/Collisions/StaticBody3D6" unique_id=501956910]
 transform = Transform3D(0.707107, 0, 0.707107, 0, 0.999999, 0, -0.707107, 0, 0.707107, -5.53849, 0.0107964, 6.16074)
 shape = SubResource("BoxShape3D_xpmd1")
 
-[node name="models" type="Node3D" parent="SubViewportContainer/SubViewport/world1"]
+[node name="models" type="Node3D" parent="SubViewportContainer/SubViewport/world1" unique_id=995153905]
 
-[node name="Cube" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world1/models"]
+[node name="Cube" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world1/models" unique_id=682345913]
 transform = Transform3D(0.412606, 0, 0.702166, 0, 0.409191, 0, -0.412606, 0, 0.702166, -2.40325, 4.79691, 1.05133)
 mesh = SubResource("ArrayMesh_hpjb3")
 skeleton = NodePath("")
 
-[node name="Cube4" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world1/models"]
+[node name="Cube4" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world1/models" unique_id=764481702]
 transform = Transform3D(0.412606, 0, 0.702166, 0, 0.409191, 0, -0.412606, 0, 0.702166, -5.56172, 0.0500384, 6.16262)
 mesh = SubResource("ArrayMesh_hpjb3")
 skeleton = NodePath("")
 
-[node name="Cube5" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world1/models"]
+[node name="Cube5" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world1/models" unique_id=755419518]
 transform = Transform3D(0.303903, 0, -0.847704, 0, 0.409191, 0, 0.498127, 0, 0.517177, -4.03858, 0.0500384, -3.34537)
 mesh = SubResource("ArrayMesh_hpjb3")
 skeleton = NodePath("")
 
-[node name="Cube6" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world1/models"]
+[node name="Cube6" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world1/models" unique_id=1180978460]
 transform = Transform3D(-0.383041, 0.00400973, -0.115169, 0.00163049, 0.399906, 0.00850032, 0.115227, 0.00767046, -0.382967, 3.11869, 0.0389286, -4.23656)
 mesh = SubResource("ArrayMesh_hpjb3")
 skeleton = NodePath("")
 
-[node name="Cube2" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world1/models"]
+[node name="Cube2" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world1/models" unique_id=513958745]
 transform = Transform3D(-0.655927, 0, 1.2832, 0, 0.7, 0, -0.754824, 0, -1.11508, 3.72915, 0.137484, 2.53421)
 mesh = SubResource("ArrayMesh_hpjb3")
 skeleton = NodePath("")
 
-[node name="Cube3" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world1/models"]
+[node name="Cube3" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world1/models" unique_id=1342616188]
 transform = Transform3D(-8.74228e-08, 0, -4, 0, 1, 0, 2, 0, -1.74846e-07, -0.175111, 0.137485, -10.9867)
 mesh = SubResource("ArrayMesh_hpjb3")
 skeleton = NodePath("")
 
-[node name="cat" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world1/models"]
+[node name="cat" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world1/models" unique_id=815577213]
 transform = Transform3D(0.489626, 0.66791, -0.560503, -0.871933, 0.375059, -0.314745, -1.0049e-14, 0.642828, 0.766011, -0.818803, 2.87687, -10.6487)
 mesh = SubResource("ArrayMesh_mr7ig")
 skeleton = NodePath("")
 
-[node name="cat2" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world1/models"]
+[node name="cat2" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world1/models" unique_id=1521125606]
 transform = Transform3D(1, 1.56324e-14, 1.24108e-21, -1.19746e-14, 0.766011, -0.642828, -1.0049e-14, 0.642828, 0.766011, -5.86367, 2.87687, -10.6487)
 mesh = SubResource("ArrayMesh_mr7ig")
 skeleton = NodePath("")
 
-[node name="cat3" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world1/models"]
+[node name="cat3" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/world1/models" unique_id=746896381]
 transform = Transform3D(1, 1.56324e-14, 1.24108e-21, -1.19746e-14, 0.766011, -0.642828, -1.0049e-14, 0.642828, 0.766011, 5.43279, 2.87687, -10.6487)
 mesh = SubResource("ArrayMesh_mr7ig")
 skeleton = NodePath("")
 
-[node name="areas" type="Node3D" parent="SubViewportContainer/SubViewport/world1"]
+[node name="areas" type="Node3D" parent="SubViewportContainer/SubViewport/world1" unique_id=2073325831]
 
-[node name="Area3D4" type="Area3D" parent="SubViewportContainer/SubViewport/world1/areas"]
+[node name="Area3D4" type="Area3D" parent="SubViewportContainer/SubViewport/world1/areas" unique_id=2098772945]
 transform = Transform3D(-1.49635, 0, 0.104635, 0, 1.5, 0, -0.104635, 0, -1.49635, -0.337748, 0.608527, 5.9829)
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/world1/areas/Area3D4"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/world1/areas/Area3D4" unique_id=919028649]
 transform = Transform3D(-0.716253, 0, 0.697839, 0, 1, 0, -0.697839, 0, -0.716253, -2.57607, 0.101857, 2.46631)
 shape = SubResource("BoxShape3D_0pd8t")
 
-[node name="Area3D3" type="Area3D" parent="SubViewportContainer/SubViewport/world1/areas"]
+[node name="Area3D3" type="Area3D" parent="SubViewportContainer/SubViewport/world1/areas" unique_id=1192247186]
 transform = Transform3D(0.707107, 0, 0.707107, 0, 1, 0, -0.707107, 0, 0.707107, -4.76662, 0.471043, 6.82785)
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/world1/areas/Area3D3"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/world1/areas/Area3D3" unique_id=1508488863]
 transform = Transform3D(1, 0, 0, 0, 0.999999, 0, 0, 0, 1, -0.0988379, 0.11969, -1.02006)
 shape = SubResource("BoxShape3D_y2ymk")
 
-[node name="Area3D5" type="Area3D" parent="SubViewportContainer/SubViewport/world1/areas"]
+[node name="Area3D5" type="Area3D" parent="SubViewportContainer/SubViewport/world1/areas" unique_id=493693198]
 transform = Transform3D(0.520816, 0, -0.853669, 0, 1, 0, 0.853669, 0, 0.520816, -4.87226, 0.471043, -2.72918)
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/world1/areas/Area3D5"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/world1/areas/Area3D5" unique_id=1709091600]
 transform = Transform3D(1, 0, 0, 0, 0.999999, 0, 0, 0, 1, -0.0988379, 0.11969, -1.02006)
 shape = SubResource("BoxShape3D_y2ymk")
 
-[node name="Area3D6" type="Area3D" parent="SubViewportContainer/SubViewport/world1/areas"]
+[node name="Area3D6" type="Area3D" parent="SubViewportContainer/SubViewport/world1/areas" unique_id=1335294638]
 transform = Transform3D(-0.383041, 0.00400973, -0.115169, 0.00163049, 0.399906, 0.00850032, 0.115227, 0.00767046, -0.382967, 2.73766, 0.482153, -5.19067)
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/world1/areas/Area3D6"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/world1/areas/Area3D6" unique_id=688336218]
 transform = Transform3D(1, -2.27708e-07, 1.75834e-06, 1.46218e-07, 0.999974, -7.26432e-07, 0, -1.6205e-07, 1, -0.316714, 0.177091, -2.27499)
 shape = SubResource("BoxShape3D_y2ymk")
 
-[node name="Area3D9" type="Area3D" parent="SubViewportContainer/SubViewport/world1/areas"]
+[node name="Area3D9" type="Area3D" parent="SubViewportContainer/SubViewport/world1/areas" unique_id=425083769]
 transform = Transform3D(0.707107, 0, 0.707107, 0, 1, 0, -0.707107, 0, 0.707107, -4.76662, 0.471043, 6.82785)
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/world1/areas/Area3D9"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/world1/areas/Area3D9" unique_id=519013475]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.0783558, 0, -1.02006)
 shape = SubResource("BoxShape3D_y2ymk")
 
-[node name="DreamHelper1" parent="SubViewportContainer/SubViewport/world1" instance=ExtResource("3_dream")]
+[node name="DreamHelper1" parent="SubViewportContainer/SubViewport/world1" unique_id=415215333 instance=ExtResource("3_dream")]
 transform = Transform3D(0.15, 0, 0, 0, 0.15, 0, 0, 0, 0.15, 3, 1, 3)
 
-[node name="DreamHelper2" parent="SubViewportContainer/SubViewport/world1" instance=ExtResource("3_dream")]
+[node name="DreamHelper2" parent="SubViewportContainer/SubViewport/world1" unique_id=1712700359 instance=ExtResource("3_dream")]
 transform = Transform3D(0.14999999, 0, 0, 0, 0.14999999, 0, 0, 0, 0.14999999, -4.9999995, 0.612047, 4.9999995)
 
-[node name="DreamHelper3" parent="SubViewportContainer/SubViewport/world1" instance=ExtResource("3_dream")]
+[node name="DreamHelper3" parent="SubViewportContainer/SubViewport/world1" unique_id=2050543716 instance=ExtResource("3_dream")]
 transform = Transform3D(0.15, 0, 0, 0, 0.15, 0, 0, 0, 0.15, 0, 1, -6)
 
-[node name="EndObject" parent="SubViewportContainer/SubViewport/world1" instance=ExtResource("3_mc2jv")]
+[node name="EndObject" parent="SubViewportContainer/SubViewport/world1" unique_id=43699026 instance=ExtResource("3_mc2jv")]
 transform = Transform3D(0.49999988, 0, 0, 0, 0.49999988, 0, 0, 0, 0.49999988, -3.754219, 0, -1.3891726)
 interaction_distance = 3.0
 
-[node name="nightmare1" type="Node3D" parent="SubViewportContainer/SubViewport"]
+[node name="nightmare1" type="Node3D" parent="SubViewportContainer/SubViewport" unique_id=146009320]
 transform = Transform3D(15, 0, 0, 0, 15, 0, 0, 0, 15, 0, 0, 0)
 visible = false
 
-[node name="MonsterLethal1" parent="SubViewportContainer/SubViewport/nightmare1" instance=ExtResource("2_ts3gi")]
+[node name="MonsterLethal1" parent="SubViewportContainer/SubViewport/nightmare1" unique_id=429643438 instance=ExtResource("2_ts3gi")]
 transform = Transform3D(0.09999999, 0, 0, 0, 0.09999999, 0, 0, 0, 0.09999999, -3, 1.5, 3)
 monster_type = 1
 speed = 5.0
 model_scene = ExtResource("3_0nbtd")
 
-[node name="MonsterJumpscare1" parent="SubViewportContainer/SubViewport/nightmare1" instance=ExtResource("2_ts3gi")]
+[node name="MonsterJumpscare1" parent="SubViewportContainer/SubViewport/nightmare1" unique_id=2108852188 instance=ExtResource("2_ts3gi")]
 transform = Transform3D(0.09999999, 0, 0, 0, 0.09999999, 0, 0, 0, 0.09999999, 4, 1.5, -4)
 speed = 6.0
 model_scene = ExtResource("3_0nbtd")
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1"]
+[node name="MeshInstance3D" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1" unique_id=2052242307]
 transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, 0, 0, 0)
 cast_shadow = 0
 mesh = SubResource("PlaneMesh_r3jhv")
 skeleton = NodePath("../../../..")
 
-[node name="StaticBody3D" type="StaticBody3D" parent="SubViewportContainer/SubViewport/nightmare1/MeshInstance3D"]
+[node name="StaticBody3D" type="StaticBody3D" parent="SubViewportContainer/SubViewport/nightmare1/MeshInstance3D" unique_id=2011349869]
 transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, 0, 0, 0)
 physics_material_override = SubResource("PhysicsMaterial_ex1pv")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/nightmare1/MeshInstance3D/StaticBody3D"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/nightmare1/MeshInstance3D/StaticBody3D" unique_id=52275930]
 transform = Transform3D(0.01, 0, 0, 0, 0.01, 0, 0, 0, 0.01, 0, 0.00490519, 0)
 shape = SubResource("WorldBoundaryShape3D_n4tg6")
 
-[node name="Skyscrapers" type="Node3D" parent="SubViewportContainer/SubViewport/nightmare1"]
+[node name="Skyscrapers" type="Node3D" parent="SubViewportContainer/SubViewport/nightmare1" unique_id=624749500]
 
-[node name="Cube2" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1/Skyscrapers"]
+[node name="Cube2" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1/Skyscrapers" unique_id=794192192]
 transform = Transform3D(1, 0, 0, 0, 1.5, 0, 0, 0, 1, 2.48661, 9.94568, 10.9123)
 mesh = SubResource("ArrayMesh_isqn2")
 skeleton = NodePath("")
 
-[node name="Cube3" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1/Skyscrapers"]
+[node name="Cube3" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1/Skyscrapers" unique_id=1151315812]
 transform = Transform3D(1, 0, 0, 0, 1.5, 0, 0, 0, 1, -2.37433, 9.94568, 10.9123)
 mesh = SubResource("ArrayMesh_isqn2")
 skeleton = NodePath("")
 
-[node name="Cube4" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1/Skyscrapers"]
+[node name="Cube4" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1/Skyscrapers" unique_id=2086162508]
 transform = Transform3D(1, 0, 0, 0, 1.5, 0, 0, 0, 1, -7.36341, 9.94568, 10.9123)
 mesh = SubResource("ArrayMesh_isqn2")
 skeleton = NodePath("")
 
-[node name="Cube9" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1/Skyscrapers"]
+[node name="Cube9" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1/Skyscrapers" unique_id=223964579]
 transform = Transform3D(-4.37114e-08, 0, -1, 0, 1.5, 0, 1, 0, -4.37114e-08, 11.1928, 9.94568, 6.84447)
 mesh = SubResource("ArrayMesh_isqn2")
 skeleton = NodePath("")
 
-[node name="Cube10" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1/Skyscrapers"]
+[node name="Cube10" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1/Skyscrapers" unique_id=1496044304]
 transform = Transform3D(-4.37114e-08, 0, -1, 0, 1.5, 0, 1, 0, -4.37114e-08, 11.2085, 9.94568, 1.86855)
 mesh = SubResource("ArrayMesh_isqn2")
 skeleton = NodePath("")
 
-[node name="Cube11" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1/Skyscrapers"]
+[node name="Cube11" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1/Skyscrapers" unique_id=830074297]
 transform = Transform3D(-4.37114e-08, 0, -1, 0, 1.5, 0, 1, 0, -4.37114e-08, 11.2088, 9.94568, -2.95336)
 mesh = SubResource("ArrayMesh_isqn2")
 skeleton = NodePath("")
 
-[node name="Cube12" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1/Skyscrapers"]
+[node name="Cube12" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1/Skyscrapers" unique_id=856810215]
 transform = Transform3D(-4.37114e-08, 0, -1, 0, 1.5, 0, 1, 0, -4.37114e-08, 11.2287, 9.94568, -7.96821)
 mesh = SubResource("ArrayMesh_isqn2")
 skeleton = NodePath("")
 
-[node name="Cube13" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1/Skyscrapers"]
+[node name="Cube13" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1/Skyscrapers" unique_id=337632291]
 transform = Transform3D(-4.37114e-08, 0, -1, 0, 1.5, 0, 1, 0, -4.37114e-08, -11.4658, 9.94568, 6.84447)
 mesh = SubResource("ArrayMesh_isqn2")
 skeleton = NodePath("")
 
-[node name="Cube14" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1/Skyscrapers"]
+[node name="Cube14" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1/Skyscrapers" unique_id=1173336596]
 transform = Transform3D(-4.37114e-08, 0, -1, 0, 1.5, 0, 1, 0, -4.37114e-08, -11.4667, 9.94568, 1.86855)
 material_override = SubResource("StandardMaterial3D_hxlkl")
 mesh = SubResource("ArrayMesh_isqn2")
 skeleton = NodePath("")
 
-[node name="Cube15" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1/Skyscrapers"]
+[node name="Cube15" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1/Skyscrapers" unique_id=256688737]
 transform = Transform3D(-4.37114e-08, 0, -1, 0, 1.5, 0, 1, 0, -4.37114e-08, -11.4546, 9.94568, -2.98585)
 mesh = SubResource("ArrayMesh_isqn2")
 skeleton = NodePath("")
 
-[node name="Cube16" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1/Skyscrapers"]
+[node name="Cube16" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1/Skyscrapers" unique_id=688191151]
 transform = Transform3D(-4.37114e-08, 0, -1, 0, 1.5, 0, 1, 0, -4.37114e-08, -11.4446, 9.94568, -7.96821)
 mesh = SubResource("ArrayMesh_isqn2")
 skeleton = NodePath("")
 
-[node name="Cube" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1/Skyscrapers"]
+[node name="Cube" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1/Skyscrapers" unique_id=1934042259]
 transform = Transform3D(1, 0, 0, 0, 1.5, 0, 0, 0, 1, 7.46924, 9.94568, 10.9123)
 mesh = SubResource("ArrayMesh_isqn2")
 skeleton = NodePath("")
 
-[node name="DirectionalLight3D" type="DirectionalLight3D" parent="SubViewportContainer/SubViewport/nightmare1"]
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="SubViewportContainer/SubViewport/nightmare1" unique_id=1122028530]
 transform = Transform3D(0.2, 0, 0, 0, -0.00700779, -0.199877, 0, 0.199877, -0.00700779, 0, 0.546569, 0)
 light_color = Color(1, 0, 0, 1)
 light_energy = 2.5
 
-[node name="Collisions" type="Node3D" parent="SubViewportContainer/SubViewport/nightmare1"]
+[node name="Collisions" type="Node3D" parent="SubViewportContainer/SubViewport/nightmare1" unique_id=141263296]
 transform = Transform3D(1, 0, 0, 0, 0.999405, 0.0344809, 0, -0.0344809, 0.999405, 0, 0, 0)
 
-[node name="StaticBody3D" type="StaticBody3D" parent="SubViewportContainer/SubViewport/nightmare1/Collisions"]
+[node name="StaticBody3D" type="StaticBody3D" parent="SubViewportContainer/SubViewport/nightmare1/Collisions" unique_id=1054033676]
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/nightmare1/Collisions/StaticBody3D"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/nightmare1/Collisions/StaticBody3D" unique_id=913592516]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.506626, 1.50919, 9.14997)
 shape = SubResource("BoxShape3D_o42gj")
 
-[node name="StaticBody3D4" type="StaticBody3D" parent="SubViewportContainer/SubViewport/nightmare1/Collisions"]
+[node name="StaticBody3D4" type="StaticBody3D" parent="SubViewportContainer/SubViewport/nightmare1/Collisions" unique_id=1650479037]
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/nightmare1/Collisions/StaticBody3D4"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/nightmare1/Collisions/StaticBody3D4" unique_id=257961450]
 transform = Transform3D(0.999999, 0, 0, 0, 0.999991, -2.98023e-08, 0, 2.98023e-08, 0.999991, 0.506626, 0.670824, -10.0041)
 shape = SubResource("BoxShape3D_o42gj")
 
-[node name="StaticBody3D2" type="StaticBody3D" parent="SubViewportContainer/SubViewport/nightmare1/Collisions"]
+[node name="StaticBody3D2" type="StaticBody3D" parent="SubViewportContainer/SubViewport/nightmare1/Collisions" unique_id=1364045754]
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/nightmare1/Collisions/StaticBody3D2"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/nightmare1/Collisions/StaticBody3D2" unique_id=589774283]
 transform = Transform3D(-4.37114e-08, 0, 1, 0, 1, 0, -1, 0, -4.37114e-08, 9.52629, 1.6037, -1.13422)
 shape = SubResource("BoxShape3D_o42gj")
 
-[node name="StaticBody3D3" type="StaticBody3D" parent="SubViewportContainer/SubViewport/nightmare1/Collisions"]
+[node name="StaticBody3D3" type="StaticBody3D" parent="SubViewportContainer/SubViewport/nightmare1/Collisions" unique_id=1178628787]
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/nightmare1/Collisions/StaticBody3D3"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/nightmare1/Collisions/StaticBody3D3" unique_id=1290742626]
 transform = Transform3D(-4.37114e-08, 0, -1, 0, 1, 0, 1, 0, -4.37114e-08, -10.1135, 1.41505, -1.10872)
 shape = SubResource("BoxShape3D_o42gj")
 
-[node name="StaticBody3D5" type="StaticBody3D" parent="SubViewportContainer/SubViewport/nightmare1/Collisions"]
+[node name="StaticBody3D5" type="StaticBody3D" parent="SubViewportContainer/SubViewport/nightmare1/Collisions" unique_id=2059841143]
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/nightmare1/Collisions/StaticBody3D5"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/nightmare1/Collisions/StaticBody3D5" unique_id=2138095081]
 transform = Transform3D(-0.656059, 0, 0.75471, 1.30385e-08, 0.999997, -7.45058e-09, -0.754707, 2.6077e-08, -0.656056, 3.68496, 0.60418, 2.54818)
 shape = SubResource("BoxShape3D_b2lfh")
 
-[node name="StaticBody3D6" type="StaticBody3D" parent="SubViewportContainer/SubViewport/nightmare1/Collisions"]
+[node name="StaticBody3D6" type="StaticBody3D" parent="SubViewportContainer/SubViewport/nightmare1/Collisions" unique_id=1375021937]
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/nightmare1/Collisions/StaticBody3D6"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/nightmare1/Collisions/StaticBody3D6" unique_id=268345662]
 transform = Transform3D(0.707107, 0, 0.707107, 1.49012e-08, 0.999991, -1.49012e-08, -0.707107, 2.98023e-08, 0.707107, -5.56388, -0.0970246, 6.1616)
 shape = SubResource("BoxShape3D_akrhb")
 
-[node name="models" type="Node3D" parent="SubViewportContainer/SubViewport/nightmare1"]
+[node name="models" type="Node3D" parent="SubViewportContainer/SubViewport/nightmare1" unique_id=1222652026]
 transform = Transform3D(1, 0, 0, 0, 0.999405, 0.0344809, 0, -0.0344809, 0.999405, 0, 0, 0)
 
-[node name="Cube" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1/models"]
+[node name="Cube" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1/models" unique_id=1383612422]
 transform = Transform3D(0.412606, 0, 0.702166, 0, 0.409191, 0, -0.412606, 0, 0.702166, -5.56172, 0.0500384, 6.16262)
 mesh = SubResource("ArrayMesh_hpjb3")
 skeleton = NodePath("")
 
-[node name="Cube4" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1/models"]
+[node name="Cube4" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1/models" unique_id=1035965728]
 transform = Transform3D(0.244298, 0.321131, 0.453767, -0.318397, 0.253541, -0.560272, -0.423591, -0.00537014, 0.682836, -5.58452, 0.717387, -1.67603)
 mesh = SubResource("ArrayMesh_hpjb3")
 skeleton = NodePath("")
 
-[node name="Cube5" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1/models"]
+[node name="Cube5" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1/models" unique_id=1458840451]
 transform = Transform3D(-0.336141, 0.330565, 0.123729, -0.436414, -0.187992, -0.475779, -0.192454, -0.151072, 0.862786, 2.56392, 1.04203, -5.54305)
 mesh = SubResource("ArrayMesh_hpjb3")
 skeleton = NodePath("")
 
-[node name="Cube2" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1/models"]
+[node name="Cube2" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1/models" unique_id=1135543945]
 transform = Transform3D(-0.655927, 0, 1.2832, 0, 0.7, 0, -0.754824, 0, -1.11508, 3.72915, 0.137484, 2.53421)
 mesh = SubResource("ArrayMesh_hpjb3")
 skeleton = NodePath("")
 
-[node name="Cube3" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1/models"]
+[node name="Cube3" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1/models" unique_id=1515305851]
 transform = Transform3D(-8.74228e-08, 0, -4, 0, 1, 0, 2, 0, -1.74846e-07, -0.175111, 0.137485, -10.9867)
 mesh = SubResource("ArrayMesh_hpjb3")
 skeleton = NodePath("")
 
-[node name="cat" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1/models"]
+[node name="cat" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1/models" unique_id=486268882]
 transform = Transform3D(1.1, 1.71957e-14, 3.99856e-20, -1.31721e-14, 0.842612, -0.707111, -1.10539e-14, 0.707111, 0.842612, -0.818803, 2.87687, -10.6487)
 mesh = SubResource("ArrayMesh_mr7ig")
 skeleton = NodePath("")
 
-[node name="cat2" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1/models"]
+[node name="cat2" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1/models" unique_id=551990329]
 transform = Transform3D(1.04544, -0.269501, 0.210762, 0.341924, 0.799661, -0.673521, 0.0117968, 0.705629, 0.843771, -1.35204, 2.87687, -10.6487)
 mesh = SubResource("ArrayMesh_mr7ig")
 skeleton = NodePath("")
 
-[node name="cat3" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1/models"]
+[node name="cat3" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1/models" unique_id=2102189769]
 transform = Transform3D(1.04851, 0.262001, -0.204897, -0.332409, 0.802076, -0.67541, -0.0114686, 0.705712, 0.843706, -0.440304, 2.87687, -10.6487)
 mesh = SubResource("ArrayMesh_mr7ig")
 skeleton = NodePath("")
 
-[node name="cat4" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1/models"]
+[node name="cat4" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1/models" unique_id=1760202510]
 transform = Transform3D(1.1, 1.71957e-14, 3.99856e-20, -1.31721e-14, 0.842612, -0.707111, -1.10539e-14, 0.707111, 0.842612, -3.23418, 2.87687, -10.6487)
 mesh = SubResource("ArrayMesh_mr7ig")
 skeleton = NodePath("")
 
-[node name="cat5" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1/models"]
+[node name="cat5" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1/models" unique_id=27039805]
 transform = Transform3D(1.04544, -0.269501, 0.210762, 0.341924, 0.799661, -0.673521, 0.0117968, 0.705629, 0.843771, -3.76742, 2.87687, -10.6487)
 mesh = SubResource("ArrayMesh_mr7ig")
 skeleton = NodePath("")
 
-[node name="cat6" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1/models"]
+[node name="cat6" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1/models" unique_id=1988713554]
 transform = Transform3D(1.04851, 0.262001, -0.204897, -0.332409, 0.802076, -0.67541, -0.0114686, 0.705712, 0.843706, -2.85568, 2.87687, -10.6487)
 mesh = SubResource("ArrayMesh_mr7ig")
 skeleton = NodePath("")
 
-[node name="cat7" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1/models"]
+[node name="cat7" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1/models" unique_id=1467818348]
 transform = Transform3D(1.1, 1.71957e-14, 4.04981e-20, -1.31721e-14, 0.842612, -0.707111, -1.10539e-14, 0.707111, 0.842612, 1.666, 2.87687, -10.6487)
 mesh = SubResource("ArrayMesh_mr7ig")
 skeleton = NodePath("")
 
-[node name="cat8" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1/models"]
+[node name="cat8" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1/models" unique_id=1756700001]
 transform = Transform3D(1.04544, -0.269501, 0.210762, 0.341924, 0.799661, -0.673521, 0.0117969, 0.705629, 0.843771, 1.13277, 2.87687, -10.6487)
 mesh = SubResource("ArrayMesh_mr7ig")
 skeleton = NodePath("")
 
-[node name="cat9" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1/models"]
+[node name="cat9" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1/models" unique_id=1634702911]
 transform = Transform3D(1.04851, 0.262001, -0.204897, -0.332409, 0.802076, -0.67541, -0.0114686, 0.705712, 0.843706, 2.0445, 2.87687, -10.6487)
 mesh = SubResource("ArrayMesh_mr7ig")
 skeleton = NodePath("")
 
-[node name="cat10" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1/models"]
+[node name="cat10" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1/models" unique_id=713392307]
 transform = Transform3D(1.1, 1.71957e-14, 3.99856e-20, -1.31721e-14, 0.842612, -0.707111, -1.10539e-14, 0.707111, 0.842612, -0.818803, 4.0775, -10.6073)
 mesh = SubResource("ArrayMesh_mr7ig")
 skeleton = NodePath("")
 
-[node name="cat11" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1/models"]
+[node name="cat11" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1/models" unique_id=1705009626]
 transform = Transform3D(1.04544, -0.269501, 0.210762, 0.341924, 0.799661, -0.673521, 0.0117968, 0.705629, 0.843771, -1.35204, 4.0775, -10.6073)
 mesh = SubResource("ArrayMesh_mr7ig")
 skeleton = NodePath("")
 
-[node name="cat12" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1/models"]
+[node name="cat12" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1/models" unique_id=1545426633]
 transform = Transform3D(1.04851, 0.262001, -0.204897, -0.332409, 0.802076, -0.67541, -0.0114686, 0.705712, 0.843706, -0.440304, 4.0775, -10.6073)
 mesh = SubResource("ArrayMesh_mr7ig")
 skeleton = NodePath("")
 
-[node name="cat13" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1/models"]
+[node name="cat13" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1/models" unique_id=1657860855]
 transform = Transform3D(1.1, 1.71957e-14, 4.04981e-20, -1.31721e-14, 0.842612, -0.707111, -1.10539e-14, 0.707111, 0.842612, -3.23418, 4.0775, -10.6073)
 mesh = SubResource("ArrayMesh_mr7ig")
 skeleton = NodePath("")
 
-[node name="cat14" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1/models"]
+[node name="cat14" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1/models" unique_id=1795317775]
 transform = Transform3D(1.04544, -0.269501, 0.210762, 0.341924, 0.799661, -0.673521, 0.0117969, 0.705629, 0.843771, -3.76742, 4.0775, -10.6073)
 mesh = SubResource("ArrayMesh_mr7ig")
 skeleton = NodePath("")
 
-[node name="cat15" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1/models"]
+[node name="cat15" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1/models" unique_id=680779636]
 transform = Transform3D(1.04851, 0.262001, -0.204897, -0.332409, 0.802076, -0.67541, -0.0114686, 0.705712, 0.843706, -2.85568, 4.0775, -10.6073)
 mesh = SubResource("ArrayMesh_mr7ig")
 skeleton = NodePath("")
 
-[node name="cat16" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1/models"]
+[node name="cat16" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1/models" unique_id=264219652]
 transform = Transform3D(1.1, 1.71957e-14, 3.81221e-20, -1.31721e-14, 0.842612, -0.707111, -1.10539e-14, 0.707111, 0.842612, 1.666, 4.0775, -10.6073)
 mesh = SubResource("ArrayMesh_mr7ig")
 skeleton = NodePath("")
 
-[node name="cat17" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1/models"]
+[node name="cat17" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1/models" unique_id=2086234688]
 transform = Transform3D(1.04544, -0.269501, 0.210762, 0.341924, 0.799661, -0.673521, 0.0117968, 0.705629, 0.843771, 1.13277, 4.0775, -10.6073)
 mesh = SubResource("ArrayMesh_mr7ig")
 skeleton = NodePath("")
 
-[node name="cat18" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1/models"]
+[node name="cat18" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/nightmare1/models" unique_id=1524315009]
 transform = Transform3D(1.04851, 0.262001, -0.204897, -0.332409, 0.802076, -0.67541, -0.0114686, 0.705712, 0.843706, 2.0445, 4.0775, -10.6073)
 mesh = SubResource("ArrayMesh_mr7ig")
 skeleton = NodePath("")
 
-[node name="areas" type="Node3D" parent="SubViewportContainer/SubViewport/nightmare1"]
+[node name="areas" type="Node3D" parent="SubViewportContainer/SubViewport/nightmare1" unique_id=517966135]
 transform = Transform3D(1, 0, 0, 0, 0.999405, 0.0344809, 0, -0.0344809, 0.999405, 0, 0, 0)
 
-[node name="Area3D4" type="Area3D" parent="SubViewportContainer/SubViewport/nightmare1/areas"]
+[node name="Area3D4" type="Area3D" parent="SubViewportContainer/SubViewport/nightmare1/areas" unique_id=2028994857]
 transform = Transform3D(-1.49635, 0, 0.104635, 0, 1.5, 0, -0.104635, 0, -1.49635, -0.337748, 0.608527, 5.9829)
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/nightmare1/areas/Area3D4"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/nightmare1/areas/Area3D4" unique_id=452930382]
 transform = Transform3D(-0.716253, 0, 0.697839, 1.28523e-07, 1, 3.72529e-09, -0.697839, 3.72529e-09, -0.716253, -2.58907, 0.101857, 2.55856)
 shape = SubResource("BoxShape3D_y2ymk")
 
-[node name="Area3D3" type="Area3D" parent="SubViewportContainer/SubViewport/nightmare1/areas"]
+[node name="Area3D3" type="Area3D" parent="SubViewportContainer/SubViewport/nightmare1/areas" unique_id=1012637873]
 transform = Transform3D(0.707107, 0, 0.707107, 0, 1, 0, -0.707107, 0, 0.707107, -4.76662, 0.471043, 6.82785)
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/nightmare1/areas/Area3D3"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/nightmare1/areas/Area3D3" unique_id=1427705753]
 transform = Transform3D(1, -1.86265e-09, 0, 1.86265e-09, 0.999998, -1.86265e-09, 0, 1.86265e-09, 1, -0.136045, -0.0902128, -1.02092)
 shape = SubResource("BoxShape3D_y2ymk")
 
-[node name="Area3D5" type="Area3D" parent="SubViewportContainer/SubViewport/nightmare1/areas"]
+[node name="Area3D5" type="Area3D" parent="SubViewportContainer/SubViewport/nightmare1/areas" unique_id=219527513]
 transform = Transform3D(0.418668, 0.784796, 0.45696, -0.545655, 0.619615, -0.564215, -0.725933, -0.0131238, 0.687641, -4.74381, 0.345527, -1.03816)
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/nightmare1/areas/Area3D5"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/nightmare1/areas/Area3D5" unique_id=765375063]
 transform = Transform3D(1, -1.86265e-09, 0, 1.86265e-09, 0.999998, -1.86265e-09, 0, 1.86265e-09, 1, -0.136045, -0.0902128, -1.02092)
 shape = SubResource("BoxShape3D_y2ymk")
 
-[node name="Area3D6" type="Area3D" parent="SubViewportContainer/SubViewport/nightmare1/areas"]
+[node name="Area3D6" type="Area3D" parent="SubViewportContainer/SubViewport/nightmare1/areas" unique_id=1794418248]
 transform = Transform3D(-0.576065, 0.807851, 0.1246, -0.747909, -0.459423, -0.479127, -0.329819, -0.369198, 0.868857, 2.97979, 0.28518, -4.83158)
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/nightmare1/areas/Area3D6"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SubViewportContainer/SubViewport/nightmare1/areas/Area3D6" unique_id=902064215]
 transform = Transform3D(1, -1.86265e-09, 0, 1.86265e-09, 0.999998, -1.86265e-09, 0, 1.86265e-09, 1, -0.136045, -0.0902128, -1.02092)
 shape = SubResource("BoxShape3D_y2ymk")
 
-[node name="OmniLight3D" type="OmniLight3D" parent="SubViewportContainer/SubViewport/nightmare1"]
+[node name="OmniLight3D" type="OmniLight3D" parent="SubViewportContainer/SubViewport/nightmare1" unique_id=1625051170]
 transform = Transform3D(0.0666667, 0, 0, 0, 0.0666667, 0, 0, 0, 0.0666667, 0.754308, 4.47058, -5.75129)
 light_energy = 16.0
 omni_range = 36.229
 
-[node name="OmniLight3D2" type="OmniLight3D" parent="SubViewportContainer/SubViewport/nightmare1"]
+[node name="OmniLight3D2" type="OmniLight3D" parent="SubViewportContainer/SubViewport/nightmare1" unique_id=519076379]
 transform = Transform3D(0.0666667, 0, 0, 0, 0.0666667, 0, 0, 0, 0.0666667, -2.91451, 4.47058, -5.75129)
 light_energy = 16.0
 omni_range = 36.229
 
-[node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="SubViewportContainer/SubViewport/nightmare1"]
+[node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="SubViewportContainer/SubViewport/nightmare1" unique_id=214189015]
 stream = ExtResource("6_ipbu6")
 volume_db = 0.75
 pitch_scale = 0.75
 autoplay = true
 bus = &"Music"
 
-[node name="EndObject" parent="SubViewportContainer/SubViewport/nightmare1" instance=ExtResource("3_mc2jv")]
+[node name="EndObject" parent="SubViewportContainer/SubViewport/nightmare1" unique_id=1095386003 instance=ExtResource("3_mc2jv")]
 transform = Transform3D(0.49999988, 0, 0, 0, 0.49999988, 0, 0, 0, 0.49999988, -3.754219, 0, -1.3891726)
 interaction_distance = 3.0
 
-[node name="Player" parent="SubViewportContainer/SubViewport" instance=ExtResource("3_k3laj")]
+[node name="Player" parent="SubViewportContainer/SubViewport" unique_id=512027946 instance=ExtResource("3_k3laj")]
 transform = Transform3D(0.7, 0, 0, 0, 0.7, 0, 0, 0, 0.7, 0, 2.822382, 0)
 
-[node name="world4" parent="SubViewportContainer/SubViewport" instance=ExtResource("29_navra")]
-visible = false
+[node name="WorldEnvironment" type="WorldEnvironment" parent="SubViewportContainer/SubViewport" unique_id=846213]
 
-[node name="WorldEnvironment" type="WorldEnvironment" parent="SubViewportContainer/SubViewport"]
+[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=1186946338]
 
-[node name="CanvasLayer" type="CanvasLayer" parent="."]
-
-[node name="CRT" type="ColorRect" parent="CanvasLayer"]
+[node name="CRT" type="ColorRect" parent="CanvasLayer" unique_id=96582159]
 material = SubResource("ShaderMaterial_wrue6")
 anchors_preset = -1
 anchor_right = 1.00417
@@ -1765,7 +1761,7 @@ anchor_bottom = 0.99375
 offset_right = -0.333344
 offset_bottom = 1.5
 
-[node name="SprintBar" type="ProgressBar" parent="CanvasLayer"]
+[node name="SprintBar" type="ProgressBar" parent="CanvasLayer" unique_id=1135910847]
 anchors_preset = 7
 anchor_left = 0.5
 anchor_top = 1.0
@@ -1781,7 +1777,7 @@ size_flags_horizontal = 4
 value = 100.0
 show_percentage = false
 
-[node name="Sprint" type="Label" parent="CanvasLayer"]
+[node name="Sprint" type="Label" parent="CanvasLayer" unique_id=94762512]
 anchors_preset = 2
 anchor_top = 1.0
 anchor_bottom = 1.0
@@ -1791,7 +1787,7 @@ offset_bottom = -30.0
 grow_vertical = 0
 text = "Sprint:"
 
-[node name="NightmareBar" type="ProgressBar" parent="CanvasLayer"]
+[node name="NightmareBar" type="ProgressBar" parent="CanvasLayer" unique_id=41204298]
 anchors_preset = 7
 anchor_left = 0.5
 anchor_top = 1.0
@@ -1804,7 +1800,7 @@ grow_horizontal = 2
 grow_vertical = 0
 size_flags_horizontal = 4
 
-[node name="Nightmare" type="Label" parent="CanvasLayer"]
+[node name="Nightmare" type="Label" parent="CanvasLayer" unique_id=1895845525]
 anchors_preset = 2
 anchor_top = 1.0
 anchor_bottom = 1.0
@@ -1813,7 +1809,7 @@ offset_right = 84.0
 grow_vertical = 0
 text = "Nightmare:"
 
-[node name="ColorRect" type="ColorRect" parent="CanvasLayer"]
+[node name="ColorRect" type="ColorRect" parent="CanvasLayer" unique_id=612889479]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0

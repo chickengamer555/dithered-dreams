@@ -1,7 +1,6 @@
-res://scenes/nightmare_helper.tscn
+res://scenes/world.tscn
 res://envoirments/world1.tres
 res://envoirments/nightmare1.tres
 res://envoirments/world2.tres
 res://envoirments/nightmare2.tres
-res://envoirments/world4.tres
-res://scenes/worlds/world_4.tscn
+res://scripts/world.gd
